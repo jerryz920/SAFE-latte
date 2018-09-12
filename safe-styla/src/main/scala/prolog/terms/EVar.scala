@@ -1,12 +1,12 @@
 package prolog.terms
 
-final class EVar() extends Var {
+final class EVar(name: String) extends Var(name) {
 
   override def tcopy(dict: Copier): Term = {
     val root = ref
     //println(s"[terms.EVar tcopy] dict=${dict};  this=${this};   root=${root}")
     if (root == this) { 
-      dict.getOrElseUpdate(this, new EVar())
+      dict.getOrElseUpdate(this, new EVar(name))
       //println(s"[terms.EVar tcopy] dict=${dict}")
       //dict(this)
     } else root.tcopy(dict)  // Reduce distinct variables when multiple variables are bound to the same thing 
@@ -24,7 +24,8 @@ final class EVar() extends Var {
 
   override def hashCode = {
     if(unbound) {
-      super.objectHashCode // Env vars are different 
+      //super.objectHashCode // Env vars are different 
+      name.hashCode     // to distinguish difference env vars
     } else ref.hashCode
   }
    

@@ -6,10 +6,10 @@ object Tests {
 
   def utest {
     println("ok")
-    val X = new Var()
-    val Y = new Var()
-    val A = new Var()
-    val B = new Var()
+    val X = Var()
+    val Y = Var()
+    val A = Var()
+    val B = Var()
 
     val T1 = new Fun("f", Array(X, new Const("a"), X))
     val T2 = new Fun("f", Array(new Const("b"), Y, A))

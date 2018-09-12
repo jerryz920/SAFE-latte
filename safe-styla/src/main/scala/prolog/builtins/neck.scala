@@ -16,7 +16,7 @@ final case class neck(x: Var) extends FunBuiltin("neck", 1) {
 
   override def safeCopy() = {
     //new neck(x)
-    new neck(new Var())
+    new neck(Var())
   }
 
 }

@@ -92,9 +92,9 @@ case class append1() extends FunBuiltin("app",3)  with Instructions {
   
     override def exec(p:Prog) : Int = {
       val oldtop=p.trail.size
-      val x=new Var()
-      val xs=new Var()
-      val zs=new Var()
+      val x=Var()
+      val xs=Var()
+      val zs=Var()
       val xxs = args(0)
       val ys=args(1)
       val xzs = args(2)
@@ -131,7 +131,7 @@ case class append1() extends FunBuiltin("app",3)  with Instructions {
 object Test extends App {
   val p=prog
   val x=`append0`()
-  x.args=Array(Const.nil,new Var(),new Cons(Const.nil,Const.nil))
+  x.args=Array(Const.nil, Var(),new Cons(Const.nil,Const.nil))
   x match {
     case `append0`() if x.exec(p)>0 => {
       println("p1 ok="+x)

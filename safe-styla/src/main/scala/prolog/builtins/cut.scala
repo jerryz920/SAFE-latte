@@ -18,7 +18,7 @@ final case class cut(x: Var) extends FunBuiltin("cut", 1) {
 
   override def safeCopy() = {
     //new cut(x)
-    new cut(new Var())
+    new cut(Var())
   }
 
 }

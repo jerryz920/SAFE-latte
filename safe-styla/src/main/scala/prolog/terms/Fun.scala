@@ -148,7 +148,7 @@ class Fun(sym: String, var args: Array[Term]) extends Const(sym) with LazyLoggin
   final def init(arity: Int) {
     this.args = new Array[Term](arity)
     for (i <- 0 until arity) {
-      args(i) = new Var()
+      args(i) = Var()
     }
   }
 
@@ -170,9 +170,10 @@ class Fun(sym: String, var args: Array[Term]) extends Const(sym) with LazyLoggin
       val l = args.length
       if (other.args.length != l) return false
       for (i <- 0 until l) {
+        logger.info(s"[Styla Fun unify] binding attempt: args($i)=${getArg(i)}   other.args($i)=${other.getArg(i)}")
         if (!args(i).ref.unify(other.args(i), trail)) {
-          //logger.info(s"[Styla Fun unify] Cannot bind: args($i)=${getArg(i)}   other.args($i)=${other.getArg(i)}")
-          //logger.info(s"[Styla Fun unify] this=${this}    term=${term}")
+          logger.info(s"[Styla Fun unify] Cannot bind: args($i)=${getArg(i)}   other.args($i)=${other.getArg(i)}")
+          logger.info(s"[Styla Fun unify] this=${this}    term=${term}")
           return false;
         }
       }
@@ -238,8 +239,17 @@ class Fun(sym: String, var args: Array[Term]) extends Const(sym) with LazyLoggin
   }
   */
 
-  override def toString = {
+  override def toString(): String = {
     val s = new StringBuffer
+    if(name == ":") {
+      assert(args.length == 2, s"Operator speak (:) takes two args: ${args.length}")
+      s.append(args(0))
+      s.append(name + " ") // :
+      s.append(args(1))
+      return s.toString
+    }
+
+    // Normal cases
     s.append(name)
     //println(s"[Fun toString] name=${name}   args.length=${args.length}  getArg(0)=${getArg(0)} \
     //          getArg(0).getClass=${getArg(0).getClass}")

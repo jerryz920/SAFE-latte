@@ -17,8 +17,10 @@ class Unfolder(prog: Prog, val goal: List[Term], matchingClauses: List[List[Term
   var previousClause: List[Term] = null
   var numTakenBranches: Int = 0
 
+  // old top of the inference trail
   private val oldtop = prog.trail.size
   def isLastClause = !atClause.hasNext
+  def getOldtop = this.oldtop
 
   private final def unfoldWith(cs: CLAUSE, trail: Trail): GOAL = {
     trail.unwind(oldtop)
@@ -65,7 +67,8 @@ class Unfolder(prog: Prog, val goal: List[Term], matchingClauses: List[List[Term
       //println(s"\n[Unfolder nextGoal] goal= ${Term.printClause(goal)}")
       logger.info(s"\n[Unfolder nextGoal] clause= ${Term.printClause(clause)}")
       newgoal = unfoldWith(clause, prog.trail)
-      println(s"\n[Unfolder nextGoal] newgoal= ${Term.printClause(newgoal)}")
+      if(newgoal != null)
+        println(s"\n[Unfolder nextGoal] newgoal= ${Term.printClause(newgoal)}")
     }
     newgoal
   }

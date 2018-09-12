@@ -15,7 +15,7 @@ class Expander {
   def expandHeadTerm(h: Term): Term = {
     h match {
       case v: Var => {
-        val u: Var = map.getOrElseUpdate(v, new Var())
+        val u: Var = map.getOrElseUpdate(v, new Var(v.name))
         code += new eq().as(u, h)
         u
       }

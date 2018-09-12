@@ -1,7 +1,7 @@
 package prolog.terms
 import scala.collection.mutable.LinkedHashSet
 
-class Var() extends Term {
+class Var(val name: String) extends Term {
   private var value: Term = this
 
   final def unbound = this.eq(value)
@@ -31,7 +31,7 @@ class Var() extends Term {
 
   override def tcopy(dict: Copier): Term = {
     val root = ref
-    if (root == this) dict.getOrElseUpdate(this, new Var())
+    if (root == this) dict.getOrElseUpdate(this, new Var(name))
     else root.tcopy(dict)  // Reduce distinct variables when multiple variables are bound to the same thing 
   }
 
@@ -57,9 +57,10 @@ class Var() extends Term {
 
   override def toString = {
     if (unbound) {
-      val h: Long = super.hashCode
-      val n: Long = if (h < 0) 2 * (-h) + 1 else 2 * h
-      "_" + n
+      //val h: Long = super.hashCode
+      //val n: Long = if (h < 0) 2 * (-h) + 1 else 2 * h
+      //"_" + n
+      name
     } else ref.toString
   }
   
@@ -74,4 +75,8 @@ class Var() extends Term {
     } else ref.hashCode
   }
 
+}
+
+object Var {
+  def apply(): Var = new Var("var*")  // Create an unnamed variable 
 }

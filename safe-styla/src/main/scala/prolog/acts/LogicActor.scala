@@ -27,7 +27,7 @@ abstract class LogicActor(aName: String, db: DataBase)
     val from = getSender
     val guard = new Fun("set_last_sender", Array(from))
     val g = new Conj(guard, msg)
-    engine.setGoal(new Var(), g)
+    engine.setGoal(Var(), g)
     //println("Answer:-GOAL=" + answer + ":-" + goal)
     engine.askAnswer()
   }
