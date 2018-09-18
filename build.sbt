@@ -116,7 +116,8 @@ lazy val safelangDeps: Seq[ModuleID] = Seq(
   tester,
   timer,
   caching,  // guava cache
-  jersey
+  jersey,
+  renci
 ).flatten
 
 lazy val commonOps = Seq(
@@ -325,14 +326,16 @@ lazy val safeAkka = safeProject("safe-akka")
     outputStrategy          := Some(StdoutOutput), // send child output to stdout
     resolvers               := commonResolvers,
     scalacOptions           ++= commonOps,
+
     // make sure that MultiJvm test are compiled by the default test compilation
     compile in MultiJvm := { (compile in MultiJvm) triggeredBy (compile in Test) }.value,
     // change the "MultiJvm" identifier
     // multiJvmMarker in MultiJvm := "ClusterTest",
     jvmOptions in MultiJvm := Seq("-Xmx256M"),
-    unmanagedSourceDirectories in MultiJvm := { Seq(baseDirectory(_ / "src/multi-jvm")).join }.value,  
+    unmanagedSourceDirectories in MultiJvm := { Seq(baseDirectory(_ / "src/multi-jvm")).join }.value 
+    
     // disable parallel tests 
-    parallelExecution in Test := false
+    , parallelExecution in Test := false
     //// make sure that MultiJvm tests are executed by the default test target,
     //// and combine the results from ordinary test and multi-jvm tests
     // executeTests in Test <<= (executeTests in Test, executeTests in MultiJvm) map {
@@ -352,6 +355,8 @@ lazy val safeAkka = safeProject("safe-akka")
 val jerseyFix  = {
   sys.props += "packaging.type" -> "jar"
   ()
+
 //SettingKey[Boolean]("autoStartServer", "") := false
+
 // val autoStartServer        := false,
 }
