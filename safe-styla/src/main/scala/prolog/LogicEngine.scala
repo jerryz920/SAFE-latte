@@ -5,7 +5,7 @@ import prolog.io.IO
 import prolog.io.TermParser
 import prolog.terms._
 import prolog.fluents.DataBase
-import prolog.ProofService._
+import prolog.proof.ProofService._
 
 import scala.collection.mutable.ListBuffer
 import com.typesafe.scalalogging.LazyLogging

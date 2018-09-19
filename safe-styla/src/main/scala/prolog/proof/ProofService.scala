@@ -1,4 +1,5 @@
 package prolog
+package proof
 
 import prolog.interp.Unfolder
 import prolog.terms.{Var, Term}
@@ -14,16 +15,16 @@ object ProofService {
 
   // For proof print
   // Inference is the inverse of the proof (deduction)
-  val proofHead =       "\n     ========================================== SAFE PROOF ========================================"
-  val proofEnd  =         "     ========================================= END OF PROOF =======================================\n"
-  val inferenceHead =   "\n     ======================================== SAFE INFERENCE ======================================"
-  val inferenceEnd  =     "     ======================================= END OF INFERENCE =====================================\n"
-  val linePrefixOfFrame = "    |        "
-  val lineSuffixOfFrame =                                                                                            "        |"
-  val inferStepHead     =               "          || "
-  val inferArrowPart0   =              "         \\||/"
-  val inferArrowPart1   =              "          \\/"
-  val commonOrigin      =               "          {}" 
+  val proofHead         =   "\n     ========================================== SAFE PROOF ========================================"
+  val proofEnd          =     "     ========================================= END OF PROOF =======================================\n"
+  val inferenceHead     =   "\n     ======================================== SAFE INFERENCE ======================================"
+  val inferenceEnd      =     "     ======================================= END OF INFERENCE =====================================\n"
+  val linePrefixOfFrame =     "    |        "
+  val lineSuffixOfFrame =                                                                                                "        |"
+  val inferStepHead     =                   "          || "
+  val inferArrowPart0   =                  "         \\||/"
+  val inferArrowPart1   =                  "          \\/"
+  val commonOrigin      =                   "          {}" 
 
   val lineLen = proofHead.length
   assert(proofHead.length == proofEnd.length, 
@@ -99,15 +100,19 @@ object ProofService {
 
 
   /**
-   * Format a logical proof based on a listed stack (with the item on top of the stack shows up
-   * as the first entry on the list) of unfolders and a listed stack of variable substitutions.
-   * The tWo input lists are snapshots taken from a Styla inference engine when it finds a solution
+   * Format a logical proof based on a listified stack (with the item on top of the stack shows up
+   * as the first entry on the list) of unfolders and a listified stack of variable substitutions.
+   * The two input lists are snapshots taken from a Styla inference engine when it finds a solution
    * to a query.  
    *
    * @return a formatted SAFE proof
    */
 
   def formatLogicalProof(proofSteps: List[Unfolder], substitutions: List[Var]): String = {
+    formatLogicalProofStd( proofSteps.map{ p => ProofStep(p) }, substitutions )  
+  }
+
+  def formatLogicalProofStd(proofSteps: List[ProofStep], substitutions: List[Var]): String = {
     val sb = new StringBuilder()
     sb.append( proofHead + "\n" )
     sb.append( formatProofln("") ) // add vspace
@@ -118,7 +123,7 @@ object ProofService {
     var i = 0
     var substIndex = 0
     while(i >= 0) {
-      val step: Unfolder = proofSteps(i)
+      val step: ProofStep = proofSteps(i)
       val goals = step.goal
       if(step.getOldtop != 0) {
         var j = substIndex
