@@ -23,6 +23,8 @@ object BuildSettings {
     //val apacheCassandra       = "4.0-SNAPSHOT"
     val jersey                = "2.26"
     val jfiglet               = "0.0.8"
+    // Need to explicitly name this, to avoid build failure.
+    val javax_ws_rsapi        = "2.1"
   }
 
   val buildSettings = Seq (
@@ -161,6 +163,10 @@ object Dependencies {
     , "org.glassfish.jersey.containers"  % "jersey-container-grizzly2-servlet" % V.jersey
     , "org.glassfish.jersey.inject"      % "jersey-hk2"                        % V.jersey
     , "org.glassfish.jersey.media"       % "jersey-media-json-jackson"         % V.jersey
+  )
+
+  val javax_ws_rsapi = Seq(
+      "javax.ws.rs"                      % "javax.ws.rs-api"                   % V.javax_ws_rsapi artifacts ( Artifact("javax.ws.rs-api", "jar", "jar"))
   )
 
   val timer = Seq(

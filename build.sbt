@@ -41,6 +41,7 @@ lazy val safeServerDeps: Seq[ModuleID] = Seq(
   logger,
   spray,
   jersey,
+  javax_ws_rsapi,
   multiJVM
 //  akkaHttp
 ).flatten
@@ -347,11 +348,3 @@ lazy val safeAkka = safeProject("safe-akka")
     //      testResults.summaries ++ multiNodeResults.summaries)
     //}
   ).dependsOn(safelang, safelog).configs(MultiJvm)
-
-// Jersey dependency workaround
-val jerseyFix  = {
-  sys.props += "packaging.type" -> "jar"
-  ()
-//SettingKey[Boolean]("autoStartServer", "") := false
-// val autoStartServer        := false,
-}
