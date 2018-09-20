@@ -1,4 +1,4 @@
-from ubuntu:14.04
+from ubuntu:18.04
 
 RUN apt-get update && apt-get install -y build-essential
 RUN apt-get install -y gdb
@@ -13,12 +13,15 @@ COPY start.sh   /root/
 COPY test.sh    /root/
 
 # Install sbt
-ENV SBT_VERSION 0.13.12
-RUN cd ~/ && wget https://dl.bintray.com/sbt/native-packages/sbt/${SBT_VERSION}/sbt-${SBT_VERSION}.tgz
+ENV SBT_VERSION 1.2.3
+RUN cd ~/ && wget https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz
 RUN cd ~/ && tar -zxvf sbt-${SBT_VERSION}.tgz
 
-# Download and SAFE
+# Download SAFE
 RUN cd ~/ && git clone https://github.com/RENCI-NRIG/SAFE.git
+
+# Compile SAFE
+RUN cd ~/SAFE && ~/sbt/bin/sbt "project safe-server" "compile"
 
 ENTRYPOINT ["/bin/bash", "/root/start.sh"]
 #ENTRYPOINT ["/bin/sh", "-c"]
