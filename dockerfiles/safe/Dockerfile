@@ -23,5 +23,6 @@ RUN cd ~/ && git clone https://github.com/RENCI-NRIG/SAFE.git
 # Compile SAFE
 RUN cd ~/SAFE && ~/sbt/bin/sbt "project safe-server" "compile"
 
+VOLUME ["/imports", "/principalkeys"]
 ENTRYPOINT ["/bin/bash", "/root/start.sh"]
 #ENTRYPOINT ["/bin/sh", "-c"]
