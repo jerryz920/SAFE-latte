@@ -68,7 +68,7 @@ trait KeyPairManager extends LazyLogging {
     if(dir.isEmpty) return serverPrincipalSet
     val filepaths = filepathsOfDir(dir)
     println(s"[KeyPairManager] Loading keys from ${dir}")
-    println(s"[KeyPairManager] Number of key: ${filepaths.size}")
+    println(s"[KeyPairManager] Number of keys: ${filepaths.size}")
     logger.info(s"All principals:")    
     var count = 0
     for(fname <- filepaths) {
