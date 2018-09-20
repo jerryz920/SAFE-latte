@@ -7,6 +7,7 @@ services:
       context: ./riak/
       dockerfile: Dockerfile
     container_name: riak
+    hostname: riak
     command: tail -f /dev/null
 
   safe:
@@ -15,3 +16,12 @@ services:
       context: ./safe/
       dockerfile: Dockerfile
     container_name: safe
+    hostname: safe
+    ports:
+      - '7777:7777'
+    environment:
+      - RIAK_IP=riak
+      - SLANG_SCRIPT=latte.slang
+    volumes:
+      - ../safe-apps/cloud-attestation/latte.slang:/imports/latte.slang
+      - ./principalkeys:/principalkeys
