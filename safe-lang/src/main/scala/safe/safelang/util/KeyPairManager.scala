@@ -1,20 +1,21 @@
 package safe.safelang
 package util
 
-import model.Principal
-import safe.safelog.{SetId, StrLit}
-
 import java.io.File
 import java.io.PrintWriter
-import scala.collection.mutable.{Map => MutableMap}
-import com.typesafe.scalalogging.LazyLogging
-
-/* Crypto libraries */
 import java.security.spec._
 import javax.crypto._
 import javax.crypto.spec._
 
+import scala.collection.mutable.{Map => MutableMap}
+
+import org.apache.commons.io.FilenameUtils
+import com.typesafe.scalalogging.LazyLogging
+
+import model.Principal
+import safe.safelog.{SetId, StrLit}
 import safe.safelang.model.Identity
+
 
 trait KeyPairManager extends LazyLogging {
 
@@ -24,7 +25,7 @@ trait KeyPairManager extends LazyLogging {
   def filepathsOfDir(dirStr: String): Seq[String] = {
     val dir = new File(dirStr)
     if(dir.exists && dir.isDirectory) {
-      dir.listFiles.filter(_.isFile).toSeq.map(_.toString)
+      dir.listFiles.filter(_.isFile).toSeq.map(_.toString).filter(FilenameUtils.getExtension(_)=="pem")
     } else {
       Seq[String]()
     }
@@ -66,8 +67,8 @@ trait KeyPairManager extends LazyLogging {
     val serverPrincipalSet = MutableMap[String, Principal]()   
     if(dir.isEmpty) return serverPrincipalSet
     val filepaths = filepathsOfDir(dir)
-    println(s"[KeyPairManager] load key pairs from ${dir}")
-    println(s"[KeyPairManager] number of key pairs: ${filepaths.size}")
+    println(s"[KeyPairManager] Loading keys from ${dir}")
+    println(s"[KeyPairManager] Number of key: ${filepaths.size}")
     logger.info(s"All principals:")    
     var count = 0
     for(fname <- filepaths) {
