@@ -16,3 +16,4 @@ sleep 10
 bash ~/test.sh
 
 /bin/bash
+exec "${@}"

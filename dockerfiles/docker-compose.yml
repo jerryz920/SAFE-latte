@@ -1,0 +1,17 @@
+version: '3.6'
+services:
+
+  riak:
+    image: riak.local:latest
+    build:
+      context: ./riak/
+      dockerfile: Dockerfile
+    container_name: riak
+    command: tail -f /dev/null
+
+  safe:
+    image: safe.local:latest
+    build:
+      context: ./safe/
+      dockerfile: Dockerfile
+    container_name: safe
