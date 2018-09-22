@@ -20,7 +20,7 @@ main() {
 }
 
 usage() {
-  echo "Usage: $0 <key-filename-prefix> <number-of-keys> <directory>"
+  echo "Usage: $0 <key-filename-prefix> <number-of-keys> <key-dir>"
 }
 
 inc() {
@@ -35,7 +35,7 @@ generate_keys() {
   count=1
   while [ $count -le $num_keys ]
   do
-    ssh-keygen -t rsa -b 4095  -P "" -f "${key_dir}/${key_name_prefix}${count}"  -q
+    ssh-keygen -t rsa -b 4096 -P "" -f "${key_dir}/${key_name_prefix}${count}.pem"  -q
     inc $count
     count=$?
     printf "."
