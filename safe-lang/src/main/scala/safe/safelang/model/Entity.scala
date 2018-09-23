@@ -352,6 +352,16 @@ object Principal {
     val keyPair: KeyPair = new JcaPEMKeyConverter().getKeyPair(pemKeyPair)
     keyPair
   }
+
+  def pidFromPublicKey(publicKey: java.security.PublicKey): String = {
+    Identity.encode(Identity.hash(publicKey.getEncoded()))
+  }
+  
+  def pidFromKeyFile(fileName: String): String = {
+    val kp: KeyPair = keyPairFromFile(fileName)
+    pidFromPublicKey(kp.getPublic)
+  }
+
 }
 
 object Entity {

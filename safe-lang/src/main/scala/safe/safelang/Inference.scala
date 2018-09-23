@@ -71,6 +71,7 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
 
   val predef: Set[StrLit] = Set(
       StrLit("getId2"), StrLit("getId3"), StrLit("getId1")
+    , StrLit("getPrincipalId1")      // Get principal ID from key file
     , StrLit("rootId1")
     , StrLit("rootPrincipal1")
     , StrLit("computeId2")
@@ -952,6 +953,9 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
         val subject = Subject(args(0).toString())
         val id = subject.computeId(name = args(1).toString).value
 	Constant(StrLit(id.name), StrLit("nil"), StrLit("StrLit"), Encoding.AttrLiteral)
+      case (StrLit("getPrincipalId"), 1) =>
+        val pid = Principal.pidFromKeyFile(args(0).id.name)
+	Constant(StrLit(pid), StrLit("nil"), StrLit("StrLit"), Encoding.AttrLiteral) 
       case (StrLit("rootId"), 1) =>
         //val argArray = args(0).id.name.split(":")
 	//Constant(StrLit(s"${argArray(0)}"), StrLit("nil"), StrLit("StrLit"), Encoding.AttrLiteral)
