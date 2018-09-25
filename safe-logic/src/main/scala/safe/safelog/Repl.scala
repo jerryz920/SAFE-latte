@@ -258,7 +258,7 @@ class Repl(
         println("Imported in %f seconds".format(time))
       } catch {
         case ex: Exception =>  
-          logger.error(s"Failed to parse ${fileName.name}: ${ex}")
+          println(s"Failed to parse ${fileName.name}: ${ex}")
           return true
       }
       importedProgram.values().flatten.foreach {
@@ -350,7 +350,8 @@ class Repl(
 	      else false // printLabel('failure)
             } catch {
               case ex: Throwable => 
-                logger.error(ex.toString)
+                printLabel('failure)
+                //logger.error(ex.toString)
             }
 	  }
 	  _inputScanned.clear()

@@ -836,7 +836,7 @@ trait ParserImpl
     }  while(!sourcesToCompile.isEmpty)
 
     println(s"\n$count scripts in total are assembled")
-    println(s"${count-1} imported scripts:") 
+    println(s"${count-1} linked scripts:") 
     compiledSources.foreach(println(_))
 
     val compileTime = (System.nanoTime - t0) / 1000
@@ -968,18 +968,22 @@ trait ParserImpl
 	  case Success(result, _) => 
 	    (Some(result), 'success)
 	  case Failure(msg, _)    => 
-	    logger.error("Parse error: " + msg)
+	    println("Parsing error: " + msg)
+	    //logger.error("Parsing error: " + msg)
 	    (None, 'failure)
 	  case Error(msg, _)      => 
-	    logger.error("Parse error: " + msg)
+	    println("Parsing error: " + msg)
+	    //logger.error("Parsing error: " + msg)
 	    (None, 'error)
 	}
       } catch {
 	case ex: ParserException => 
-	  logger.error("Parse error: " + ex)
+	  println("Parsing error: " + ex)
+	  //logger.error("Parsing error: " + ex)
 	  (None, 'error)
 	case ex: NumericException => 
-	  logger.error("Parse error: " + ex)
+	  println("Parsing error: " + ex)
+	  //logger.error("Parsing error: " + ex)
 	  (None, 'error)
       }
       case None => (None, 'continuation)
