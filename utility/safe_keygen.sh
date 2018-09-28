@@ -35,7 +35,20 @@ generate_keys() {
   count=1
   while [ $count -le $num_keys ]
   do
-    ssh-keygen -t rsa -b 4096 -P "" -f "${key_dir}/${key_name_prefix}${count}.pem"  -q
+    keyfile="${key_dir}/${key_name_prefix}${count}.key"
+    certfile="${key_dir}/${key_name_prefix}${count}.cert.pem"
+    pkcs12Certfile="${key_dir}/${key_name_prefix}${count}.cert.pfx"
+
+    # Generate key pair
+    ssh-keygen -t rsa -b 4096 -P "" -f ${keyfile}  -q
+
+    # Generate self-signed certificate from SSH-created public/private keys:
+    subj="/C=US/ST=NC/L=Durham/CN=www.cs.duke.edu"
+    openssl req -new -x509 -days 365 -subj ${subj} -key ${keyfile} -out ${certfile}
+
+    # Generate PKCS12 (browser-importable) from PEM:
+    openssl pkcs12 -inkey ${keyfile} -in ${certfile} -export -passout pass: -out ${pkcs12Certfile}
+
     inc $count
     count=$?
     printf "."

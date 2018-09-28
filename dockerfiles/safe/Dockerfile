@@ -16,6 +16,7 @@ RUN cd ~/ && tar -zxvf sbt-${SBT_VERSION}.tgz
 
 # Download SAFE
 RUN cd ~/ && git clone https://github.com/RENCI-NRIG/SAFE.git
+RUN cd SAFE && git pull origin master && git checkout working-session
 
 # Compile SAFE
 RUN cd ~/SAFE && ~/sbt/bin/sbt "project safe-server" "compile"
