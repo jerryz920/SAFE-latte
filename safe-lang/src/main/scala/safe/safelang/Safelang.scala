@@ -360,17 +360,19 @@ class SafelangManager(keypairDir: String) extends KeyPairManager with LazyLoggin
     } 
   }
 
-  def getMatchingKeyFileAndLoad(pname: String): Boolean = {
+  def searchKeyFileAndLoad(pname: String): Boolean = {
     val dir = new File(keypairDir)
     val keyFiles: Seq[File] = dir.listFiles( new FilenameFilter() {
       def accept(d: File, name: String): Boolean = {
-        name.equals(s"${pname}.key") 
+        name.equals(s"${pname}.key")
       }
     }).toSeq
     if(keyFiles.size == 1) {
+      logger.info(s"Loading key for principal ${pname}")
       loadKeyPairs(keyFiles.map(_.toString), principalNameToID, serverPrincipals)
       true
     } else if(keyFiles.size == 0) {
+      logger.info(s"No key matching principal ${pname}")
       false
     } else {  //keyFiles.size >= 1
       logger.info(s"More than one key files identified by ${pname}: ${keyFiles}")
@@ -378,19 +380,23 @@ class SafelangManager(keypairDir: String) extends KeyPairManager with LazyLoggin
     }
   }
 
+
   def solveSlangQuery(query: Query, requestedEnv: Map[String, Option[String]]=emptyReqEnvs,
       guardType: Option[Int]=Some(DEF_GUARD)): Seq[Seq[Statement]] = {
     val penv: Option[String] = requestedEnv("Principal")  // Consider the case where the value can be a principal name
     val p: Option[String] = if(!penv.isDefined) { penv
         } else { 
-          val id = Some(principalNameToID.get(penv.get))
+          val id: Option[String] = principalNameToID.get(penv.get)
+          logger.info(s"id: ${id}")
           if(!id.isDefined) {
-            getMatchingKeyFileAndLoad(penv.get) 
+            searchKeyFileAndLoad(penv.get) 
+            Some(principalNameToID.getOrElse(penv.get, penv.get))
+          } else {
+            id
           }
-          Some(principalNameToID.getOrElse(penv.get, penv.get))
         }
     //val p: Option[String] = requestedEnv("Principal")
-    logger.info(s"p: $p \n requestedEnv: $requestedEnv")
+    logger.info(s"p: $p \nrequestedEnv: $requestedEnv")
     var pid: String = if(p.isDefined) p.get  else "_default"
     //var pid: String = if(p.isDefined && isValidPID(p.get)) p.get 
     //                  else if(defaultServerPrincipal.isDefined) defaultServerPrincipal.get.pid
