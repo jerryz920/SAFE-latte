@@ -1,9 +1,16 @@
 package safe.safelang
 
-import scala.collection.mutable.{Set => MutableSet, Map => MutableMap, ListBuffer}
-import scala.collection.mutable.{LinkedHashSet => OrderedSet, Queue}
+import java.io.{File, FilenameFilter}
 import java.util.concurrent.atomic.AtomicInteger
 import java.nio.file.{Path, Paths}
+import javax.crypto.spec.SecretKeySpec
+
+import scala.collection.mutable.{Set => MutableSet, Map => MutableMap, ListBuffer}
+import scala.collection.mutable.{LinkedHashSet => OrderedSet, Queue}
+
+import akka.actor.ActorSystem
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.io.FilenameUtils
 
 import safe.cache.SafeTable
 import setcache.SetCache
@@ -11,10 +18,7 @@ import safesets._
 import safe.safelog.{SetId, Index, MutableCache, Statement, Subcontext, StrLit, 
   UnSafeException, Assertion, Query, EnvValue, Constant, Encoding, SafeProgram}
 import model.Principal
-import akka.actor.ActorSystem
 import util.KeyPairManager
-import com.typesafe.scalalogging.LazyLogging
-import javax.crypto.spec.SecretKeySpec
 
 trait SafelangImpl extends safe.safelog.SafelogImpl  {
   slangInference: InferenceService with ParserService with SafeSetsService =>
@@ -356,10 +360,35 @@ class SafelangManager(keypairDir: String) extends KeyPairManager with LazyLoggin
     } 
   }
 
+  def getMatchingKeyFileAndLoad(pname: String): Boolean = {
+    val dir = new File(keypairDir)
+    val keyFiles: Seq[File] = dir.listFiles( new FilenameFilter() {
+      def accept(d: File, name: String): Boolean = {
+        name.equals(s"${pname}.key") 
+      }
+    }).toSeq
+    if(keyFiles.size == 1) {
+      loadKeyPairs(keyFiles.map(_.toString), principalNameToID, serverPrincipals)
+      true
+    } else if(keyFiles.size == 0) {
+      false
+    } else {  //keyFiles.size >= 1
+      logger.info(s"More than one key files identified by ${pname}: ${keyFiles}")
+      false
+    }
+  }
+
   def solveSlangQuery(query: Query, requestedEnv: Map[String, Option[String]]=emptyReqEnvs,
       guardType: Option[Int]=Some(DEF_GUARD)): Seq[Seq[Statement]] = {
     val penv: Option[String] = requestedEnv("Principal")  // Consider the case where the value can be a principal name
-    val p: Option[String] = if(!penv.isDefined) penv else { Some(principalNameToID.getOrElse(penv.get, penv.get))}
+    val p: Option[String] = if(!penv.isDefined) { penv
+        } else { 
+          val id = Some(principalNameToID.get(penv.get))
+          if(!id.isDefined) {
+            getMatchingKeyFileAndLoad(penv.get) 
+          }
+          Some(principalNameToID.getOrElse(penv.get, penv.get))
+        }
     //val p: Option[String] = requestedEnv("Principal")
     logger.info(s"p: $p \n requestedEnv: $requestedEnv")
     var pid: String = if(p.isDefined) p.get  else "_default"
@@ -393,7 +422,7 @@ class SafelangManager(keypairDir: String) extends KeyPairManager with LazyLoggin
       } else { // Reference envcontext hasn't been setup yet. That means the server didn't see this server principal before. 
                // Make a ref envcontext and set it up
         val _cnt = MutableMap[StrLit, EnvValue]()
-        if(serverPrincipals.contains(pid)) { // Request specified a valide server principal 
+        if(serverPrincipals.contains(pid)) { // Request specified a valid server principal 
           setSelfEnvs(_cnt, serverPrincipals(pid)) 
         } else {  // Set Self only
           setSelfEnvs(_cnt, pid)

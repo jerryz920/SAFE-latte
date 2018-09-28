@@ -260,7 +260,9 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
 
       val principal: Principal = envContext.get(StrLit("Selfie")) match {
         case Some(p: Principal) => p
-        case _                  => null    // Since there is not signing key, the certificate will be posted without signature
+        case _                  => 
+          if(Config.config.unsignedCertsOn) null    // Since there is not signing key, the certificate will be posted without signature
+          else  throw UnSafeException(s"cannot sign since principal (Selfie) not defined ${envContext.keySet}") 
       }
 
       val unfoldedTerms: Seq[Term] = constantTerms.map(term => SlangTerm.unfoldSeq(term)).flatten 

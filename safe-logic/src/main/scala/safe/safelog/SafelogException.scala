@@ -18,6 +18,6 @@ object SafelogException {
     case 'failure => println("[" + Console.RED + "unsatisfied" +  Console.RESET + "] ")
     case 'info => print("[" + Console.YELLOW + "info" + Console.RESET + "] ")
     case 'more => print("[" + Console.BLUE + "more?" + Console.RESET + "] ")
-    case 'warn => print("[" + Console.RED+ "warn" + Console.RESET + "] ")
+    case 'warn => print("[" + Console.RED+ "WARN" + Console.RESET + "] ")
   }
 }
