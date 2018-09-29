@@ -63,7 +63,8 @@ object Scid {
 
 object Identity {
 
-  import org.apache.commons.codec.binary.Base64
+  // import org.apache.commons.codec.binary.Base64
+  import java.util.Base64
 
   val encodingPattern = """([a-zA-Z])'(.+)'""".r
 
@@ -85,18 +86,20 @@ object Identity {
   /** encode a Byte array in Base 64 
    *  {A-Za-z0-9+/}
    */
-  def base64Encode(in: Array[Byte]): String = new String(Base64.encodeBase64(in))
+  def base64Encode(in: Array[Byte]): String = new String(Base64.getEncoder.encodeToString(in))
 
   /** encode a Byte array in Base 64 in a way that's safe for use in URLs
    *  {A-Za-z0-9-_}
    */
-  def base64EncodeURLSafe(in: Array[Byte]): String = Base64.encodeBase64URLSafeString(in)
+  def base64EncodeURLSafe(in: Array[Byte]): String = Base64.getUrlEncoder.encodeToString(in)
 
   /** decode a String in Base 64 
    *  Note: '+' and '-' both decode to 62. '/' and '_' both decode to 63. This means decoder seamlessly handles both
    *  URL_SAFE and STANDARD base64. (The encoder, on the other hand, needs to know ahead of time what to emit.)
    */
-  def base64Decode(in: String): Array[Byte] = Base64.decodeBase64(in)
+  def base64Decode(in: String): Array[Byte] = Base64.getDecoder.decode(in)
+
+  def base64DecodeURLSafe(in: String): Array[Byte] = Base64.getUrlDecoder.decode(in)
 
 
   /** encode a byte array as hexadecimal characters */
