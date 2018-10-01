@@ -327,20 +327,20 @@ object Principal {
     new Principal(keyPair)
   }
 
-  def keyPairFromFile(pemFile: String): KeyPair = {
-    import java.io.{File, FileInputStream, FileReader, InputStreamReader}
-    import org.bouncycastle.openssl.{PEMKeyPair, PEMParser}
-    import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
 
-    val pemKeyPair: PEMKeyPair = try {
+  def parsePEM(pemFile: String): java.lang.Object = {
+    import java.io.{File, FileInputStream, FileReader, InputStreamReader}
+    import org.bouncycastle.openssl.PEMParser
+
+    try {
       val file = this.getClass().getClassLoader().getResourceAsStream(pemFile)
       val pFile = if(file == null) { // if absolute path is provided
         new FileInputStream(pemFile)
       } else file
       val parser = new PEMParser(new InputStreamReader(pFile))
-      val pkp: PEMKeyPair = parser.readObject().asInstanceOf[PEMKeyPair]
+      val pemobj = parser.readObject()
       pFile.close() // Close after use
-      pkp
+      pemobj
     } catch {
       case e: java.io.FileNotFoundException =>
         val fn = new java.io.File(pemFile)
@@ -349,19 +349,53 @@ object Principal {
       case e: NullPointerException => throw ParserException(s"Error reading file: $pemFile; error msg: $e")
       case _: Throwable => throw ParserException(s"Error reading file: $pemFile")
     }
-    val keyPair: KeyPair = new JcaPEMKeyConverter().getKeyPair(pemKeyPair)
-    keyPair
+  }
+
+  def keyPairFromFile(pemFile: String): KeyPair = {
+    import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
+    import org.bouncycastle.openssl.PEMKeyPair
+
+    val pemobj = parsePEM(pemFile)
+    try {
+      val pemKeyPair = pemobj.asInstanceOf[PEMKeyPair]
+      new JcaPEMKeyConverter().getKeyPair(pemKeyPair)
+    } catch {
+      case e: Throwable => throw ParserException(s"Not a PEM key pair: ${pemobj} ${e} ${pemFile}")
+    }
+  }
+
+  def pubKeyFromFile(pemFile: String): java.security.PublicKey = {
+    import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo
+    import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
+
+    val pemobj = parsePEM(pemFile)
+
+    try {
+      val pk = pemobj.asInstanceOf[SubjectPublicKeyInfo]
+      //pk.parsePublicKey.getEncoded  // not work
+      //pk.getPublicKeyData.getBytes  // not work
+      new JcaPEMKeyConverter().getPublicKey(pk)
+    } catch {
+      case e: Throwable => throw ParserException(s"Not a PEM public key: ${pemobj} ${e} ${pemFile}")
+    }    
+  }
+
+  // Get pid from a public key pem file
+  def pidFromKeyFile(fileName: String): String = {
+    val pk: java.security.PublicKey = pubKeyFromFile(fileName) 
+    pidFromPublicKey(pk)
   }
 
   def pidFromPublicKey(publicKey: java.security.PublicKey): String = {
     Identity.encode(Identity.hash(publicKey.getEncoded()))
   }
   
-  def pidFromKeyFile(fileName: String): String = {
-    val kp: KeyPair = keyPairFromFile(fileName)
-    pidFromPublicKey(kp.getPublic)
-  }
 
+//  def pidFromKeyFile(fileName: String): String = {
+//    val kp: KeyPair = keyPairFromFile(fileName)
+//    pidFromPublicKey(kp.getPublic)
+//  }
+//
 }
 
 object Entity {
