@@ -36,11 +36,14 @@ generate_keys() {
   while [ $count -le $num_keys ]
   do
     keyfile="${key_dir}/${key_name_prefix}${count}.key"
+    pubfile="${key_dir}/${key_name_prefix}${count}.pub"
     certfile="${key_dir}/${key_name_prefix}${count}.cert.pem"
     pkcs12Certfile="${key_dir}/${key_name_prefix}${count}.cert.pfx"
 
     # Generate key pair
     ssh-keygen -t rsa -b 4096 -P "" -f ${keyfile}  -q
+    ssh-keygen -e -m PEM -f ${keyfile}.pub > ${pubfile}
+    rm ${keyfile}.pub
 
     # Generate self-signed certificate from SSH-created public/private keys:
     subj="/C=US/ST=NC/L=Durham/CN=www.cs.duke.edu"
