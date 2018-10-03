@@ -355,8 +355,8 @@ class Repl(
 	      else false // printLabel('failure)
             } catch {
               case ex: Throwable => 
-                //printLabel('failure)
-                logger.error(ex.toString)
+                printLabel('failure)
+                //logger.error(ex.toString)
             }
 	  }
 	  _inputScanned.clear()
