@@ -822,7 +822,8 @@ trait ParserImpl
 
       //println(s"""Imported files: ${importedFiles.mkString("; ")}""")
       // Processing relative paths
-      val additionalSources = importedFiles.map( f => rPath.resolve(f).toFile.getCanonicalPath )
+      //val additionalSources = importedFiles.map( f => rPath.resolve(f).toFile.getCanonicalPath )
+      val additionalSources = importedFiles.map( f => Repl.expandPathname(f, rPath) )
       //println(s"""Additional sources: ${additionalSources.mkString("; ")}""")
 
 

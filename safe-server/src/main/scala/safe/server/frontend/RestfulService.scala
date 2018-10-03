@@ -51,27 +51,28 @@ object RestfulService {
 class RestfulService(val storeURI: String, val role: Option[String], slangFile: String, fileArgs: Option[String], numWorkers: Int, val requestTimeout: Timeout, val keypairDir: String) extends Actor with RestfulHttpService {
 
   import scala.concurrent.ExecutionContext.Implicits.global
+  import safe.safelog.Repl._
 
   def actorRefFactory = context
 
   inference = slangManager.createSafelang() // Daemon safelang
 
   guardTable = GuardTable(MutableMap[String, Seq[String]](), MutableMap[String, Int]())
-  val guards = inference.compileAndGetGuards(slangFile, fileArgs)
+  val guards = inference.compileAndGetGuards(expandPathname(slangFile), fileArgs)
   guardTable.addGuards(guards)
 
   // Pre-load guarding scripts
   // import guard
   val importGuardSlangPath = safe.safelang.Config.config.importGuardSlangPath
   if(importGuardSlangPath != "") {
-    val importGuards = inference.compileAndGetGuards(importGuardSlangPath)
+    val importGuards = inference.compileAndGetGuards(expandPathname(importGuardSlangPath))
     guardTable.addGuards(importGuards)
   }
 
   // speaksfor guard
   val speaksForGuardSlangPath = safe.safelang.Config.config.speaksForGuardSlangPath
   if(speaksForGuardSlangPath != "") {
-    val speaksForGuards = inference.compileAndGetGuards(speaksForGuardSlangPath)
+    val speaksForGuards = inference.compileAndGetGuards(expandPathname(speaksForGuardSlangPath))
     guardTable.addGuards(speaksForGuards)
   } 
 
@@ -92,7 +93,7 @@ class RestfulService(val storeURI: String, val role: Option[String], slangFile: 
         val slang = slangManager.createSafelang()
         val _guards = if(isSlangSource)
                         slang.compileAndGetGuardsWithSource(arg)
-                      else slang.compileAndGetGuards(arg) 
+                      else slang.compileAndGetGuards(expandPathname(arg)) 
         guardTable.addGuards(_guards)  // update guard table
       }
     } 
@@ -182,6 +183,7 @@ trait RestfulHttpService extends Actor with HttpService with DefaultJsonProtocol
   import scala.language.postfixOps // for 'q ? in parameter() below
   //implicit def ec = actorRefFactory.dispatcher
   import scala.concurrent.ExecutionContext.Implicits.global
+  import safe.safelog.Repl._
 
   val storeURI: String
   val role: Option[String]
@@ -196,7 +198,7 @@ trait RestfulHttpService extends Actor with HttpService with DefaultJsonProtocol
   val numServedReqs = new AtomicInteger(0)  // For perf collection
 
   // safelang manager
-  val slangManager: SafelangManager = SafelangManager.instance(keypairDir)
+  val slangManager: SafelangManager = SafelangManager.instance(expandPathname(keypairDir))
 
   //The responses should not be cached at the client site; so we explicitly disable them.
   val CacheHeader = (maxAge: Long) => `Cache-Control`(`max-age`(maxAge)) :: Nil

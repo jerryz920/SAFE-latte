@@ -107,7 +107,7 @@ trait SafelangService extends InferenceService
   /**
    * Compile slang, and link imported code when applicable.
    */ 
-  def compileSlang(slangFile: String, fileArgs: Option[String]): SafeProgram = {
+  def compileSlang(slangFile: String, fileArgs: Option[String] = None): SafeProgram = {
     val slangSource = substituteAndGetFileContent(slangFile, fileArgs)
     val p = Paths.get(slangFile)
     compileSlangWithSource(slangSource, p)

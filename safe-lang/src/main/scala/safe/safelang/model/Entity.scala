@@ -328,9 +328,11 @@ object Principal {
   }
 
 
-  def parsePEM(pemFile: String): java.lang.Object = {
+  def parsePEM(pemKeyFile: String): java.lang.Object = {
     import java.io.{File, FileInputStream, FileReader, InputStreamReader}
     import org.bouncycastle.openssl.PEMParser
+
+    val pemFile = safe.safelog.Repl.expandPathname(pemKeyFile)
 
     try {
       val file = this.getClass().getClassLoader().getResourceAsStream(pemFile)

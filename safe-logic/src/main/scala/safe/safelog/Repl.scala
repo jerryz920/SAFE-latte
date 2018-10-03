@@ -129,6 +129,11 @@ class Repl(
     updatePromptSelf()
   }
 
+
+  protected def importProgram(pathname: String): SafeProgram = {
+    compileAndLink(pathname)
+  }
+
   private def evalReplCmd(cmd: Term): Boolean = cmd match {
 
     case Structure(StrLit("_is"), (v @ Variable(StrLit(vname), _, _, _)) +: rightterm +: Nil, _, _, _) => 
@@ -232,11 +237,11 @@ class Repl(
       true
 
     case Structure(StrLit("import"), xterms, _, _, _) => 
-      val (fileName, subjectSha) = xterms match {
-         case Seq(Constant(fileName, _, _, _)) => (fileName, "")
-         case Seq(Constant(fileName, _, _, _), Constant(sub, _, _, _)) => (fileName, sub)
+      val (filePathname, subjectSha) = xterms match {
+         case Seq(Constant(filePathname, _, _, _)) => (filePathname, "")
+         case Seq(Constant(filePathname, _, _, _), Constant(sub, _, _, _)) => (filePathname, sub)
       }
-      printLabel('info); println(s"importing file ${fileName.name} ...") 
+      printLabel('info); println(s"importing file ${filePathname.name} ...") 
       //println(s"cmd.primaryIndex=${cmd.primaryIndex} \n  cmd.secondaryIndex=${cmd.secondaryIndex}")
       _replStatements.remove(cmd.primaryIndex) // remove this import from cache to avoid unneeded recursion
       //_replStatements.remove(cmd.secondaryIndex)
@@ -245,20 +250,20 @@ class Repl(
 
       var importedProgram = Map[Index, OrderedSet[Statement]]()
       try {
-        val file = fileName.name
+        val file = filePathname.name
         //val source = io.Source.fromFile(file).getLines.toList.mkString("\n") 
         //val fStream = new java.io.InputStreamReader(new java.io.FileInputStream(file))
         //val fStream = new java.io.InputStreamReader(this.getClass().getClassLoader().getResourceAsStream(file))
         //val (knowledgeBase, time) = util.time(parse(fStream))
 
         //val (knowledgeBase, time) = util.time(parse(source))
-        val (importedProgram, time) = util.time(compileAndLink(file))
+        val (importedProgram, time) = util.time( importProgram( Repl.expandPathname(file) )  )
         addStatementsToRepl(importedProgram)  // Add statements to Repl cache
         logger.info(s"Time for import is $time seconds")
         println("Imported in %f seconds".format(time))
       } catch {
         case ex: Exception =>  
-          println(s"Failed to parse ${fileName.name}: ${ex}")
+          println(s"Failed to parse ${filePathname.name}: ${ex}")
           return true
       }
       importedProgram.values().flatten.foreach {
@@ -350,8 +355,8 @@ class Repl(
 	      else false // printLabel('failure)
             } catch {
               case ex: Throwable => 
-                printLabel('failure)
-                //logger.error(ex.toString)
+                //printLabel('failure)
+                logger.error(ex.toString)
             }
 	  }
 	  _inputScanned.clear()
@@ -503,8 +508,19 @@ class Repl(
 }
 
 object Repl {
+
+  import java.nio.file.{Path, Paths}
+
   //def apply() = new Repl(Config.config.self, Config.config.saysOperator)
   val inference = new Repl(Config.config.self, Config.config.saysOperator)
+
+  def expandPathname(p: String, referencePath: Path = Paths.get(".")): String = {
+    val tildeFree: String = p.replaceFirst("^~", System.getProperty("user.home"))
+    //println(s"[safelog.Repl.expandPathname]  tildeFree: ${tildeFree}")
+    val expanded: String = referencePath.resolve(tildeFree).toFile.getCanonicalPath
+    //println(s"[safelog.Repl.expandPathname]  expanded: ${expanded}")
+    expanded
+  }
 
   def main(args: Array[String]): Unit = {
 

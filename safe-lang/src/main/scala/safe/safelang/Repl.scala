@@ -9,7 +9,7 @@ import setcache.SetCache
 import safe.cache.SafeTable
 import safesets._
 import model.Principal
-import safe.safelog.{SetId, Index, MutableCache, Statement, StrLit, Constant}
+import safe.safelog.{SetId, Index, MutableCache, Statement, StrLit, Constant, SafeProgram}
 
 class Repl(
   val safeSetsClient: SafeSetsClient,
@@ -32,6 +32,10 @@ class Repl(
     } else {
       stdPromptMsg = "slang> "
     }
+  }
+
+  override def importProgram(pathname: String): SafeProgram = {
+    compileSlang(pathname)
   }
 }
   
