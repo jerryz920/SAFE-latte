@@ -21,8 +21,9 @@ RUN cd ~/SAFE && git pull origin master && git checkout working-session
 # Compile SAFE
 RUN cd ~/SAFE && ~/sbt/bin/sbt "project safe-server" "compile"
 
-COPY start.sh   /root/
-COPY test.sh    /root/
+COPY start.sh     /root/
+COPY test.sh      /root/
+COPY hash_gen.py  /root/
 
 VOLUME ["/imports", "/principalkeys"]
 ENTRYPOINT ["/bin/bash", "/root/start.sh"]
