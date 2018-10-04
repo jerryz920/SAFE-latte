@@ -1,4 +1,4 @@
-version: '3.6'
+version: '3.3'
 services:
 
   riak:
@@ -25,6 +25,5 @@ services:
       - SLANG_CONF=strong.conf.slang
       - STRONG_ROOT_PUB=strong-1.pub
     volumes:
-      - ../safe-apps/strong/strong.slang:/imports/strong.slang 
-      - ../safe-apps/strong/strong.conf.slang:/imports/strong.conf.slang
+      - ./imports:/imports
       - ./principalkeys:/principalkeys
