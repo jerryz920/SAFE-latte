@@ -21,7 +21,10 @@ services:
       - '7777:7777'
     environment:
       - RIAK_IP=riak
-      - SLANG_SCRIPT=latte.slang
+      - SLANG_SCRIPT=strong.slang
+      - SLANG_CONF=strong.conf.slang
+      - STRONG_ROOT_PUB=strong-1.key
     volumes:
-      - ../safe-apps/cloud-attestation/latte.slang:/imports/latte.slang
+      - ../safe-apps/strong/strong.slang:/imports/strong.slang 
+      - ../safe-apps/strong/strong.conf.slang:/imports/strong.conf.slang
       - ./principalkeys:/principalkeys
