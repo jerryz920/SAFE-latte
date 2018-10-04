@@ -3,7 +3,7 @@ from ubuntu:18.04
 RUN apt-get update && apt-get install -y build-essential
 RUN apt-get install -y gdb
 RUN apt-get install -y default-jdk
-RUN apt-get install -y git curl make htop vim emacs wget
+RUN apt-get install -y python git curl make htop wget
 
 RUN apt-get install -y libssl1.0.0
 RUN apt-get install -y libpam0g-dev
