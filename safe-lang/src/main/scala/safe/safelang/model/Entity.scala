@@ -95,7 +95,7 @@ object Subject {
       case _                                           => ("u", subject)
     }
     val subjectBytes: Array[Byte] = encodingType match {
-      case "u" => Identity.base64Decode(sub)
+      case "u" => Identity.base64DecodeURLSafe(sub)
       case "h" => Identity.hexDecode(sub)
       case _   => throw UnSupportedOperatorException(s"Encoding type, $encodingType not supported")
     }

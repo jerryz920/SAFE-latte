@@ -1,4 +1,4 @@
-defenv RootDir() :- "ZF67xzvOPvC2IKWfvHWCLqcq7bkZRscL5FFKlQeyHiQ=:root"
+defenv RootDir() :- "ZF67xzvOPvC2IKWfvHWCLqcq7bkZRscL5FFKlQeyHiQ=:root".
 
 defcon srnEvaluation() :-
   spec("Rules for SRN certified evaluation, in a bottom-up fashion"),

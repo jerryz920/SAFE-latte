@@ -25,5 +25,5 @@ services:
       - SLANG_CONF=strong.conf.slang
       - STRONG_ROOT_PUB=strong-1.pub
     volumes:
-      - ./imports:/imports
+      - ../safe-apps/strong:/imports
       - ./principalkeys:/principalkeys
