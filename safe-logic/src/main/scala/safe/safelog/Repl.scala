@@ -143,11 +143,17 @@ class Repl(
       //  println(s"rightterm.terms=${rightterm.asInstanceOf[Structure].terms}")
       //}
       //val rightval = solveAQuery(Query(Seq(cmd)))(envContext, Seq[Subcontext]()).map(f => f(v)) 
-      val rightval = solveAQuery(Query(Seq(cmd)))(envContext, Seq(Subcontext("_tmp", _replStatements.toMap))).map(f => f(v)) 
-      updateEnvContext(v.simpleName, rightval.head)
-      printLabel('info) 
-      println(s"${v.simpleName.name}=${rightval.head}") //(${rightval})")
-      //println(s"envContext=${envContext}")
+      try {
+        val rightval = solveAQuery(Query(Seq(cmd)))(envContext, Seq(Subcontext("_tmp", _replStatements.toMap))).map(f => f(v)) 
+        updateEnvContext(v.simpleName, rightval.head)
+        printLabel('info) 
+        println(s"${v.simpleName.name}=${rightval.head}") //(${rightval})")
+        //println(s"envContext=${envContext}")
+      } catch {
+        case ex: Throwable =>
+           printLabel('failure)
+           println(ex.toString)
+      }
       _replStatements.remove(cmd.primaryIndex)
       true
 
@@ -356,6 +362,7 @@ class Repl(
             } catch {
               case ex: Throwable => 
                 printLabel('failure)
+                //println(ex.toString)
                 //logger.error(ex.toString)
             }
 	  }

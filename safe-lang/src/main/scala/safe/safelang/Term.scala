@@ -359,7 +359,7 @@ object SlangTerm extends safe.safelog.TermLike {
 
   override def isGrounded(term: Term): Boolean = term match {
     case c: Constant => true
-    case v: Variable => false
+    case v: Variable if v.id.name.startsWith("$") => true // env variable
     case Structure(id, terms, _, _, _) =>
       val resMap = terms.map{x => isGrounded(x)} // TODO: doing more computation than necessary
       if(resMap.contains(false)) false else true
