@@ -1,4 +1,4 @@
-omport("../safe-client.slang").
+import("../safe-client.slang").
 
 defenv ServerJVM() :- "152.3.136.26:6666".
 defenv Envs() :- ":::".
