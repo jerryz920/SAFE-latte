@@ -1,4 +1,4 @@
-import("../safe-client.slang").
+omport("../safe-client.slang").
 
 defenv ServerJVM() :- "152.3.136.26:6666".
 defenv Envs() :- ":::".
@@ -39,9 +39,9 @@ defcall postDirectoryAccess(?GroupId, ?Scid) :-
 //    updateSubjectSet($ServerJVM, $Envs, $Token).
 //  }.
 
-defcall accessNamedObject(?SubjectId, ?Name) :-
+defcall accessNamedObject(?SubjectId, ?Name, ?RootDir) :-
   {
-    accessNamedObject($ServerJVM, $Envs, $SubjectId, $Name).
+    accessNamedObject($ServerJVM, $Envs, $SubjectId, $Name, $RootDir).
   }.
 
 defcall tagAccessTest(?U) :-
@@ -120,9 +120,9 @@ defcall whoami() :-
     whoami($ServerJVM, $Envs).
   }.
 
-defcall queryName(?Name) :-
+defcall queryName(?RootDir, ?Name) :-
   {
-    queryName($ServerJVM, $Envs, $Name).
+    queryName($ServerJVM, $Envs, $RootDir, $Name).
   }.
 
 defcall postNameDelegation(?ObjectName, ?ChildScid, ?ParentScid) :-
@@ -130,27 +130,36 @@ defcall postNameDelegation(?ObjectName, ?ChildScid, ?ParentScid) :-
     postNameDelegation($ServerJVM, $Envs, $ObjectName, $ChildScid, $ParentScid).
   }.
 
-delegateName(?ObjectName, ?SubdirPrincipalName, ?SubdirLocalName, ?DirPrincipalName, ?DirLocalName) :-
-  switchSelfTo(?SubdirPrincipalName),
-  ?SubScidInfo := queryLocalName(?SubdirLocalName),
-  ?SubScid := parseAndGetNthArg(?SubScidInfo, 1),
-  switchSelfTo(?DirPrincipalName),
-  ?DirScidInfo := queryLocalName(?DirLocalName),
-  ?MountScid := parseAndGetNthArg(?DirScidInfo, 1),
-  ?Token := postNameDelegation(?ObjectName, ?SubScid, ?MountScid),
-  switchSelfTo(?SubdirPrincipalName),
-  updateObjectSet(?Token, ?SubScid).  
+delegateName(?NameComponent, ?SubdirPrincipalId, ?SubdirUUID, ?DirPrincipalId, ?DirUUID) :-
+  switchSelfTo(?DirPrincipalId),
+  ?Token := postNameDelegation(?NameComponent, "?SubdirPrincipalId:?SubdirUUID", "?DirPrincipalId:?DirUUID"),
+  switchSelfTo(?SubdirPrincipalId),
+  updateObjectSet(?Token, "?SubdirPrincipalId:?SubdirUUID").  
 
 
-delegateName(?ObjectName, ?SubdirPrincipalName, ?SubdirLocalName, ?ParentScid) :-
-  switchSelfTo(?SubdirPrincipalName),
-  ?SubScidInfo := queryLocalName(?SubdirLocalName),
-  ?SubScid := parseAndGetNthArg(?SubScidInfo, 1),
-  ?DirPID := rootPrincipal(?ParentScid),
-  switchSelfTo(?DirPID),
-  ?Token := postNameDelegation(?ObjectName, ?SubScid, ?ParentScid),
-  switchSelfTo(?SubdirPrincipalName),
-  updateObjectSet(?Token, ?SubScid).
+//
+//delegateName(?ObjectName, ?SubdirPrincipalName, ?SubdirLocalName, ?DirPrincipalName, ?DirLocalName) :-
+//  switchSelfTo(?SubdirPrincipalName),
+//  ?SubScidInfo := queryLocalName(?SubdirLocalName),
+//  ?SubScid := parseAndGetNthArg(?SubScidInfo, 1),
+//  switchSelfTo(?DirPrincipalName),
+//  ?DirScidInfo := queryLocalName(?DirLocalName),
+//  ?MountScid := parseAndGetNthArg(?DirScidInfo, 1),
+//  ?Token := postNameDelegation(?ObjectName, ?SubScid, ?MountScid),
+//  switchSelfTo(?SubdirPrincipalName),
+//  updateObjectSet(?Token, ?SubScid).  
+//
+//
+//delegateName(?ObjectName, ?SubdirPrincipalName, ?SubdirLocalName, ?ParentScid) :-
+//  switchSelfTo(?SubdirPrincipalName),
+//  ?SubScidInfo := queryLocalName(?SubdirLocalName),
+//  ?SubScid := parseAndGetNthArg(?SubScidInfo, 1),
+//  ?DirPID := rootPrincipal(?ParentScid),
+//  switchSelfTo(?DirPID),
+//  ?Token := postNameDelegation(?ObjectName, ?SubScid, ?ParentScid),
+//  switchSelfTo(?SubdirPrincipalName),
+//  updateObjectSet(?Token, ?SubScid).
+//
 
 
 defcall updateObjectSet(?Token, ?Scid) :-

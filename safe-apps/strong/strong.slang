@@ -231,8 +231,8 @@ defcon accessPolicySet() :-
       ?DRoot := rootPrincipal(?Dir),
       ?Principal = ?DRoot.
 
-    approveAccess(?P, ?Name) :-  
-      srnNameToID(?Name, ?Scid),
+    approveAccess(?P, ?Name, ?RootDir) :-  
+      srnNameToID(?RootDir, ?Name, ?Scid),
       allowAccess(?Group, ?Dir),
       srnIDPathTo(?Dir, ?Scid),
       membership(?Group, ?P).
@@ -258,17 +258,34 @@ defguard queryMembership(?Group, ?SubjectId) :-
     membership($Group, $SubjectId)?
   }.
 
-defguard queryName(?Name) :-
+//
+// A generic guard for querying names in a multi-rooted hierarchy
+//
+
+defguard queryName(?RootDir, ?Name) :-
   spec("Query a name"),
-  resolve($RootDir, ?Name, ?Scid, ?LastCertToken),
+  resolve(?RootDir, ?Name, ?Scid, ?LastCertToken),
   ?SRNEvalRulesRef := label("SRN-standard-evaluation"),
   ?ObjRoot := rootPrincipal(?Scid),
   ?ObjToken := label(?ObjRoot, ?Scid),
   {
     link($ObjToken).
     link($SRNEvalRulesRef).
-    srnNameToID($Name, ?Scid)?
+    srnNameToID($RootDir, $Name, ?Scid)?
   }.
+
+
+//defguard queryName(?Name) :-
+//  spec("Query a name"),
+//  resolve($RootDir, ?Name, ?Scid, ?LastCertToken),
+//  ?SRNEvalRulesRef := label("SRN-standard-evaluation"),
+//  ?ObjRoot := rootPrincipal(?Scid),
+//  ?ObjToken := label(?ObjRoot, ?Scid),
+//  {
+//    link($ObjToken).
+//    link($SRNEvalRulesRef).
+//    srnNameToID($Name, ?Scid)?
+//  }.
 
 defguard queryLocalName(?Name) :-
   spec("Query a local name"),
@@ -278,9 +295,10 @@ defguard queryLocalName(?Name) :-
     localObject($Name, ?Scid)?
   }.
 
-defguard accessNamedObject(?P, ?Name) :-
+
+defguard accessNamedObject(?P, ?Name, ?RootDir) :-
   spec("Check if a principal can access a named object"),
-  resolve($RootDir, ?Name, ?Scid, ?LastCertToken),
+  resolve(?RootDir, ?Name, ?Scid, ?LastCertToken),
   ?ObjRoot := rootPrincipal(?Scid),
   ?ObjToken := label(?ObjRoot, ?Scid),
   ?SRNEvalRulesRef := label("SRN-standard-evaluation"),
@@ -292,5 +310,24 @@ defguard accessNamedObject(?P, ?Name) :-
     link($MembershipPolicyRef).
     link($AccessPolicyRef).
     link($BearerRef).
-    approveAccess($P, $Name)?
+    approveAccess($P, $Name, $RootDir)?
   }.
+
+
+//
+//defguard accessNamedObject(?P, ?Name) :-
+//  spec("Check if a principal can access a named object"),
+//  resolve($RootDir, ?Name, ?Scid, ?LastCertToken),
+//  ?ObjRoot := rootPrincipal(?Scid),
+//  ?ObjToken := label(?ObjRoot, ?Scid),
+//  ?SRNEvalRulesRef := label("SRN-standard-evaluation"),
+//  ?MembershipPolicyRef := label("standard-membership-policy"),
+//  ?AccessPolicyRef := label("standard-access-policy"),
+//  {
+//    link($ObjToken).
+//    link($SRNEvalRulesRef).
+//    link($MembershipPolicyRef).
+//    link($AccessPolicyRef).
+//    link($BearerRef).
+//    approveAccess($P, $Name)?
+//  }.

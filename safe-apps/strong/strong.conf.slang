@@ -1,16 +1,16 @@
-defenv RootDir() :- "ZF67xzvOPvC2IKWfvHWCLqcq7bkZRscL5FFKlQeyHiQ=:root".
+//defenv RootDir() :- "ZF67xzvOPvC2IKWfvHWCLqcq7bkZRscL5FFKlQeyHiQ=:root".
 
 defcon srnEvaluation() :-
   spec("Rules for SRN certified evaluation, in a bottom-up fashion"),
   {
-    srnNameToID(?Name, ?Scid) :-
+    srnNameToID(?RootDir, ?Name, ?Scid) :-
       singleComponent(?Name),
-      ?RootAuthority := rootPrincipal($RootDir),
-      ?RootAuthority: nameObject(?Name, ?Scid, $RootDir).
+      ?RootAuthority := rootPrincipal(?RootDir),
+      ?RootAuthority: nameObject(?Name, ?Scid, ?RootDir).
 
-    srnNameToID(?Name, ?Scid) :-
+    srnNameToID(?RootDir, ?Name, ?Scid) :-
       splitLast(?Name, ?Init, ?LastComponent),
-      srnNameToID(?Init, ?Dir),
+      srnNameToID(?RootDir, ?Init, ?Dir),
       ?DirAuthority := rootPrincipal(?Dir),
       ?DirAuthority: nameObject(?LastComponent, ?Scid, ?Dir).
 
