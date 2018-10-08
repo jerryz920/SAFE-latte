@@ -14,4 +14,4 @@ P1@slang> delegateName("project0", $P2, "5a9bdf08-8fba-4540-b321-f6719c0c4356", 
 kUmAglfeRE6VhrpZapbDW2Wd1zh49gyyB4DzXVgMlh4=@slang> delegateName("dataset0", $P3, "5181abf4-4798-4a74-9eee-19c1c5cab60e", $P2, "5a9bdf08-8fba-4540-b321-f6719c0c4356")?
 hZ6iH7LNlNRXLk4R2JsbC4GLOCzuKrGKEBxIO0ldmgU=@slang> delegateName("part0", $P4, "1b607eed-80a6-4f85-9118-6d12e31c9f09", $P3, "5181abf4-4798-4a74-9eee-19c1c5cab60e")?
 
-mgJ8fKnJjZCjOSxBrNGeLQDYlSEa54aA3HfI5UJvSHs=@slang> queryName("Jgm1DHxtpKXYY9b9PW2nFGqspsRTSlLRatlsWPdhTns=:2e7032a4-612c-46bf-88ba-e6584f3df233", "project0/dataset0/part0")?
+mgJ8fKnJjZCjOSxBrNGeLQDYlSEa54aA3HfI5UJvSHs=@slang> queryName("$P1:2e7032a4-612c-46bf-88ba-e6584f3df233", "project0/dataset0/part0")?
