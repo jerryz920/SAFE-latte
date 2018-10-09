@@ -8,10 +8,22 @@ strong-2@slang> ?Self := "strong-3".
 strong-3@slang> ?P3 := postIdSetRaw("strong-3").
 strong-3@slang> ?Self := "strong-4".
 strong-4@slang> ?P4 := postIdSetRaw("strong-4").
+strong-4@slang> ?UUID1 := "4b3f260d-c5e4-4ae4-a67d-f95f0b7b2c98".
+strong-4@slang> ?UUID2 := "14bcb715-1cb1-447b-885b-0c7c572d4df6".
+strong-4@slang> ?UUID3 := "36e32724-f233-4b9b-b582-063b6ef49842".
+strong-4@slang> ?UUID4 := "c6533f31-80db-4746-b1b1-2110514a2782".
 
+P1@slang> delegateName("project0", $P2, $UUID2, $P1, $UUID1)?
+slang> delegateName("dataset0", $P3, $UUID3, $P2, $UUID2)?
+slang> delegateName("part0", $P4, $UUID4, $P3, $UUID3)?
 
-P1@slang> delegateName("project0", $P2, "5a9bdf08-8fba-4540-b321-f6719c0c4356", $P1, "2e7032a4-612c-46bf-88ba-e6584f3df233")?
-kUmAglfeRE6VhrpZapbDW2Wd1zh49gyyB4DzXVgMlh4=@slang> delegateName("dataset0", $P3, "5181abf4-4798-4a74-9eee-19c1c5cab60e", $P2, "5a9bdf08-8fba-4540-b321-f6719c0c4356")?
-hZ6iH7LNlNRXLk4R2JsbC4GLOCzuKrGKEBxIO0ldmgU=@slang> delegateName("part0", $P4, "1b607eed-80a6-4f85-9118-6d12e31c9f09", $P3, "5181abf4-4798-4a74-9eee-19c1c5cab60e")?
+slang> queryName("$P1:$UUID1", "project0/dataset0/part0")?
 
-mgJ8fKnJjZCjOSxBrNGeLQDYlSEa54aA3HfI5UJvSHs=@slang> queryName("$P1:2e7032a4-612c-46bf-88ba-e6584f3df233", "project0/dataset0/part0")?
+P3@slang> postDirectoryAccess("$P4:group0", '$P3:$UUID3')?
+
+// These two steps can be merged
+P4@slang> ?Membership := postGroupMember("$P4:group0", $P4, "true").
+P4@slang> ?SubjectSet := updateSubjectSet($Membership).
+
+slang> ?Envs := "$SubjectSet".
+slang> accessNamedObject($P4, "project0/dataset0", "$P1:$UUID1")?
