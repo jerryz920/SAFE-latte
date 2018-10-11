@@ -1,12 +1,15 @@
 package safe.safelog
 
-import com.github.lalyos.jfiglet.FigletFont;
+
+import java.nio.file.{Path, Paths}
+import java.io.{File, PrintWriter}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{Set => MutableSet}
 import scala.collection.mutable.{LinkedHashSet => OrderedSet}
 import scala.util.{Try, Success, Failure}
-import java.nio.file.{Path, Paths}
+
+import com.github.lalyos.jfiglet.FigletFont;
 
 import SafelogException.printLabel
 
@@ -170,6 +173,20 @@ class Repl(
       clearEnvContext()
       true
 
+    case Structure(StrLit("saveEnvTo"), Seq(Constant(StrLit(file), _, _, _)), _, _, _) => 
+      try {
+        val p = Repl.expandPathname(file)
+        val pw = new PrintWriter(new File(p))
+        envContext.foreach{ case (k, v) if v.isInstanceOf[Constant] => pw.write(s"""defenv ${k.name}() :- "${v.asInstanceOf[Constant].id.name}".\n""") }
+        pw.close
+      } catch {
+        case ex: Throwable =>
+           printLabel('failure)
+           println(ex.toString)
+      }
+      _replStatements.remove(cmd.primaryIndex)
+      true
+
     case Constant(StrLit("env"), _, _, _) | Structure(StrLit("env"), Nil, _, _, _) =>
       envContext.foreach{ case (k, v) if v.isInstanceOf[Constant] => println(s"${k.name}=${v.asInstanceOf[Constant].id.name}") }
       _replStatements.remove(cmd.primaryIndex)
@@ -230,6 +247,7 @@ class Repl(
       printLabel('info); println("commands list") 
       println("help.                     display this message")
       println("env.                      list of envs")
+      println("saveEnvTo(<file>)         save envs to a file")
       println("pwd.                      print working directory")
       println("import(<file>).           import file with name <file>")
       println("ls.                       list of assertions made so far")
@@ -362,7 +380,7 @@ class Repl(
             } catch {
               case ex: Throwable => 
                 printLabel('failure)
-                //println(ex.toString)
+                println(ex.toString)
                 //logger.error(ex.toString)
             }
 	  }
