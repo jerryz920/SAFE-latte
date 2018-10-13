@@ -1,46 +1,10 @@
+import("../safe.slang").
 import("../strong.conf.slang").
 
-//
-// Identity set (apply to all participants)
-//
-
-defcon makeMyIdentitySet(?CN) :-
-  spec('Construct an identity set for self'),
-  {
-    principal($SelfKey) :- spec("identity set for $CN").
-  }.
-
-defcon makeMySubjectSet() :-
-  spec("Construct a subject set for self"),
-  {
-    link($Self).
-    label("subject($Self)").
-  }.
-
-defcon addTokenToSubjectSet(?Token) :-
-  spec("Add a token to the user's subject set."),
-  {
-    link($Token).
-    label("subject($Self)").
-  }.
-
-defpost postIdSet(?CN) :- [makeMyIdentitySet(?CN)].
-
-defpost postSubjectSet() :- [makeMySubjectSet()].
-
-defpost updateSubjectSet(?Token) :- [addTokenToSubjectSet(?Token)].
 
 //
 // Group Authority 
 //
-
-defcon makeGroupSet(?Group) :-
-  spec('Construct a set for a group'),
-  {
-    label("groups/$Group").
-  }.
-
-defpost postGroupSet(?Group) :- [makeGroupSet(?Group)].
 
 defcon addTokenToGroupSet(?Token, ?Group) :-
   spec("Add a link to a group's ID set. Invoked on delegation to this group"),
@@ -75,7 +39,7 @@ defpost postGroupDelegation(?Group, ?SubGroup, ?Delegatable) :- [delegateGroup(?
 
 
 //
-// User (group member)
+// Group member
 //
 
 defcon delegateGroupMembership(?User, ?Group, ?Delegatable) :-
@@ -94,43 +58,44 @@ defpost postMembershipDelegation(?User, ?Group, ?Delegatable) :- [delegateGroupM
 // Naming authority
 //
 
-defcon makeObjectSet(?Scid) :-
-  spec("Construct a set for object ?Scid"),
+defcon makeNameObjectSet(?Scid) :-
+  spec("Construct a set for name object ?Scid"),
   {
     label("$Scid").
   }.
 
-defcon addTokenToObjectSet(?Token, ?Scid) :-
+defcon addTokenToNameObjectSet(?Token, ?Scid) :-
   spec("Add a link to an object set"),
   {
     link($Token).
     label("$Scid").
   }.
 
-defpost postObjectSet(?Scid) :- [makeObjectSet(?Scid)].
+defpost postNameObjectSet(?Scid) :- [makeNameObjectSet(?Scid)].
 
-defpost updateObjectSet(?Token, ?Scid) :- [addTokenToObjectSet(?Token, ?Scid)].
+defpost updateNameObjectSet(?Token, ?Scid) :- [addTokenToNameObjectSet(?Token, ?Scid)].
 
-defcon localObject(?ObjectName, ?Uuid) :- 
+defcon localNameObject(?LocalName, ?Uuid) :- 
   spec('Add a local object'),
   {
-    localObject($ObjectName, "$Self:$Uuid").
-    label("localObjects/$ObjectName").
+    localNameObject($LocalName, "$Self:$Uuid").
+    label("localNameObjects/$LocalName").
   }.
 
-defpost postLocalObject(?ObjectName, ?Uuid) :- [localObject(?ObjectName, ?Uuid)].
+defpost postLocalNameObject(?Name, ?Uuid) :- [localNameObject(?Name, ?Uuid)].
 
-defcon createNameEntry(?ObjectName, ?ChildScid, ?ParentScid) :-
+defcon createNameEntry(?NameComponent, ?ChildScid, ?ParentScid) :-
   spec('Create a name entry'),
   ?ParentToken := label(?ParentScid),
   {
     link($ParentToken).
-    nameObject($ObjectName, $ChildScid, $ParentScid).
-    nameObject2($ParentScid, $ObjectName, $ChildScid).
-    label("$ParentScid/$ObjectName").
+    nameObject($NameComponent, $ChildScid, $ParentScid).
+    nameObject2($ParentScid, $NameComponent, $ChildScid).
+    label("$ParentScid/$NameComponent").
   }.
 
-defpost postNameDelegation(?ObjectName, ?ChildScid, ?ParentScid) :- [createNameEntry(?ObjectName, ?ChildScid, ?ParentScid)].
+defpost postNameDelegation(?NameComponent, ?ChildScid, ?ParentScid) :- 
+  [createNameEntry(?NameComponent, ?ChildScid, ?ParentScid)].
 
 
 defcon grantAccess(?Group, ?DirScid) :-
@@ -154,11 +119,13 @@ defcon memberSet() :-
       membership(?Group, ?User, _).
   
    //
-   // If the group root has the membership automatically, 
-   // update the root's subject set    
+   // If the group root can automatically have membership of the group, 
+   // enable this rule.
+   //
    // membership(?Group, ?User, true) :-
    //   ?GRoot := rootPrincipal(?Group),
    //   ?GRoot = ?User.
+   //
 
     membership(?Group, ?User, ?Delegatable) :-
       ?GRoot := rootPrincipal(?Group), 
@@ -170,25 +137,14 @@ defcon memberSet() :-
 
     membership(?Group, ?User, ?Delegatable) :-
       ?GRoot := rootPrincipal(?Group),
-      ?GRoot: nestGroup(?Group, ?ToGroup, true), 
-      membership(?ToGroup, ?User, ?Delegatable).
+      ?GRoot: nestGroup(?Group, ?SubGroup, true), 
+      membership(?SubGroup, ?User, ?Delegatable).
 
     membership(?Group, ?User, ?Delegatable) :-
       ?GRoot := rootPrincipal(?Group),
-      ?GRoot: nestGroup(?Group, ?ToGroup, false), 
-      ?ToGroupRoot := rootPrincipal(?ToGroup),
-      ?ToGroupRoot: groupMember(?ToGroup, ?User, ?Delegatable).
-
-//
-//  These rules are redundant
-//
-//    nestGroup(?SrcGroup, ?DstGroup) :-
-//      ?SrcOwner := rootPrincipal(?SrcGroup), ?SrcOwner: nestGroup(?SrcGroup, ?DstGroup).
-//
-//    nestGroup(?SrcGroup, ?DstGroup) :-
-//      ?SrcOwner := rootPrincipal(?SrcGroup), ?SrcOwner: nestGroup(?SrcGroup, ?MidGroup),
-//      nestGroup(?MidGroup, ?DstGroup).
-//
+      ?GRoot: nestGroup(?Group, ?SubGroup, false), 
+      ?SubGroupRoot := rootPrincipal(?SubGroup),
+      ?SubGroupRoot: groupMember(?SubGroup, ?User, ?Delegatable).
 
     label('standard-membership-policy').
   }.
@@ -196,17 +152,17 @@ defcon memberSet() :-
 definit memberSet().
 
 
-defcon checkDirectObject(?Dir, ?Name) :-
-  spec("Check if a name represents a direct object"),
+defcon checkDirectNameObject(?Dir, ?NameComponent) :-
+  spec("Check if a name object is directly under a dir"),
   {
-    directObject(?Scid) :- ?NameAuthority := rootPrincipal($Dir), ?NameAuthority: nameObject($Name, ?Scid, $Dir).
+    directObject(?Scid) :- ?NameAuthority := rootPrincipal($Dir), ?NameAuthority: nameObject($NameComponent, ?Scid, $Dir).
     directObject(?Scid)?
-    label("$Dir-$Name").
+    label("$Dir-$NameComponent").
   }.
 
 resolve(?Dir, ?Name, ?Scid, ?LastCertToken) :-
   singleComponent(?Name),
-  ?RulesRef := checkDirectObject(?Dir, ?Name),
+  ?RulesRef := checkDirectNameObject(?Dir, ?Name),
   ?DirAuthority := rootPrincipal(?Dir),
   ?ObjDelToken := label(?DirAuthority, "?Dir/?Name"),
   ?ScidSet := inferSet(?RulesRef, ?ObjDelToken),
@@ -216,7 +172,7 @@ resolve(?Dir, ?Name, ?Scid, ?LastCertToken) :-
 
 resolve(?Dir, ?Name, ?Scid, ?LastCertToken) :-
   splitHead(?Name, ?FirstComponent, ?Tail),
-  ?RulesRef := checkDirectObject(?Dir, ?FirstComponent),
+  ?RulesRef := checkDirectNameObject(?Dir, ?FirstComponent),
   ?DirAuthority := rootPrincipal(?Dir),
   ?ObjDelToken := label(?DirAuthority, "?Dir/?FirstComponent"),
   ?SubDirSet := inferSet(?RulesRef, ?ObjDelToken),
@@ -289,12 +245,11 @@ defguard queryName(?RootDir, ?Name) :-
 
 defguard queryLocalName(?Name) :-
   spec("Query a local name"),
-  ?LocalObjectSet := label("localObjects/?Name"),
+  ?LocalNameObjectSet := label("localNameObjects/?Name"),
   {
-    link($LocalObjectSet).
-    localObject($Name, ?Scid)?
+    link($LocalNameObjectSet).
+    localNameObject($Name, ?Scid)?
   }.
-
 
 defguard accessNamedObject(?P, ?Name, ?RootDir) :-
   spec("Check if a principal can access a named object"),
@@ -331,3 +286,4 @@ defguard accessNamedObject(?P, ?Name, ?RootDir) :-
 //    link($BearerRef).
 //    approveAccess($P, $Name)?
 //  }.
+//
