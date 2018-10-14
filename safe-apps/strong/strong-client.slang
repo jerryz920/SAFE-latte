@@ -4,115 +4,60 @@ defenv ServerJVM() :- "152.3.136.26:6666".
 defenv Envs() :- ":::".
 defenv Self() :- "strong-1".
 
-defcall postIdSet(?CN, ?PreferredStores) :-
-  {
-    postIdSet($ServerJVM, $Envs, $CN, $PreferredStores).
-  }.
-
-defcall postIdSetRaw(?CN) :-
-  {
-    postIdSet($ServerJVM, $Envs, $CN).
-  }.
-
-defcall updateIDSet(?StoreAddr, ?Protocol, ?ServerID) :-
-  {
-     updateIDSet($ServerJVM, $Envs, $StoreAddr, $Protocol, $ServerID).
-  }.
-
-defcall postGroupSet(?Group) :-
-  {
-    postGroupSet($ServerJVM, $Envs, $Group).
-  }.
-
 defcall postGroupMember(?GroupId, ?SubjectId, ?Delegatable) :-
   {
     postGroupMember($ServerJVM, $Envs, $GroupId, $SubjectId, $Delegatable).
   }.
 
+defcall postGroupDelegation(?GroupId, ?SubGroupId, ?Delegatable) :-
+  {
+    postGroupDelegation($ServerJVM, $Envs, $GroupId, $SubGroupId, $Delegatable).
+  }.
+
+defcall updateGroupSet(?Token, ?Group) :-
+  {
+    updateGroupSet($ServerJVM, $Envs, $Token, $Group).
+  }.
+
+nestGroup(?GroupId, ?SubGroupId, ?Delegatable) :-
+  ?GA := rootPrincipal(?GroupId),
+  switchSelfTo(?GA),
+  ?Token := postGroupDelegation(?GroupId, ?SubGroupId, ?Delegatable),
+  ?SubjectId := rootPrincipal(?SubGroupId),
+  switchSelfTo(?SubjectId),
+  updateGroupSet(?Token, ?SubGroupId).
+
+defcall postMembershipDelegation(?SubjectId, ?GroupId, ?Delegatable) :-
+  {
+    postMembershipDelegation($ServerJVM, $Envs, $SubjectId, $GroupId, $Delegatable).
+  }.
+
+delegateMembership(?GroupId, ?SubjectId, ?Delegatable) :-
+  ?GA := rootPrincipal(?GroupId),
+  switchSelfTo(?GA),
+  ?Token := postMembershipDelegation(?SubjectId, ?GroupId, ?Delegatable),
+  switchSelfTo(?SubjectId),
+  updateSubjectSet(?Token).
+
+defcall updateNameObjectSet(?Token, ?Scid) :-
+  {
+    updateNameObjectSet($ServerJVM, $Envs, $Token, $Scid).
+  }.
+
+defcall postNameDelegation(?NameComponent, ?ChildScid, ?ParentScid) :-
+  {
+    postNameDelegation($ServerJVM, $Envs, $NameComponent, $ChildScid, $ParentScid).
+  }.
+
+delegateName(?NameComponent, ?DirPrincipalId, ?DirUUID, ?SubdirPrincipalId, ?SubdirUUID) :-
+  switchSelfTo(?DirPrincipalId),
+  ?Token := postNameDelegation(?NameComponent, "?SubdirPrincipalId:?SubdirUUID", "?DirPrincipalId:?DirUUID"),
+  switchSelfTo(?SubdirPrincipalId),
+  updateObjectSet(?Token, "?SubdirPrincipalId:?SubdirUUID").  
+
 defcall postDirectoryAccess(?GroupId, ?Scid) :-
   {
     postDirectoryAccess($ServerJVM, $Envs, $GroupId, $Scid).
-  }.
-
-//defcall updateSubjectSet(?Token) :-
-//  {
-//    updateSubjectSet($ServerJVM, $Envs, $Token).
-//  }.
-
-defcall accessNamedObject(?SubjectId, ?Name, ?RootDir) :-
-  {
-    accessNamedObject($ServerJVM, $Envs, $SubjectId, $Name, $RootDir).
-  }.
-
-defcall tagAccessTest(?U) :-
-  {
-    tagAccessTest($ServerJVM, $Envs, $U).
-  }.
-
-defcall postPolicyIPV4() :-
-  {
-    postPolicyIPV4($ServerJVM, $Envs).
-  }.
-
-defcall testPolicy() :-
-  {
-    testPolicy($ServerJVM, $Envs).
-  }.
-
-defcall testipv4(?IP) :-
-  {
-    testipv4($ServerJVM, $Envs, $IP).
-  }.
-
-defcall passList(?A, ?B) :-
-  {
-    passList($ServerJVM, $Envs, $A, $B).
-  }.
-
-
-//hangCall(?A, ?B, ?C) :- ?Token := tagAccessTestForAlice(?A, ?B, ?C), updateSubjectSet(...., ?Token).
-
-defcall tagAccessTestForAlice(?U) :-
-  {
-    tagAccessTest($ServerJVM, $Envs, $U).
-  }.
-
-
-defcall postPolicy(?PolicyId) :-
-  {
-    postPolicy($ServerJVM, $Envs, $PolicyId).
-  }.
-
-
-defcall postSubjectSet() :-
-  {
-    postSubjectSet($ServerJVM, $Envs).
-  }.
-
-defcall postSetWithList(?Name, ?Arg) :-
-  {
-    postSetWithList($ServerJVM, $Envs, $Name, $Arg).
-  }.
-
-defcall updateSubjectSet(?Token) :-
-  {
-    updateSubjectSet($ServerJVM, $Envs, $Token).
-  }.
-
-
-defcall mymethod() :-
-  {
-    mymethod($ServerJVM, $Envs).
-  }.
-
-
- allocateIPAll(?AS, ?IP, ?P) :-
-   ?Token := postAllocateIP(?AS, ?IP), switchSelfTo(?P),
-   updateSubjectSet(?Token).
-
-defcall test(?IP,?FileA,?FileB) :-
-  {
-    do_inspection($ServerJVM,$Envs,$IP,$FileA,$FileB).
   }.
 
 defcall whoami() :-
@@ -120,69 +65,17 @@ defcall whoami() :-
     whoami($ServerJVM, $Envs).
   }.
 
+defcall queryMembership(?GroupId, ?SubjectId) :-
+  {
+    queryMembership($ServerJVM, $Envs, $GroupId, $SubjectId).
+  }.
+
 defcall queryName(?RootDir, ?Name) :-
   {
     queryName($ServerJVM, $Envs, $RootDir, $Name).
   }.
 
-defcall postNameDelegation(?ObjectName, ?ChildScid, ?ParentScid) :-
+defcall accessNamedObject(?SubjectId, ?Name, ?RootDir) :-
   {
-    postNameDelegation($ServerJVM, $Envs, $ObjectName, $ChildScid, $ParentScid).
+    accessNamedObject($ServerJVM, $Envs, $SubjectId, $Name, $RootDir).
   }.
-
-delegateName(?NameComponent, ?SubdirPrincipalId, ?SubdirUUID, ?DirPrincipalId, ?DirUUID) :-
-  switchSelfTo(?DirPrincipalId),
-  ?Token := postNameDelegation(?NameComponent, "?SubdirPrincipalId:?SubdirUUID", "?DirPrincipalId:?DirUUID"),
-  switchSelfTo(?SubdirPrincipalId),
-  updateObjectSet(?Token, "?SubdirPrincipalId:?SubdirUUID").  
-
-
-//
-//delegateName(?ObjectName, ?SubdirPrincipalName, ?SubdirLocalName, ?DirPrincipalName, ?DirLocalName) :-
-//  switchSelfTo(?SubdirPrincipalName),
-//  ?SubScidInfo := queryLocalName(?SubdirLocalName),
-//  ?SubScid := parseAndGetNthArg(?SubScidInfo, 1),
-//  switchSelfTo(?DirPrincipalName),
-//  ?DirScidInfo := queryLocalName(?DirLocalName),
-//  ?MountScid := parseAndGetNthArg(?DirScidInfo, 1),
-//  ?Token := postNameDelegation(?ObjectName, ?SubScid, ?MountScid),
-//  switchSelfTo(?SubdirPrincipalName),
-//  updateObjectSet(?Token, ?SubScid).  
-//
-//
-//delegateName(?ObjectName, ?SubdirPrincipalName, ?SubdirLocalName, ?ParentScid) :-
-//  switchSelfTo(?SubdirPrincipalName),
-//  ?SubScidInfo := queryLocalName(?SubdirLocalName),
-//  ?SubScid := parseAndGetNthArg(?SubScidInfo, 1),
-//  ?DirPID := rootPrincipal(?ParentScid),
-//  switchSelfTo(?DirPID),
-//  ?Token := postNameDelegation(?ObjectName, ?SubScid, ?ParentScid),
-//  switchSelfTo(?SubdirPrincipalName),
-//  updateObjectSet(?Token, ?SubScid).
-//
-
-
-defcall updateObjectSet(?Token, ?Scid) :-
-  {
-    updateObjectSet($ServerJVM, $Envs, $Token, $Scid).
-  }.
-
-defcall postObjectSet(?Scid) :-
-  {
-    postObjectSet($ServerJVM, $Envs, $Scid).
-  }.
-
-defcall queryLocalName(?Name) :-
-  {
-    queryLocalName($ServerJVM, $Envs, $Name).
-  }.
-
-defcall postLocalObject(?Name, ?Uuid) :-
-  {
-    postLocalObject($ServerJVM, $Envs, $Name, $Uuid).
-  }.
-
-testAll(?IP, ?FileA, ?FileB) :- ?NameA := queryName(?FileA), ?ScidA := parseAndGetNthArg(?NameA, 1), ?NameB := queryName(?FileB), ?ScidB := parseAndGetNthArg(?NameB, 1), test(?IP, ?ScidA, ?ScidB).
-
-
-//hangCall(?A, ?B, ?C) :- ?Token := tagAccessTestForAlice(?A, ?B, ?C), updateSubjectSet(...., ?Token).

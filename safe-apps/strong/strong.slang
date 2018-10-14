@@ -1,19 +1,9 @@
 import("../safe.slang").
 import("../strong.conf.slang").
 
-
 //
 // Group Authority 
 //
-
-defcon addTokenToGroupSet(?Token, ?Group) :-
-  spec("Add a link to a group's ID set. Invoked on delegation to this group"),
-  {
-    link($Token).
-    label("groups/$Group").
-  }.
-
-defpost updateGroupSet(?Token, ?Group) :- [addTokenToGroupSet(?Token, ?Group)].
 
 defcon addGroupMember(?Group, ?User, ?Delegatable) :-
   spec('Add a user into a group'),
@@ -37,6 +27,15 @@ defcon delegateGroup(?Group, ?SubGroup, ?Delegatable) :-
 
 defpost postGroupDelegation(?Group, ?SubGroup, ?Delegatable) :- [delegateGroup(?Group, ?SubGroup, ?Delegatable)].
 
+defcon addTokenToGroupSet(?Token, ?Group) :-
+  spec("Add a link to a group's ID set. Invoked on delegation to this group"),
+  {
+    link($Token).
+    label("groups/$Group").
+  }.
+
+defpost updateGroupSet(?Token, ?Group) :- [addTokenToGroupSet(?Token, ?Group)].
+
 
 //
 // Group member
@@ -58,12 +57,6 @@ defpost postMembershipDelegation(?User, ?Group, ?Delegatable) :- [delegateGroupM
 // Naming authority
 //
 
-defcon makeNameObjectSet(?Scid) :-
-  spec("Construct a set for name object ?Scid"),
-  {
-    label("$Scid").
-  }.
-
 defcon addTokenToNameObjectSet(?Token, ?Scid) :-
   spec("Add a link to an object set"),
   {
@@ -71,18 +64,7 @@ defcon addTokenToNameObjectSet(?Token, ?Scid) :-
     label("$Scid").
   }.
 
-defpost postNameObjectSet(?Scid) :- [makeNameObjectSet(?Scid)].
-
 defpost updateNameObjectSet(?Token, ?Scid) :- [addTokenToNameObjectSet(?Token, ?Scid)].
-
-defcon localNameObject(?LocalName, ?Uuid) :- 
-  spec('Add a local object'),
-  {
-    localNameObject($LocalName, "$Self:$Uuid").
-    label("localNameObjects/$LocalName").
-  }.
-
-defpost postLocalNameObject(?Name, ?Uuid) :- [localNameObject(?Name, ?Uuid)].
 
 defcon createNameEntry(?NameComponent, ?ChildScid, ?ParentScid) :-
   spec('Create a name entry'),
@@ -155,8 +137,11 @@ definit memberSet().
 defcon checkDirectNameObject(?Dir, ?NameComponent) :-
   spec("Check if a name object is directly under a dir"),
   {
-    directObject(?Scid) :- ?NameAuthority := rootPrincipal($Dir), ?NameAuthority: nameObject($NameComponent, ?Scid, $Dir).
-    directObject(?Scid)?
+    directNameObject(?Scid) :- 
+      ?NameAuthority := rootPrincipal($Dir),
+      ?NameAuthority: nameObject($NameComponent, ?Scid, $Dir).
+
+    directNameObject(?Scid)?
     label("$Dir-$NameComponent").
   }.
 
@@ -178,6 +163,33 @@ resolve(?Dir, ?Name, ?Scid, ?LastCertToken) :-
   ?SubDirSet := inferSet(?RulesRef, ?ObjDelToken),
   ?SubDir := getNthArgFromSlogset(?SubDirSet, 0),
   resolve(?SubDir, ?Tail, ?Scid, ?LastCertToken).
+
+defcon srnEvaluation() :-
+  spec("Rules for SRN certified evaluation, in a bottom-up fashion"),
+  {
+    srnNameToID(?RootDir, ?Name, ?Scid) :-
+      singleComponent(?Name),
+      ?RootAuthority := rootPrincipal(?RootDir),
+      ?RootAuthority: nameObject(?Name, ?Scid, ?RootDir).
+
+    srnNameToID(?RootDir, ?Name, ?Scid) :-
+      splitLast(?Name, ?Init, ?LastComponent),
+      srnNameToID(?RootDir, ?Init, ?Dir),
+      ?DirAuthority := rootPrincipal(?Dir),
+      ?DirAuthority: nameObject(?LastComponent, ?Scid, ?Dir).
+
+    srnIDPathTo(?UpstreamScid, ?DownstreamScid) :-
+      ?UpstreamScid = ?DownstreamScid.
+
+    srnIDPathTo(?UpstreamScid, ?DownstreamScid) :-
+      ?UpstreamRoot := rootPrincipal(?UpstreamScid),
+      ?UpstreamRoot: nameObject2(?UpstreamScid, ?Name, ?MiddleScid),
+      srnIDPathTo(?MiddleScid, ?DownstreamScid).
+
+    label("SRN-standard-evaluation").
+  }.
+
+definit srnEvaluation().
 
 defcon accessPolicySet() :-
   spec("Policy for access control over named objects"),
@@ -215,7 +227,7 @@ defguard queryMembership(?Group, ?SubjectId) :-
   }.
 
 //
-// A generic guard for querying names in a multi-rooted hierarchy
+// A generic guard for querying names under a naming hierarchy
 //
 
 defguard queryName(?RootDir, ?Name) :-
@@ -228,27 +240,6 @@ defguard queryName(?RootDir, ?Name) :-
     link($ObjToken).
     link($SRNEvalRulesRef).
     srnNameToID($RootDir, $Name, ?Scid)?
-  }.
-
-
-//defguard queryName(?Name) :-
-//  spec("Query a name"),
-//  resolve($RootDir, ?Name, ?Scid, ?LastCertToken),
-//  ?SRNEvalRulesRef := label("SRN-standard-evaluation"),
-//  ?ObjRoot := rootPrincipal(?Scid),
-//  ?ObjToken := label(?ObjRoot, ?Scid),
-//  {
-//    link($ObjToken).
-//    link($SRNEvalRulesRef).
-//    srnNameToID($Name, ?Scid)?
-//  }.
-
-defguard queryLocalName(?Name) :-
-  spec("Query a local name"),
-  ?LocalNameObjectSet := label("localNameObjects/?Name"),
-  {
-    link($LocalNameObjectSet).
-    localNameObject($Name, ?Scid)?
   }.
 
 defguard accessNamedObject(?P, ?Name, ?RootDir) :-
@@ -267,23 +258,3 @@ defguard accessNamedObject(?P, ?Name, ?RootDir) :-
     link($BearerRef).
     approveAccess($P, $Name, $RootDir)?
   }.
-
-
-//
-//defguard accessNamedObject(?P, ?Name) :-
-//  spec("Check if a principal can access a named object"),
-//  resolve($RootDir, ?Name, ?Scid, ?LastCertToken),
-//  ?ObjRoot := rootPrincipal(?Scid),
-//  ?ObjToken := label(?ObjRoot, ?Scid),
-//  ?SRNEvalRulesRef := label("SRN-standard-evaluation"),
-//  ?MembershipPolicyRef := label("standard-membership-policy"),
-//  ?AccessPolicyRef := label("standard-access-policy"),
-//  {
-//    link($ObjToken).
-//    link($SRNEvalRulesRef).
-//    link($MembershipPolicyRef).
-//    link($AccessPolicyRef).
-//    link($BearerRef).
-//    approveAccess($P, $Name)?
-//  }.
-//
