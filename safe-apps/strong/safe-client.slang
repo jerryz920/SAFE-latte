@@ -1,29 +1,29 @@
 defcall postIdSetRaw(?CN) :-
   {
-    postIdSet($ServerJVM, $Envs, $CN).
+    postIdSet($ServerJVM, $ReqEnvs, $CN).
   }.
 
 defcall postIdSet(?CN, ?StoreAddr, ?Protocol, ?ServerID) :-
   {
-    postIdSet($ServerJVM, $Envs, $CN, $StoreAddr, $Protocol, $ServerID).
+    postIdSet($ServerJVM, $ReqEnvs, $CN, $StoreAddr, $Protocol, $ServerID).
   }.
 
 defcall updateIDSet(?StoreAddr, ?Protocol, ?ServerID) :-
   {
-     updateIDSet($ServerJVM, $Envs, $StoreAddr, $Protocol, $ServerID).
+     updateIDSet($ServerJVM, $ReqEnvs, $StoreAddr, $Protocol, $ServerID).
   }.
 
 defcall postSubjectSet() :-
   {
-    postSubjectSet($ServerJVM, $Envs).
+    postSubjectSet($ServerJVM, $ReqEnvs).
   }.
 
 defcall updateSubjectSet(?Token) :-
   {
-    updateSubjectSet($ServerJVM, $Envs, $Token).
+    updateSubjectSet($ServerJVM, $ReqEnvs, $Token).
   }.
 
 defcall serverImport(?SlangPathname) :-
   {
-    import($ServerJVM, $Envs, $SlangPathname).
+    import($ServerJVM, $ReqEnvs, $SlangPathname).
   }.

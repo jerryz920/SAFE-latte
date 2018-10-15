@@ -1,22 +1,22 @@
 import("../safe-client.slang").
 
 defenv ServerJVM() :- "152.3.136.26:6666".
-defenv Envs() :- ":::".
+defenv ReqEnvs() :- ":::".
 defenv Self() :- "strong-1".
 
 defcall postGroupMember(?GroupId, ?SubjectId, ?Delegatable) :-
   {
-    postGroupMember($ServerJVM, $Envs, $GroupId, $SubjectId, $Delegatable).
+    postGroupMember($ServerJVM, $ReqEnvs, $GroupId, $SubjectId, $Delegatable).
   }.
 
 defcall postGroupDelegation(?GroupId, ?SubGroupId, ?Delegatable) :-
   {
-    postGroupDelegation($ServerJVM, $Envs, $GroupId, $SubGroupId, $Delegatable).
+    postGroupDelegation($ServerJVM, $ReqEnvs, $GroupId, $SubGroupId, $Delegatable).
   }.
 
 defcall updateGroupSet(?Token, ?Group) :-
   {
-    updateGroupSet($ServerJVM, $Envs, $Token, $Group).
+    updateGroupSet($ServerJVM, $ReqEnvs, $Token, $Group).
   }.
 
 nestGroup(?GroupId, ?SubGroupId, ?Delegatable) :-
@@ -41,12 +41,12 @@ delegateMembership(?GroupId, ?SubjectId, ?Delegatable) :-
 
 defcall updateNameObjectSet(?Token, ?Scid) :-
   {
-    updateNameObjectSet($ServerJVM, $Envs, $Token, $Scid).
+    updateNameObjectSet($ServerJVM, $ReqEnvs, $Token, $Scid).
   }.
 
 defcall postNameDelegation(?NameComponent, ?ChildScid, ?ParentScid) :-
   {
-    postNameDelegation($ServerJVM, $Envs, $NameComponent, $ChildScid, $ParentScid).
+    postNameDelegation($ServerJVM, $ReqEnvs, $NameComponent, $ChildScid, $ParentScid).
   }.
 
 delegateName(?NameComponent, ?DirPrincipalId, ?DirUUID, ?SubdirPrincipalId, ?SubdirUUID) :-
@@ -57,25 +57,25 @@ delegateName(?NameComponent, ?DirPrincipalId, ?DirUUID, ?SubdirPrincipalId, ?Sub
 
 defcall postDirectoryAccess(?GroupId, ?Scid) :-
   {
-    postDirectoryAccess($ServerJVM, $Envs, $GroupId, $Scid).
+    postDirectoryAccess($ServerJVM, $ReqEnvs, $GroupId, $Scid).
   }.
 
 defcall whoami() :-
   {
-    whoami($ServerJVM, $Envs).
+    whoami($ServerJVM, $ReqEnvs).
   }.
 
 defcall queryMembership(?GroupId, ?SubjectId) :-
   {
-    queryMembership($ServerJVM, $Envs, $GroupId, $SubjectId).
+    queryMembership($ServerJVM, $ReqEnvs, $GroupId, $SubjectId).
   }.
 
 defcall queryName(?RootDir, ?Name) :-
   {
-    queryName($ServerJVM, $Envs, $RootDir, $Name).
+    queryName($ServerJVM, $ReqEnvs, $RootDir, $Name).
   }.
 
 defcall accessNamedObject(?SubjectId, ?Name, ?RootDir) :-
   {
-    accessNamedObject($ServerJVM, $Envs, $SubjectId, $Name, $RootDir).
+    accessNamedObject($ServerJVM, $ReqEnvs, $SubjectId, $Name, $RootDir).
   }.
