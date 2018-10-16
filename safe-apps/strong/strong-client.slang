@@ -53,7 +53,7 @@ delegateName(?NameComponent, ?DirPrincipalId, ?DirUUID, ?SubdirPrincipalId, ?Sub
   switchSelfTo(?DirPrincipalId),
   ?Token := postNameDelegation(?NameComponent, "?SubdirPrincipalId:?SubdirUUID", "?DirPrincipalId:?DirUUID"),
   switchSelfTo(?SubdirPrincipalId),
-  updateObjectSet(?Token, "?SubdirPrincipalId:?SubdirUUID").  
+  updateNameObjectSet(?Token, "?SubdirPrincipalId:?SubdirUUID").  
 
 defcall postDirectoryAccess(?GroupId, ?Scid) :-
   {
