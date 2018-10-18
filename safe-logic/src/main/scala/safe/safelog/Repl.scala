@@ -75,7 +75,7 @@ class Repl(
     import jline.console.history.FileHistory
 
     fileName match {
-      case Some(fn) => 
+      case Some(fn) => // console reader backed by a specified history file 
         val file = Term.stripQuotes(fn)
         try {
           val fStream = this.getClass().getClassLoader().getResourceAsStream(file) match { // for externalized resources 
@@ -96,9 +96,14 @@ class Repl(
        }
       case _ => 
 	val reader = new jline.console.ConsoleReader(System.in, System.out)
-	reader.setHistory(new FileHistory(new File(System.getProperty("user.home") + "/.slang_history")))
+        val historyFile: File = new File(System.getProperty("user.home") + "/.slang_history")
+        if(historyFile.exists()) { // clear existing history if any
+          historyFile.delete()
+        }
+	reader.setHistory(new FileHistory(historyFile))
 	reader.setHistoryEnabled(true)
 	reader.setExpandEvents(false) // for ! issue
+        // reader.setBellEnabled(true)
         val completer = new StringsCompleter(replCmdSeq.asJavaCollection)
         reader.addCompleter(completer)
 	reader
@@ -323,16 +328,8 @@ class Repl(
   @annotation.tailrec
   private def readEval(reader: jline.console.ConsoleReader, promptMsg: String = "", interactiveMode: Boolean = false): Seq[Statement] = {
 
-    def updateQuery(query: Statement, stmt: Seq[Term]): Unit = {
-      if(interactiveMode && !evalReplCmd(stmt.head)) {
-	_queriesInMemory += query
-	_queriesInMemoryFresh += query
-      }
-      if(!interactiveMode) {
-	_queriesInMemory += query
-	_queriesInMemoryFresh += query
-      }
-    }
+    var end = false
+    var uncompletedLine = false
 
     if(interactiveMode) reader.setPrompt(promptMsg)
 
@@ -346,74 +343,89 @@ class Repl(
       case str => parseCmdLine(str) match {
 	case (Some(stmts), 'success) =>  // program includes all statement 
           val program = addStatementsToRepl(stmts)     // add to _replStatements
-          try {
-	    program.values().flatten.map { // TODO: Looping through program.values() for each input is not necessary
-	      case assertion @ Assertion(stmt) =>
-		if(interactiveMode && !evalReplCmd(stmt.head)) { 
-                  //println(s"readEval: done with ${stmt.head};  interactiveMode=${interactiveMode}")
-                  //scala.io.StdIn.readLine()
-                  _assertionsInMemory += assertion }
-		if(!interactiveMode) _assertionsInMemory += assertion
-                if(assertion.terms.head.id.name == "clear") throw new UnSafeException("clear")
-	      case query @ Query(stmt) => 
-		_replStatements.remove(StrLit("_query"))
-		updateQuery(query, stmt)
-	      case query @ QueryAll(stmt) => 
-		_replStatements.remove(StrLit("_query"))
-		updateQuery(query, stmt)
-	      case _ => Nil
-	    }
-          } catch {
-            case _: Throwable =>
-          }
-          // handle retractions
-          program.get(StrLit("_retraction")).map{r => r.foreach{rs => retractStatement(rs, _replStatements)}}
-
-          if(_queriesInMemoryFresh.nonEmpty) {
-	    try {
-              val programMap = _replStatements.toMap
-              val (solutions: Seq[Seq[Statement]], time: Double) = util.time(solve(programMap, _queriesInMemoryFresh.toSeq, interactiveMode), 'ms)
-              logger.info(s"Solve completed in $time milliseconds")
-              //println(s"Solve completed in $time milliseconds")
-	      if(solutions.flatten.nonEmpty) true //printLabel('success) //println(s"""All solutions: ${solutions.mkString(", ")}""") 
-	      else false // printLabel('failure)
-            } catch {
-              case ex: Throwable => 
-                printLabel('failure)
-                println(ex.toString)
-                //logger.error(ex.toString)
-            }
-	  }
-	  _inputScanned.clear()
-	  _queriesInMemoryFresh.clear()
-          updatePromptSelf()
-	  if(interactiveMode) readEval(reader, stdPromptMsg, true) else readEval(reader)
+          processShellCommands(stmts.toMap, interactiveMode)
         case (None, 'quit) => 
-	  _inputScanned.clear()
+          end = true
           if(interactiveMode) flushHistory(reader)
-          Nil
 	case (None, 'comment) =>  // a line starting with a comment
-	  _inputScanned.clear()
-	  if(interactiveMode) readEval(reader, stdPromptMsg, true) else readEval(reader)
 	case (None, 'paste) => 
-	  _inputScanned.clear()
-	  if(interactiveMode) readEval(reader, " | ", true) else readEval(reader)
+          stdPromptMsg = " | "
+          uncompletedLine = true
 	case (None, 'continuation) => // empty line or incomplete statement
-	  if(interactiveMode) readEval(reader, " | ", true) else readEval(reader)
+          stdPromptMsg = " | "
+          uncompletedLine = true
 	case (Some(stmt), 'builtIn) =>  // is it a builtIn? // TODO:
 	  // call the appropriate builtIn function
 	  // builtInHandler()
 	  //_assertionsInMemory -= stmt
-	  _inputScanned.clear()
-	  if(interactiveMode) readEval(reader, stdPromptMsg, true) else readEval(reader)
         case (_, 'failure) =>
-	  _inputScanned.clear()
-	  if(interactiveMode) readEval(reader, stdPromptMsg, true) else readEval(reader)
         case (_, 'error) =>
-	  _inputScanned.clear()
-	  if(interactiveMode) readEval(reader, stdPromptMsg, true) else readEval(reader)
+      }
+      if(!uncompletedLine) {
+        _inputScanned.clear()  
+      }
+      if(!end) {
+        if(interactiveMode) readEval(reader, stdPromptMsg, true) else readEval(reader)
+      } else {
+        Nil
       }
     }
+  }
+
+
+  def processShellCommands(commands: Map[Index, OrderedSet[Statement]], interactiveMode: Boolean = false): Unit = {
+
+    def updateQuery(query: Statement, stmt: Seq[Term]): Unit = {
+      if(interactiveMode && !evalReplCmd(stmt.head)) {
+	_queriesInMemory += query
+	_queriesInMemoryFresh += query
+      }
+      if(!interactiveMode) {
+	_queriesInMemory += query
+	_queriesInMemoryFresh += query
+      }
+    }
+
+    try{
+      commands.values().flatten.map {
+         case assertion @ Assertion(stmt) =>
+           if(interactiveMode && !evalReplCmd(stmt.head)) { 
+             //println(s"readEval: done with ${stmt.head};  interactiveMode=${interactiveMode}")
+             //scala.io.StdIn.readLine()
+             _assertionsInMemory += assertion }
+           if(!interactiveMode) _assertionsInMemory += assertion
+           if(assertion.terms.head.id.name == "clear") throw new UnSafeException("clear")
+         case query @ Query(stmt) => 
+           _replStatements.remove(StrLit("_query"))
+           updateQuery(query, stmt)
+         case query @ QueryAll(stmt) => 
+           _replStatements.remove(StrLit("_query"))
+           updateQuery(query, stmt)
+         case _ => Nil
+       }
+    } catch {
+      case _: Throwable =>
+    }
+    // handle retractions
+    commands.get(StrLit("_retraction")).map{r => r.foreach{rs => retractStatement(rs, _replStatements)}}
+
+    if(_queriesInMemoryFresh.nonEmpty) {
+      try {
+        val programMap = _replStatements.toMap
+        val (solutions: Seq[Seq[Statement]], time: Double) = util.time(solve(programMap, _queriesInMemoryFresh.toSeq, interactiveMode), 'ms)
+        logger.info(s"Solve completed in $time milliseconds")
+        //println(s"Solve completed in $time milliseconds")
+        if(solutions.flatten.nonEmpty) true //printLabel('success) //println(s"""All solutions: ${solutions.mkString(", ")}""") 
+        else false // printLabel('failure)
+      } catch {
+        case ex: Throwable => 
+          printLabel('failure)
+          println(ex.toString)
+          //logger.error(ex.toString)
+      }
+    }
+    _queriesInMemoryFresh.clear()
+    updatePromptSelf()
   }
 
   def retractStatement(
