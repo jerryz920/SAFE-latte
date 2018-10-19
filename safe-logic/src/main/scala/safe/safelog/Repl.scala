@@ -192,6 +192,21 @@ class Repl(
       _replStatements.remove(cmd.primaryIndex)
       true
 
+    case Structure(StrLit("runShellCmds"), Seq(Constant(StrLit(file), _, _, _)), _, _, _) => 
+      val p = Repl.expandPathname(file)
+      val source = scala.io.Source.fromFile(p)
+      val _inputScanned = source.getLines.mkString("\n")
+        _inputScanned.toString match {
+          case str => parseCmdLine(str) match {
+	    case (Some(stmts), 'success) =>  // program includes all statement 
+              val program = addStatementsToRepl(stmts)     // add to _replStatements
+              processShellCommands(stmts.toMap)
+            case _ => // ToDo
+          }
+        }
+      _replStatements.remove(cmd.primaryIndex)
+      true
+
     case Constant(StrLit("env"), _, _, _) | Structure(StrLit("env"), Nil, _, _, _) =>
       envContext.foreach{ case (k, v) if v.isInstanceOf[Constant] => println(s"${k.name}=${v.asInstanceOf[Constant].id.name}") }
       _replStatements.remove(cmd.primaryIndex)
