@@ -142,199 +142,178 @@ class Repl(
     compileAndLink(pathname)
   }
 
-  private def evalReplCmd(cmd: Term): Boolean = cmd match {
+  private def evalReplCmd(cmd: Term): Boolean = {
+    var isReplBuiltin = true
 
-    case Structure(StrLit("_is"), (v @ Variable(StrLit(vname), _, _, _)) +: rightterm +: Nil, _, _, _) => 
-      //println(s"Set ${vname} to ${rightterm}.  rightterm.getClass=${rightterm.getClass}")      
-      //if(rightterm.isInstanceOf[Structure]) {
-      //  println(s"rightterm.id=${rightterm.asInstanceOf[Structure].id}")
-      //  println(s"rightterm.terms=${rightterm.asInstanceOf[Structure].terms}")
-      //}
-      //val rightval = solveAQuery(Query(Seq(cmd)))(envContext, Seq[Subcontext]()).map(f => f(v)) 
-      try {
-        val rightval = solveAQuery(Query(Seq(cmd)))(envContext, Seq(Subcontext("_tmp", _replStatements.toMap))).map(f => f(v)) 
-        updateEnvContext(v.simpleName, rightval.head)
-        printLabel('info) 
-        println(s"${v.simpleName.name}=${rightval.head}") //(${rightval})")
-        //println(s"envContext=${envContext}")
-      } catch {
-        case ex: Throwable =>
-           printLabel('failure)
-           println(ex.toString)
-      }
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Structure(StrLit("clear"), Seq(Constant(StrLit("env"), _, _, _)), _, _, _) => 
-      clearEnvContext()  // clear env variables
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Constant(StrLit("clear"), _, _, _) | Structure(StrLit("clear"), Nil, _, _, _) => 
-      printLabel('info); println("clear all") 
-      _assertionsInMemory.clear()
-      _queriesInMemory.clear()
-      _replStatements.clear()
-      clearEnvContext()
-      true
-
-    case Structure(StrLit("saveEnvTo"), Seq(Constant(StrLit(file), _, _, _)), _, _, _) => 
-      try {
-        val p = Repl.expandPathname(file)
-        val pw = new PrintWriter(new File(p))
-        envContext.foreach{ case (k, v) if v.isInstanceOf[Constant] => pw.write(s"""defenv ${k.name}() :- "${v.asInstanceOf[Constant].id.name}".\n""") }
-        pw.close
-      } catch {
-        case ex: Throwable =>
-           printLabel('failure)
-           println(ex.toString)
-      }
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Structure(StrLit("runShellCmds"), Seq(Constant(StrLit(file), _, _, _)), _, _, _) => 
-      val p = Repl.expandPathname(file)
-      val source = scala.io.Source.fromFile(p)
-      val _inputScanned = source.getLines.mkString("\n")
-        _inputScanned.toString match {
-          case str => parseCmdLine(str) match {
-	    case (Some(stmts), 'success) =>  // program includes all statement 
-              val program = addStatementsToRepl(stmts)     // add to _replStatements
-              processShellCommands(stmts.toMap)
-            case _ => // ToDo
-          }
+    cmd match {
+      case Structure(StrLit("_is"), (v @ Variable(StrLit(vname), _, _, _)) +: rightterm +: Nil, _, _, _) => 
+        //println(s"Set ${vname} to ${rightterm}.  rightterm.getClass=${rightterm.getClass}")      
+        //if(rightterm.isInstanceOf[Structure]) {
+        //  println(s"rightterm.id=${rightterm.asInstanceOf[Structure].id}")
+        //  println(s"rightterm.terms=${rightterm.asInstanceOf[Structure].terms}")
+        //}
+        //val rightval = solveAQuery(Query(Seq(cmd)))(envContext, Seq[Subcontext]()).map(f => f(v)) 
+        try {
+          val rightval = solveAQuery(Query(Seq(cmd)))(envContext, Seq(Subcontext("_tmp", _replStatements.toMap))).map(f => f(v)) 
+          updateEnvContext(v.simpleName, rightval.head)
+          printLabel('info) 
+          println(s"${v.simpleName.name}=${rightval.head}") //(${rightval})")
+          //println(s"envContext=${envContext}")
+        } catch {
+          case ex: Throwable =>
+             printLabel('failure)
+             println(ex.toString)
         }
-      _replStatements.remove(cmd.primaryIndex)
+
+      case Structure(StrLit("clear"), Seq(Constant(StrLit("env"), _, _, _)), _, _, _) => 
+        clearEnvContext()  // clear env variables
+
+      case Constant(StrLit("clear"), _, _, _) | Structure(StrLit("clear"), Nil, _, _, _) => 
+        printLabel('info); println("clear all") 
+        _assertionsInMemory.clear()
+        _queriesInMemory.clear()
+        _replStatements.clear()
+        clearEnvContext()
+
+      case Structure(StrLit("saveEnvTo"), Seq(Constant(StrLit(file), _, _, _)), _, _, _) => 
+        try {
+          val p = Repl.expandPathname(file)
+          val pw = new PrintWriter(new File(p))
+          envContext.foreach{ case (k, v) if v.isInstanceOf[Constant] => pw.write(s"""defenv ${k.name}() :- "${v.asInstanceOf[Constant].id.name}".\n""") }
+          pw.close
+        } catch {
+          case ex: Throwable =>
+             printLabel('failure)
+             println(ex.toString)
+        }
+
+      case Structure(StrLit("runShellCmds"), Seq(Constant(StrLit(file), _, _, _)), _, _, _) => 
+        val p = Repl.expandPathname(file)
+        val source = scala.io.Source.fromFile(p)
+        val _inputScanned = source.getLines.mkString("\n")
+          _inputScanned.toString match {
+            case str => parseCmdLine(str) match {
+              case (Some(stmts), 'success) =>  // program includes all statement 
+                val program = addStatementsToRepl(stmts)     // add to _replStatements
+                // println(s"[Repl.evalReplCmd.runShellCmds] scanned stmts: $stmts")
+                processShellCommands(stmts.toMap, true)
+              case (None, 'continuation) =>
+                println("Unexpected end of command list") 
+              case x @ _ => // no messages other than parsing error messages
+            }
+          }
+
+      case Constant(StrLit("env"), _, _, _) | Structure(StrLit("env"), Nil, _, _, _) =>
+        envContext.foreach{ case (k, v) if v.isInstanceOf[Constant] => println(s"${k.name}=${v.asInstanceOf[Constant].id.name}") }
+
+      case Constant(StrLit("pwd"), _, _, _) | Structure(StrLit("pwd"), Nil, _, _, _) => 
+        val workingDir: Path = Paths.get(".")
+        println(workingDir.toFile.getCanonicalPath)
+
+      case Constant(StrLit("ls"), _, _, _) | Structure(StrLit("ls"), Nil, _, _, _) => 
+        //printLabel('info); println("list of assertions made so far ...")
+        _assertionsInMemory.foreach(println)
+
+      case Structure(StrLit("_fact"), Variable(StrLit("$Self"), _, _, _) +: Constant(StrLit("ls"), _, _, _) +: Nil, _, _, _) 
+         | Structure(StrLit("ls"), Nil, _, _, _) => 
+        printLabel('info); println("list of assertions made so far ...")
+        _assertionsInMemory.foreach(println)
+
+      case Structure(StrLit("ls"), Seq(Constant(StrLit("all"), _, _, _)), _, _, _) => 
+        //printLabel('info); println("list of all statements made so far...")
+        _assertionsInMemory.foreach(println)
+        _retractionsInMemory.foreach(println)
+        _queriesInMemory.foreach(println)
+
+      case Structure(StrLit("ls"), Seq(Constant(StrLit("facts"), _, _, _)), _, _, _) => 
+        //printLabel('info); println("facts made so far ...")
+        _assertionsInMemory.filter(_.terms.length < 2).foreach(println)
+
+      case Structure(StrLit("ls"), Seq(Constant(StrLit("rules"), _, _, _)), _, _, _) => 
+        printLabel('info); println("rules made so far ....")
+        _assertionsInMemory.filter(_.terms.length > 1).foreach(println)
+
+      case Structure(StrLit("ls"), Seq(Constant(StrLit("queries"), _, _, _)), _, _, _) => 
+        printLabel('info); println("queries made so far ....")
+        _queriesInMemory.foreach(println)
+
+      case Structure(StrLit("ls"), Seq(Constant(StrLit("retractions"), _, _, _)), _, _, _) => 
+        printLabel('info); println("retractions made so far ....")
+        _retractionsInMemory.foreach(println)
+
+      case Constant(StrLit("help"), _, _, _) | Structure(StrLit("help"), Nil, _, _, _) => 
+        printLabel('info); println("commands list") 
+        println("help.                     display this message")
+        println("env.                      list of envs")
+        println("saveEnvTo(<file>)         save envs to a file")
+        println("pwd.                      print working directory")
+        println("import(<file>).           import file with name <file>")
+        println("ls.                       list of assertions made so far")
+        println("ls(facts).                list of facts made so far")
+        println("ls(rules).                list of rules made so far")
+        println("ls(queries).              list of queries made so far")
+        println("ls(retractions).          list of retractions made so far")
+        println("ls(all).                  list of all statements made so far")
+        println("q().                      quit the interpreter")
+
+      case Structure(StrLit("import"), xterms, _, _, _) => 
+        val (filePathname, subjectSha) = xterms match {
+           case Seq(Constant(filePathname, _, _, _)) => (filePathname, "")
+           case Seq(Constant(filePathname, _, _, _), Constant(sub, _, _, _)) => (filePathname, sub)
+        }
+        printLabel('info); println(s"importing file ${filePathname.name} ...") 
+        //println(s"cmd.primaryIndex=${cmd.primaryIndex} \n  cmd.secondaryIndex=${cmd.secondaryIndex}")
+        //_replStatements.remove(cmd.primaryIndex) // remove this import from cache to avoid unneeded recursion
+        //_replStatements.remove(cmd.secondaryIndex)
+        //_replStatements.keySet.foreach { k => println(s"index: ${k}  \n  statements: ${_replStatements(k)} \n ") }
+        //scala.io.StdIn.readLine()
+
+        var importedProgram = Map[Index, OrderedSet[Statement]]()
+        try {
+          val file = filePathname.name
+          //val source = io.Source.fromFile(file).getLines.toList.mkString("\n") 
+          //val fStream = new java.io.InputStreamReader(new java.io.FileInputStream(file))
+          //val fStream = new java.io.InputStreamReader(this.getClass().getClassLoader().getResourceAsStream(file))
+          //val (knowledgeBase, time) = util.time(parse(fStream))
+
+          //val (knowledgeBase, time) = util.time(parse(source))
+          val (importedProgram, time) = util.time( importProgram( Repl.expandPathname(file) )  )
+          addStatementsToRepl(importedProgram)  // Add statements to Repl cache
+          logger.info(s"Time for import is $time seconds")
+          println("Imported in %f seconds".format(time))
+        } catch {
+          case ex: Exception =>  
+            println(s"Failed to parse ${filePathname.name}: ${ex}")
+            return true
+        }
+        importedProgram.values().flatten.foreach {
+          case s @ Assertion(stmt) => stmt.head match {
+             case Structure(StrLit("import"), _, _, _, _) => 
+               // evalReplCmd(stmt.head)
+               println("[" + Console.RED + "Unexpected import" + Console.RESET + "] " + s) 
+             case _ => _assertionsInMemory += s
+          }
+          case s @ Retraction(stmt) => _retractionsInMemory += s
+          case s @ Query(stmt) => _queriesInMemory += s
+          case s @ QueryAll(stmt) => _queriesInMemory += s
+          case x => println(s"Repl: Something is malformed during parsing, $x")
+        }
+
+      case Structure(StrLit("trace"), Seq(Constant(StrLit("on"), _, _, _)), _, _, _) => printLabel('info); println("starting the trace ...")
+        //env._trace = true
+
+      case Structure(StrLit("trace"), Seq(Constant(StrLit("off"), _, _, _)), _, _, _) => printLabel('info); println("trace is off ...") 
+        //env._trace = false
+
+      case _ => isReplBuiltin = false
+    }
+   
+    if(isReplBuiltin) { // already executed; remove the cmd
+      _replStatements.remove(cmd.primaryIndex) 
       true
-
-    case Constant(StrLit("env"), _, _, _) | Structure(StrLit("env"), Nil, _, _, _) =>
-      envContext.foreach{ case (k, v) if v.isInstanceOf[Constant] => println(s"${k.name}=${v.asInstanceOf[Constant].id.name}") }
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Constant(StrLit("pwd"), _, _, _) | Structure(StrLit("pwd"), Nil, _, _, _) => 
-      val workingDir: Path = Paths.get(".")
-      println(workingDir.toFile.getCanonicalPath)
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Constant(StrLit("ls"), _, _, _) | Structure(StrLit("ls"), Nil, _, _, _) => 
-      //printLabel('info); println("list of assertions made so far ...")
-      _assertionsInMemory.foreach(println)
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Structure(StrLit("_fact"), Variable(StrLit("$Self"), _, _, _) +: Constant(StrLit("ls"), _, _, _) +: Nil, _, _, _) 
-       | Structure(StrLit("ls"), Nil, _, _, _) => 
-      printLabel('info); println("list of assertions made so far ...")
-      _assertionsInMemory.foreach(println)
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Structure(StrLit("ls"), Seq(Constant(StrLit("all"), _, _, _)), _, _, _) => 
-      //printLabel('info); println("list of all statements made so far...")
-      _assertionsInMemory.foreach(println)
-      _retractionsInMemory.foreach(println)
-      _queriesInMemory.foreach(println)
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Structure(StrLit("ls"), Seq(Constant(StrLit("facts"), _, _, _)), _, _, _) => 
-      //printLabel('info); println("facts made so far ...")
-      _assertionsInMemory.filter(_.terms.length < 2).foreach(println)
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Structure(StrLit("ls"), Seq(Constant(StrLit("rules"), _, _, _)), _, _, _) => 
-      printLabel('info); println("rules made so far ....")
-      _assertionsInMemory.filter(_.terms.length > 1).foreach(println)
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Structure(StrLit("ls"), Seq(Constant(StrLit("queries"), _, _, _)), _, _, _) => 
-      printLabel('info); println("queries made so far ....")
-      _queriesInMemory.foreach(println)
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Structure(StrLit("ls"), Seq(Constant(StrLit("retractions"), _, _, _)), _, _, _) => 
-      printLabel('info); println("retractions made so far ....")
-      _retractionsInMemory.foreach(println)
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Constant(StrLit("help"), _, _, _) | Structure(StrLit("help"), Nil, _, _, _) => 
-      printLabel('info); println("commands list") 
-      println("help.                     display this message")
-      println("env.                      list of envs")
-      println("saveEnvTo(<file>)         save envs to a file")
-      println("pwd.                      print working directory")
-      println("import(<file>).           import file with name <file>")
-      println("ls.                       list of assertions made so far")
-      println("ls(facts).                list of facts made so far")
-      println("ls(rules).                list of rules made so far")
-      println("ls(queries).              list of queries made so far")
-      println("ls(retractions).          list of retractions made so far")
-      println("ls(all).                  list of all statements made so far")
-      println("q().                      quit the interpreter")
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Structure(StrLit("import"), xterms, _, _, _) => 
-      val (filePathname, subjectSha) = xterms match {
-         case Seq(Constant(filePathname, _, _, _)) => (filePathname, "")
-         case Seq(Constant(filePathname, _, _, _), Constant(sub, _, _, _)) => (filePathname, sub)
-      }
-      printLabel('info); println(s"importing file ${filePathname.name} ...") 
-      //println(s"cmd.primaryIndex=${cmd.primaryIndex} \n  cmd.secondaryIndex=${cmd.secondaryIndex}")
-      _replStatements.remove(cmd.primaryIndex) // remove this import from cache to avoid unneeded recursion
-      //_replStatements.remove(cmd.secondaryIndex)
-      //_replStatements.keySet.foreach { k => println(s"index: ${k}  \n  statements: ${_replStatements(k)} \n ") }
-      //scala.io.StdIn.readLine()
-
-      var importedProgram = Map[Index, OrderedSet[Statement]]()
-      try {
-        val file = filePathname.name
-        //val source = io.Source.fromFile(file).getLines.toList.mkString("\n") 
-        //val fStream = new java.io.InputStreamReader(new java.io.FileInputStream(file))
-        //val fStream = new java.io.InputStreamReader(this.getClass().getClassLoader().getResourceAsStream(file))
-        //val (knowledgeBase, time) = util.time(parse(fStream))
-
-        //val (knowledgeBase, time) = util.time(parse(source))
-        val (importedProgram, time) = util.time( importProgram( Repl.expandPathname(file) )  )
-        addStatementsToRepl(importedProgram)  // Add statements to Repl cache
-        logger.info(s"Time for import is $time seconds")
-        println("Imported in %f seconds".format(time))
-      } catch {
-        case ex: Exception =>  
-          println(s"Failed to parse ${filePathname.name}: ${ex}")
-          return true
-      }
-      importedProgram.values().flatten.foreach {
-        case s @ Assertion(stmt) => stmt.head match {
-	   case Structure(StrLit("import"), _, _, _, _) => 
-             // evalReplCmd(stmt.head)
-             println("[" + Console.RED + "Unexpected import" + Console.RESET + "] " + s) 
-	   case _ => _assertionsInMemory += s
-	}
-        case s @ Retraction(stmt) => _retractionsInMemory += s
-        case s @ Query(stmt) => _queriesInMemory += s
-        case s @ QueryAll(stmt) => _queriesInMemory += s
-	case x => println(s"Repl: Something is malformed during parsing, $x")
-      }
-      true
-
-    case Structure(StrLit("trace"), Seq(Constant(StrLit("on"), _, _, _)), _, _, _) => printLabel('info); println("starting the trace ...")
-      //env._trace = true
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case Structure(StrLit("trace"), Seq(Constant(StrLit("off"), _, _, _)), _, _, _) => printLabel('info); println("trace is off ...") 
-      //env._trace = false
-      _replStatements.remove(cmd.primaryIndex)
-      true
-
-    case _ => false
+    } else {
+      false
+    }
   }
 
   //val quit = """(q(uit)?\s*(\(\))?\s*[.?]+\s*$)""".r // q. | quit. | q(). | quit(). | q? | quit? | ..
