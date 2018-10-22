@@ -49,9 +49,9 @@ class SlangRemoteCallClient(context: ActorSystem) {
   def sendSlangRequest(jvmAddr: String, method: String, speaker: Option[String], 
                        subject: Option[String], objectId: Option[String], 
                        bearerRef: Option[String], principal: Option[String],
-                       otherArgs: Seq[String]): Future[SlangCallResponse] = {
+                       methodParams: Seq[String]): Future[SlangCallResponse] = {
     val url = getURL(jvmAddr, method)
-    val content = SlangCallParams(speaker, subject, objectId, bearerRef, principal, otherArgs)
+    val content = SlangCallParams(speaker, subject, objectId, bearerRef, principal, methodParams)
     //println(s"content as SlangCallParams: ${content}")
     val response: Future[SlangCallResponse] = pipeline(Post(url, content))
     response
@@ -67,11 +67,11 @@ class SlangRemoteCallClient(context: ActorSystem) {
   def checkMarshalling(jvmAddr: String, method: String, speaker: Option[String], 
                        subject: Option[String], objectId: Option[String], 
                        bearerRef: Option[String], principal: Option[String],
-                       otherArgs: Seq[String]): Unit = {
+                       methodParams: Seq[String]): Unit = {
     import spray.httpx.marshalling._
 
     val url = getURL(jvmAddr, method)
-    val content = SlangCallParams(speaker, subject, objectId, bearerRef, principal, otherArgs)
+    val content = SlangCallParams(speaker, subject, objectId, bearerRef, principal, methodParams)
     println(s"[checkMarshalling] marshal(content)=${marshal(content)}")
 
     // Spray test spec
@@ -83,7 +83,7 @@ class SlangRemoteCallClient(context: ActorSystem) {
     //  }
     //}
     //val url = getURL(jvmAddr, method)
-    //val content = SlangParams(bearerRef, subject, principal, otherArgs)
+    //val content = SlangParams(bearerRef, subject, principal, methodParams)
     //Post("/", content) ~> route ~> check {
     //  println(s"[response] ${responseAs[String]}")
     //} 

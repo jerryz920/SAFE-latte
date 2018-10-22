@@ -366,9 +366,9 @@ trait RestfulHttpService extends Actor with HttpService with DefaultJsonProtocol
         if(nr % 1000 == 0) {
           slangPerfCollector.persist(s"slang-perf-part-${nr/1000}", allRecords=false) 
         }
-        reqContext.complete(SlangCallResponse(s"""${res}"""))
+        reqContext.complete(SlangCallResponse("succeed", s"""${res}"""))
       case Failure(res) => 
-        reqContext.complete(SlangCallResponse(s"Query failed with msg: $res"))
+        reqContext.complete(SlangCallResponse("fail", s"Query failed with msg: $res"))
     }
   }
 

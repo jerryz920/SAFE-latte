@@ -48,6 +48,7 @@ class Config(config: com.typesafe.config.Config) {
   val speaksForGuardSlangPath: String= Try(config.getString("safelang.speaksForGuardSlangPath")).getOrElse("") 
   val speaksForGuardName: String     = Try(config.getString("safelang.speaksForGuardName")).getOrElse("")
   val unsignedCertsOn: Boolean       = Try(config.getBoolean("safelang.unsignedCertsOn")).getOrElse(false) 
+  val reqEnvDelimiter: String        = Try(config.getString("safelang.reqEnvDelimiter")).getOrElse("colon")
 }
 
 object Config {

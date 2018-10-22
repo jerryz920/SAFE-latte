@@ -170,7 +170,7 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
         //_ = println("[slangInference solveSetTerm] about to eval set: " + sTerm)
 
 	result = sTerm.evalSet(setType)(envContext, slangCallClient, setCache, contextCache)
-	if(result.toString != "false")
+	if(result.toString != "_false")
       } yield((x: Term) => if(x == defhead) result else x, goals.tail)
       res
     }

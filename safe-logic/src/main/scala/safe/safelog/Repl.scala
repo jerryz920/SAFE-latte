@@ -200,6 +200,7 @@ class Repl(
               case (None, 'continuation) =>
                 println("Unexpected end of command list")
               case x @ _ => // no messages other than parsing error messages
+                            // ignores quit.
             }
           }
 
