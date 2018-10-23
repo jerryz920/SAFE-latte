@@ -21,9 +21,11 @@ H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> delegateName("part00", $P3, 
 
 TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> queryName("$P1:$UUID1", "project00/dataset00/part00")?
 
-H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> postDirectoryAccess("$P5:group0", "$P3:$UUID3")?
+H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> ?Self := $P3.
 
-H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> ?Self := $P5.
+P3@slang> postDirectoryAccess("$P5:group0", "$P3:$UUID3")?
+
+slang> ?Self := $P5.
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?Membership := postGroupMember("$P5:group0", $P5, "true")?
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?SubjectSet := updateSubjectSet($Membership).
 
