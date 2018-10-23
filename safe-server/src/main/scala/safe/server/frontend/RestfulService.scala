@@ -100,9 +100,9 @@ class RestfulService(val storeURI: String, val role: Option[String], slangFile: 
     result.onComplete {
       case Success(res) => 
         context become receive
-        reqContext.complete(SlangCallResponse(s"Import completed"))
+        reqContext.complete(SlangCallResponse("succeed", s"Import completed"))
       case Failure(res) =>
-        reqContext.complete(SlangCallResponse(s"Import failed: ${res}"))
+        reqContext.complete(SlangCallResponse("fail", s"Import failed: ${res}"))
     }
   }
 
@@ -136,7 +136,7 @@ class RestfulService(val storeURI: String, val role: Option[String], slangFile: 
       runImportSlang(args, requestTimeout, isSlangSource)
     } else {
       reqContext: RequestContext =>
-        reqContext.complete(SlangCallResponse(s"Import request from an unauthorized IP: ${ip}"))
+        reqContext.complete(SlangCallResponse("fail", s"Import request from an unauthorized IP: ${ip}"))
     } 
   }
 
@@ -147,7 +147,7 @@ class RestfulService(val storeURI: String, val role: Option[String], slangFile: 
         clientIP { (remoteAddress) =>
           val ip = remoteAddress.toString 
           println(s"params.clientIP: ${ip}")
-          importSlangFromIP(ip, params.otherValues, requestTimeout, false)
+          importSlangFromIP(ip, params.methodParams, requestTimeout, false)
         }
       }
     } ~
@@ -157,7 +157,7 @@ class RestfulService(val storeURI: String, val role: Option[String], slangFile: 
         clientIP { (remoteAddress) =>
           val ip = remoteAddress.toString
           println(s"params.clientIP: ${ip}")
-          importSlangFromIP(ip, params.otherValues, requestTimeout, true)
+          importSlangFromIP(ip, params.methodParams, requestTimeout, true)
         }
       }
     }
@@ -232,15 +232,15 @@ trait RestfulHttpService extends Actor with HttpService with DefaultJsonProtocol
       val envs = Map("Speaker" -> params.speaker, "Subject" -> params.subject, "Object" -> params.objectId,
                      "BearerRef" -> params.bearerRef,  "Principal" -> params.principal)
       //println(s"params as JSON object: ${params}")
-      logger.info(s"[guardHandlerRoute] envs=${envs}     args=${params.otherValues}")
+      logger.info(s"[guardHandlerRoute] envs=${envs}     args=${params.methodParams}")
       var ret = postedArgs
       var desc = ""
-      if(params.otherValues.size == guardArity) {
-        val (r, d) = runGuard(methodName, params.otherValues)(envs, requestTimeout)
+      if(params.methodParams.size == guardArity) {
+        val (r, d) = runGuard(methodName, params.methodParams)(envs, requestTimeout)
         ret = r
         desc = d
       } else {
-        throw UnSafeException(s"Wrong params: ${guardArity} params expected; params.otherValues.size=${params.otherValues.size}")
+        throw UnSafeException(s"Wrong params: ${guardArity} params expected; params.methodParams.size=${params.methodParams.size}")
       }
       val t = (System.nanoTime() - s)/1000
       slangPerfCollector.addRequestLatency(t, desc)
@@ -259,9 +259,9 @@ trait RestfulHttpService extends Actor with HttpService with DefaultJsonProtocol
         if(nr % 1000 == 0) {
           slangPerfCollector.persist(s"slang-perf-part-${nr/1000}", allRecords=false)
         }
-        reqContext.complete(SlangCallResponse(s"""${res}"""))
+        reqContext.complete(SlangCallResponse("succeed", s"""${res}"""))
       case Failure(res) =>
-        reqContext.complete(SlangCallResponse(s"Query failed with msg: $res"))
+        reqContext.complete(SlangCallResponse("fail", s"Query failed with msg: $res"))
     }
   }
 
