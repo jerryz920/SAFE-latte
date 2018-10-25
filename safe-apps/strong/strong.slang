@@ -1,5 +1,5 @@
 import("../safe.slang").
-import("../strong.conf.slang").
+import("strong.conf.slang").
 
 //
 // Group Authority 
