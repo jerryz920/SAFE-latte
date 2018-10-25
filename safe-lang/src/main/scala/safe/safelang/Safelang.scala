@@ -109,7 +109,7 @@ trait SafelangService extends InferenceService
    */ 
   def compileSlang(slangFile: String, fileArgs: Option[String] = None): SafeProgram = {
     val slangSource = substituteAndGetFileContent(slangFile, fileArgs)
-    val p = Paths.get(slangFile)
+    val p = Paths.get(slangFile).getParent
     compileSlangWithSource(slangSource, p)
   }
 
@@ -123,7 +123,7 @@ trait SafelangService extends InferenceService
 
   def compileAndGetGuards(slangFile: String, fileArgs: Option[String] = None): Map[String, Tuple2[Int, Seq[String]]] = {
     val slangSource = substituteAndGetFileContent(slangFile, fileArgs)
-    val p = Paths.get(slangFile)
+    val p = Paths.get(slangFile).getParent
     compileAndGetGuardsWithSource(slangSource, p)
   } 
 

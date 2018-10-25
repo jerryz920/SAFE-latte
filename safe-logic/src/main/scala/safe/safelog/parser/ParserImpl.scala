@@ -809,9 +809,10 @@ trait ParserImpl
         val s = sourcesToCompile.dequeue
         //stmts = parseFileWithProgramArgs(s, fileArgs)
         stmts = parseFileWithProgramArgs(s)
-        rPath = Paths.get(s)
+        rPath = Paths.get(s).getParent
         compiledSources += s
       }
+      // println(s"reference path: ${rPath}")
       allPrograms += stmts
       val importedFiles: Seq[String] = stmts.get(new Index("import1")) match {
         case Some(importStmts: OrderedSet[Statement]) =>
@@ -855,7 +856,7 @@ trait ParserImpl
 
   def compileAndLink(fileName: String, fileArgs: Option[String] = None): SafeProgram = {
     val fileContent: String = substituteAndGetFileContent(fileName, fileArgs)
-    val p: Path = Paths.get(fileName)
+    val p: Path = Paths.get(fileName).getParent
     compileAndLinkWithSource(fileContent, p)
   }
 
