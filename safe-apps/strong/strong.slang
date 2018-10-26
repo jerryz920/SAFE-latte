@@ -194,14 +194,21 @@ definit srnEvaluation().
 defcon accessPolicySet() :-
   spec("Policy for access control over named objects"),
   {
-    allowAccess(?Group, ?Dir) :-
+    groupAccessToDir(?Group, ?Dir) :-
       ?Principal: accessToDir(?Group, ?Dir),
       ?DRoot := rootPrincipal(?Dir),
       ?Principal = ?DRoot.
 
     approveAccess(?P, ?Name, ?RootDir) :-  
       srnNameToID(?RootDir, ?Name, ?Scid),
-      allowAccess(?Group, ?Dir),
+      groupAccessToDir(?Group, ?Dir),
+      srnIDPathTo(?Dir, ?Scid),
+      membership(?Group, ?P).
+
+
+    groupAccessToName(?P, ?Group, ?Name, ?RootDir) :-  
+      srnNameToID(?RootDir, ?Name, ?Scid),
+      groupAccessToDir(?Group, ?Dir),
       srnIDPathTo(?Dir, ?Scid),
       membership(?Group, ?P).
 
