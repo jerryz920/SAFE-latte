@@ -31,7 +31,7 @@ defguard accessNamedObjectUnderDIFC(?P, ?Name, ?RootDir) :-
   resolve(?RootDir, ?Name, ?Scid, ?LastCertToken),
   ?ObjRoot := rootPrincipal(?Scid),
   ?ObjSet := label(?ObjRoot, ?Scid),
-  ?DifcRulesRef := difcAccessPolicy(?P, ?Name, ?RootDir),
+  ?DifcRulesRef := difcAccessPolicyTargetingSet(?P, ?Name, ?RootDir),
   ?SubgoalsRef := inferQuerySet(?DifcRulesRef, ?ObjSet),
   ?SRNEvalRulesRef := label("SRN-standard-evaluation"),
   ?MembershipPolicyRef := label("standard-membership-policy"),
