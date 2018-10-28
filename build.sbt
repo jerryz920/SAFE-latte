@@ -24,15 +24,6 @@ lazy val safeDeps: Seq[ModuleID] = Seq(
   spray
 ).flatten
 
-lazy val safeAkkaDeps: Seq[ModuleID] = Seq(
-  akka,
-  crypto,
-  caching,
-  http,
-  logger,
-  multiJVM
-).flatten
-
 lazy val safeServerDeps: Seq[ModuleID] = Seq(
   akka,
   crypto,
@@ -156,7 +147,7 @@ lazy val safe = (project in file("."))
     scalacOptions          ++= commonOps,
     shellPrompt            := { s => "[" + Project.extract(s).currentProject.id + "@sbt]> " }
   )
-//).dependsOn(safelang, safelog, safeAkka)
+//).dependsOn(safelang, safelog)
 
 
 //  def getSourceDir = {
@@ -316,35 +307,3 @@ lazy val safelog = safeProject("safe-logic")
     resolvers               := commonResolvers,
     scalacOptions           ++= commonOps
   ).dependsOn(safeCache)
-
-lazy val safeAkka = safeProject("safe-akka")
-  .settings(
-    SbtMultiJvm.multiJvmSettings,
-    sbtConnectInput in run  := true,  // send stdin to children
-    fork                    := true,
-    libraryDependencies     ++= safeAkkaDeps,
-    outputStrategy          := Some(StdoutOutput), // send child output to stdout
-    resolvers               := commonResolvers,
-    scalacOptions           ++= commonOps,
-    // make sure that MultiJvm test are compiled by the default test compilation
-    compile in MultiJvm := { (compile in MultiJvm) triggeredBy (compile in Test) }.value,
-    // change the "MultiJvm" identifier
-    // multiJvmMarker in MultiJvm := "ClusterTest",
-    jvmOptions in MultiJvm := Seq("-Xmx256M"),
-    unmanagedSourceDirectories in MultiJvm := { Seq(baseDirectory(_ / "src/multi-jvm")).join }.value,  
-    // disable parallel tests 
-    parallelExecution in Test := false
-    //// make sure that MultiJvm tests are executed by the default test target,
-    //// and combine the results from ordinary test and multi-jvm tests
-    // executeTests in Test <<= (executeTests in Test, executeTests in MultiJvm) map {
-    //  case (testResults, multiNodeResults) =>
-    //    val overall =
-    //      if (testResults.overall.id < multiNodeResults.overall.id)
-    //        multiNodeResults.overall
-    //      else
-    //        testResults.overall
-    //    Tests.Output(overall,  
-    //      testResults.events ++ multiNodeResults.events,
-    //      testResults.summaries ++ multiNodeResults.summaries)
-    //}
-  ).dependsOn(safelang, safelog).configs(MultiJvm)
