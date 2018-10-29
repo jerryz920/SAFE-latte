@@ -5,6 +5,7 @@ import scala.collection.mutable.{ListBuffer, Queue, Set => MutableSet}
 import safe.safelog.AnnotationTags._
 import scala.collection.mutable.{LinkedHashSet => OrderedSet}
 import java.nio.file.{Path, Paths}
+import java.io.{File, FilenameFilter}
 
 trait ParserImpl
   extends scala.util.parsing.combinator.JavaTokenParsers 
@@ -821,12 +822,27 @@ trait ParserImpl
         case _ => Seq[String]()
       }
 
-      //println(s"""Imported files: ${importedFiles.mkString("; ")}""")
+      // println(s"""Imported files: ${importedFiles.mkString("; ")}""")
       // Processing relative paths
-      //val additionalSources = importedFiles.map( f => rPath.resolve(f).toFile.getCanonicalPath )
-      val additionalSources = importedFiles.map( f => Repl.expandPathname(f, rPath) )
+      // val additionalSources = importedFiles.map( f => rPath.resolve(f).toFile.getCanonicalPath )
+      // val additionalSources = importedFiles.map( f => Repl.expandPathname(f, rPath) )
+      val additionalSources = importedFiles.map{ imptf =>
+        val expanded: String = Repl.expandPathname(imptf, rPath)
+        val f = new File(expanded)
+        if(f.isFile) {
+          Seq(expanded)
+        } else if (f.isDirectory) {
+          f.listFiles( new FilenameFilter() {
+            def accept(p: File, name: String): Boolean = {
+              name.endsWith(".slang")
+            }
+          }).toSeq.map(jf => jf.getCanonicalPath)
+        } else {
+	  logger.warn(s"Invalid input: ${expanded}")
+          Seq[String]()
+        }
+      }.flatten
       //println(s"""Additional sources: ${additionalSources.mkString("; ")}""")
-
 
       val uncompiledAdditional = additionalSources.filter(!sourcesToCompile.contains(_)).filter(!compiledSources.contains(_))
       //println(s"""Uncompiled additional: ${uncompiledAdditional.mkString("; ")}""")
