@@ -831,7 +831,7 @@ trait ParserImpl
         val f = new File(expanded)
         if(f.isFile) {
           Seq(expanded)
-        } else if (f.isDirectory) {
+        } else if (f.isDirectory && imptf.endsWith("/")) {
           f.listFiles( new FilenameFilter() {
             def accept(p: File, name: String): Boolean = {
               name.endsWith(".slang")
