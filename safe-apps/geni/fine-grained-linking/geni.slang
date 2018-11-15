@@ -1,10 +1,8 @@
-//defenv Selfie() :-
-//  spec('Load the principal keypair'),
-//  principal($1).
+defenv Selfie() :-
+  spec('Load the principal keypair'),
+  principal($1).
 
-//defenv GeniRoot() :- u'jT9Gocrdu_KIm3Vb9eQc2a3lNWmtHp_AX1b3nD_cq-o'.
-//defenv GeniRoot() :- u'IBpC0ljPorTuO85iJ-9GIxkXyDlOHAfFwcKfGtj-h2U'.
-defenv GeniRoot() :-  'hBZy2DLtG7qF7CxdZNWusPKdDz6LbA3lBDFIBDGbHTo'.
+defenv GeniRoot() :- 'hBZy2DLtG7qF7CxdZNWusPKdDz6LbA3lBDFIBDGbHTo'.
 
 defenv MyAnchorSet() :- anchorSet().
 
@@ -25,6 +23,13 @@ defcon makeMySubjectSet() :-
     label("subject($Self)").
   }.
 
+defcon makeCapabilitySet(?Token, ?Scid) :-
+  spec("Construct a capability set for ?Scid"),
+  {
+    link($Token).
+    label("capability($Scid)").
+  }.
+
 defcon addTokenToSubjectSet(?Token) :-
   spec("Add a token to the user's subject set. Invoke after the user gets a delegation"),
   {
@@ -36,7 +41,9 @@ defpost postIdSet(?CN) :- [makeMyIdentitySet(?CN)].
 
 defpost postSubjectSet() :- [makeMySubjectSet()].
 
-defpost updateSubjectSet(?Token) :- [addTokenToSubjectSet(?Token)].
+defpost passDelegation(?Token, ?Scid) :-
+  ?CapSetRef := label($Self, "capability(?Scid)"),
+  [makeCapabilitySet(?Token, ?Scid), addTokenToSubjectSet(?CapSetRef)].
 
 
 //
@@ -109,20 +116,20 @@ defpost postCPEndorsement(?CP) :- [endorseCP(?CP)].
 
 defcon endorsePI(?PI) :-
   spec('Endorse a geni PI'),
-  ?SubjectSetRef := label($Self, "subject($Self)"),
+  ?CapSetRef := label($Self, "capability(MA)"),
   {
     geniUser($PI).
     geniPI($PI).
-    link($SubjectSetRef).
+    link($CapSetRef).
     label("pi/$PI").
   }.
 
 defcon endorseUser(?User) :- 
   spec('Endorse a geni user'),
-  ?SubjectSetRef := label($Self, "subject($Self)"),
+  ?CapSetRef := label($Self, "capability(MA)"),
   {
     geniUser($User).
-    link($SubjectSetRef).
+    link($CapSetRef).
     label("user/$User").
   }.
 
@@ -167,10 +174,10 @@ defpost postMemberSet() :-
   [memberSet()].
 
 defcon delegateProjectMembership(?SubjectId, ?ProjectId, ?Delegatable) :-
-  ?SubjectSetRef := label($Self, "subject($Self)"),
+  ?CapSetRef := label($Self, "capability(?ProjectId)"),
   {
     delegateMember($SubjectId, $ProjectId, $Delegatable).
-    link($SubjectSetRef).
+    link($CapSetRef).
     label("project membership delegation $SubjectId $ProjectId").
   }.
 
@@ -191,12 +198,12 @@ defcon projectPolicySet() :-
 definit projectPolicySet().
 
 defcon createProjectSet(?SubjectId, ?ProjectId, ?ProjectMembershipRef) :-
-  ?SubjectSetRef := label($Self, "subject($Self)"),
+  ?CapSetRef := label($Self, "capability(PA)"),
   {
     owner($SubjectId, $ProjectId).
     project($ProjectId, standard).
     link($ProjectMembershipRef).
-    link($SubjectSetRef).
+    link($CapSetRef).
     label("project/$ProjectId").
   }.
 
@@ -272,10 +279,10 @@ defpost postStandardSliceDefaultPrivilegeSet() :-
   [standardSliceDefaultPrivilegeSet()].
 
 defcon delegateSliceControl(?SubjectId, ?SliceId, ?Delegatable) :-
-  ?SubjectSetRef := label($Self, "subject($Self)"),
+  ?CapSetRef := label($Self, "capability(?SliceId)"),
   {
     delegateControl($SubjectId, $SliceId, $Delegatable).
-    link($SubjectSetRef).
+    link($CapSetRef).
     label("slice control delegation $SubjectId $SliceId").
   }.
 
@@ -305,13 +312,13 @@ definit slicePolicySet().
 //
 
 defcon createSliceSet(?SubjectId, ?SliceId, ?ProjectId, ?SliceControlRef, ?SlicePrivRef) :-
-  ?SubjectSetRef := label($Self, "subject($Self)"),
+  ?CapSetRef := label($Self, "capability(SA)"),
   {
     owner($SubjectId, $SliceId).
     slice($SliceId, $ProjectId, standard).
     link($SliceControlRef).
     link($SlicePrivRef).
-    link($SubjectSetRef).
+    link($CapSetRef).
     label("slice/$SliceId").
   }.
 

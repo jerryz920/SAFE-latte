@@ -1,12 +1,10 @@
-//defenv Selfie() :-
-//  spec('Load the principal keypair'),
-//  principal($1).
+defenv Selfie() :-
+  spec('Load the principal keypair'),
+  principal($1).
 
-//defenv GeniRoot() :- u'jT9Gocrdu_KIm3Vb9eQc2a3lNWmtHp_AX1b3nD_cq-o'.
-defenv GeniRoot() :- u'IBpC0ljPorTuO85iJ-9GIxkXyDlOHAfFwcKfGtj-h2U'.
+defenv GeniRoot() :-  'hBZy2DLtG7qF7CxdZNWusPKdDz6LbA3lBDFIBDGbHTo'.
 
-// The reference to anchorSet changes under different server principals
-//defenv MyAnchorSet() :- anchorSet().
+defenv MyAnchorSet() :- anchorSet().
 
 //
 // Identity set (apply to all participants)
@@ -271,6 +269,16 @@ defcon standardSliceDefaultPrivilegeSet() :-
 defpost postStandardSliceDefaultPrivilegeSet() :- 
   [standardSliceDefaultPrivilegeSet()].
 
+defcon delegateSliceControl(?SubjectId, ?SliceId, ?Delegatable) :-
+  ?SubjectSetRef := label($Self, "subject($Self)"),
+  {
+    delegateControl($SubjectId, $SliceId, $Delegatable).
+    link($SubjectSetRef).
+    label("slice control delegation $SubjectId $SliceId").
+  }.
+
+defpost postSliceControl(?SubjectId, ?SliceId, ?Delegatable) :- 
+  [delegateSliceControl(?SubjectId, ?SliceId, ?Delegatable)].
 
 
 //
@@ -342,7 +350,6 @@ definit aggregatePolicySet().
 defguard createProject() :-
   spec("Guard for ProjectAuthority.createProject"),
   ?PolicyRef := label("pa/standard-project-operations"),
-  ?MyAnchorSet := label("geni/anchor-set"),
   {
     link($MyAnchorSet).
     link($PolicyRef).
@@ -353,7 +360,6 @@ defguard createProject() :-
 defguard createSlice(?ProjectId) :-
   spec("Guard for SliceAuthority.createSlice"),
   ?PolicyRef := label("sa/standard-slice-operations"),
-  ?MyAnchorSet := label("geni/anchor-set"),
   {
     link($MyAnchorSet).
     link($PolicyRef).
@@ -364,7 +370,6 @@ defguard createSlice(?ProjectId) :-
 defguard createSliver(?SliceId) :-
   spec("Guard for Aggregate.createSliver"),
   ?PolicyRef := label("aggregate/standard-slice-operations"),
-  ?MyAnchorSet := label("geni/anchor-set"),
   {
     link($MyAnchorSet).
     link($PolicyRef).
@@ -406,5 +411,3 @@ defcon anchorSet() :-
     link($FedUserRef).   
     label("geni/anchor-set").
   }.
-
-definit anchorSet().
