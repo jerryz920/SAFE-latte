@@ -3,24 +3,26 @@ import("../strong/strong.slang")
 defcon difcAccessPolicyTargetingFile(?P, ?FileScid, ?Name, ?RootScid) :-
   spec('Local DIFC access policies targeting a file'),
   {
-    groupAccessToName($P, ?Group, $Name, $RootScid) :- 
+    approveAccessByMembership($P, ?Tag, $Name, $RootScid) :- 
       ?FileOwner := rootPrincipal($FileScid), 
-      ?FileOwner: accessToDir(?Group, $FileScid).
+      ?FileOwner: accessToDir(?Tag, $FileScid).
 
-    groupAccessToName($P, ?Group, $Name, $RootScid)?
+    approveAccessByMembership($P, ?Tag, $Name, $RootScid)?
 
     label('DIFCAccessPolicyTargetingFile/$FileScid').
   }.
 
 
-defcon difcAccessPolicyTargetingSet(?P, ?Name, ?RootDir) :-
+defcon difcAccessPolicyTargetingSet(?P, ?Name, ?RootScid) :-
   spec('Local DIFC access policies targeting a set'),
   {
 
-    groupAccessToName($P, ?Group, $Name, $RootScid) :- 
-      ?FileOwner: accessToDir(?Group, $FileScid).
+    approveAccessByMembership($P, ?Tag, $Name, $RootScid) :- 
+      ?FileOwner: accessToDir(?Tag, ?FileScid),
+      ?Froot := rootPrincipal(?FileScid),
+      ?FileOwner = ?Froot.
 
-    groupAccessToName($P, ?Group, $Name, $RootScid)?
+    approveAccessByMembership($P, ?Tag, $Name, $RootScid)?
 
     label('DIFCAccessPolicyTargetingSet/$RootDir/$Name').
   }.
