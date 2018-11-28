@@ -1,5 +1,6 @@
 import("../safe.slang").
 import("strong.conf.slang").
+import("../cloud-attestation/").
 
 //
 // Group Authority 
@@ -205,8 +206,8 @@ defcon accessPolicySet() :-
       srnIDPathTo(?Dir, ?Scid),
       membership(?Group, ?P).
 
-
-    groupAccessToName(?P, ?Group, ?Name, ?RootDir) :-  
+    // Approve access by specified membership    
+    approveAccessByMembership(?P, ?Group, ?Name, ?RootDir) :-  
       srnNameToID(?RootDir, ?Name, ?Scid),
       groupAccessToDir(?Group, ?Dir),
       srnIDPathTo(?Dir, ?Scid),
