@@ -48,7 +48,7 @@ class LDAPClient extends LazyLogging {
   val ldapUsername = Config.config.ldapUsername
   val ldapPassword = Config.config.ldapPassword
 
-  // println(s"ldapUsername: ${ldapUsername}    ldapPassword: ${ldapPassword}")
+  println(s"ldapUsername: ${ldapUsername}    ldapPassword: ${ldapPassword}")
  
   /**
    * An LDAP context is created under a principal using its credential. All queries
@@ -158,7 +158,7 @@ class LDAPClient extends LazyLogging {
     var ctx: LdapContext = null
     if(ldapContexts.containsKey(serveraddr)) {
       ctx = ldapContexts.get(serveraddr).get     
-    } else {  // make a context and add the context into cache for future user
+    } else {  // make a context and add the context into cache for future use
       ctx = createLDAPContext(serveraddr, ldapUsername, ldapPassword)
       logger.info(s"add context for ${serveraddr}")
       ldapContexts.put(serveraddr, ctx)

@@ -120,14 +120,14 @@ class SlangService(keypairDir: String, slangFile: String, fileArgs: Option[Strin
 
   def invoke(defx: DefCallableDesc): String = {
     // Sanity check before call
-    if(sanityCheck(defx)) return ""
+    if(!sanityCheck(defx)) return "Invalid"
     val r = executeHandler(defx.methodName, defx.args, defx.envs)
     increaseCounter() 
     r
   }
 
   def invokeAsync(defx: DefCallableDesc): Unit = {
-    if(sanityCheck(defx)) return
+    if(!sanityCheck(defx)) return
     val resultFuture = Future {
       executeHandler(defx.methodName, defx.args, defx.envs)
     }
