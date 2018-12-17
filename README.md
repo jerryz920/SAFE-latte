@@ -55,6 +55,6 @@ More information about SAFE:
   - [Containerized SAFE](docs/safe-docker.md)
 - SAFE Language (Slang)
   - [SAFE Language syntax](docs/safe-slang.md)
-  - [SAFE primer using Strong policy library](docs/safe-strong.md)
+  - [SAFE primer using Strong policy library](docs/safe-strong-hello-world.md)
   - [SAFE miscellaneous features](docs/safe-misc.md)
   - [SAFE LDAP bridge for gathering group membership assertions from CoManage](docs/safe-comanage.md)
