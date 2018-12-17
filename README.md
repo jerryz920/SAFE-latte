@@ -50,11 +50,11 @@ More information about SAFE:
 ## Additional Documentation
 
 - SAFE Implementation
-  - [SAFE implementation overview](safe-implementation.md)
-  - [Building SAFE](safe-build.md)
-  - [Containerized SAFE](safe-docker.md)
+  - [SAFE implementation overview](docs/safe-implementation.md)
+  - [Building SAFE](docs/safe-build.md)
+  - [Containerized SAFE](docs/safe-docker.md)
 - SAFE Language (Slang)
-  - [SAFE Language syntax](safe-slang.md)
-  - [SAFE primer using Strong policy library](safe-strong.md)
-  - [SAFE miscellaneous features](safe-misc.md)
-  - [SAFE LDAP bridge for gathering group membership assertions from CoManage](safe-comanage.md)
+  - [SAFE Language syntax](docs/safe-slang.md)
+  - [SAFE primer using Strong policy library](docs/safe-strong.md)
+  - [SAFE miscellaneous features](docs/safe-misc.md)
+  - [SAFE LDAP bridge for gathering group membership assertions from CoManage](docs/safe-comanage.md)
