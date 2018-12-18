@@ -1,7 +1,7 @@
 from ubuntu:18.04
 
 RUN apt-get update && apt-get install -y build-essential
-RUN apt-get install -y gdb default-jdk python git curl make htop wget libssl1.0.0 libpam0g-dev libssl-dev python-crypto
+RUN apt-get install -y gdb default-jdk python git curl make htop wget libssl1.0.0 libpam0g-dev libssl-dev python-crypto python
 
 # Install sbt
 ENV SBT_VERSION 1.2.3
@@ -16,8 +16,8 @@ RUN cd ~/SAFE && ~/sbt/bin/sbt "project safe-server" "compile"
 
 COPY start.sh     /root/
 COPY test.sh      /root/
-COPY hash_gen.py  /root/
+RUN cd ~/SAFE && cp utility/safe_keygen.sh /root/ && cp utility/hash_gen.py /root/
 
 VOLUME ["/imports", "/principalkeys"]
 ENTRYPOINT ["/bin/bash", "/root/start.sh"]
-#ENTRYPOINT ["/bin/sh", "-c"]
+#ENTRYPOINT ["/bin/sh", "-c", "tail -f /dev/null"]

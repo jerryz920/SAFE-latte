@@ -17,6 +17,7 @@ services:
       dockerfile: Dockerfile
     container_name: safe
     hostname: safe
+    command: tail -f /dev/null
     ports:
       - '7777:7777'
     environment:

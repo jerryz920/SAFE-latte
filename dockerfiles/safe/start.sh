@@ -14,7 +14,8 @@ strong_root=`python /root/hash_gen.py /principalkeys/${STRONG_ROOT_PUB}`
 sed -i "/.*defenv RootDir()/ s:.*:defenv RootDir() \:- \"${strong_root}\:root\"\.:" /imports/${SLANG_CONF}
 
 # Run
-~/sbt/bin/sbt "project safe-server" "run -f /imports/${SLANG_SCRIPT} -r safeService  -kd  /principalkeys"
+#~/sbt/bin/sbt "project safe-server" "run -f /imports/${SLANG_SCRIPT} -r safeService  -kd  /principalkeys"
+# Start the CLI
+~/sbt/bin/sbt "project safe-lang" "run" 
 
-#bash ~/test.sh
-/bin/bash
+exec "${@}"
