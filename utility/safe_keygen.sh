@@ -4,6 +4,8 @@ KEYLENGTH=4096
 CERT_SUBJECT="/C=US/ST=NC/L=ChapelHill/CN=cyberimpact.us"
 CERT_DAYS=3650
 
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
 main() {
   if [ $# -ne 3 ]; then
     usage
@@ -55,7 +57,7 @@ generate_keys() {
     openssl pkcs12 -inkey ${keyfile} -in ${certfile} -export -passout pass: -out ${pkcs12Certfile} >& /dev/null
 
     # output the hash of the generated public key
-    keyhash=`./hash_gen.py ${pubfile}`
+    keyhash=`${SCRIPTDIR}/hash_gen.py ${pubfile}`
 
     rm ${pubprivfile}
     rm ${certfile}
