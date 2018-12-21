@@ -11,10 +11,10 @@ sed -i "/.*url = \"http/ s:.*:    url = \"http\://${RIAK_IP}\:8098/types/safeset
 
 strong_root=`python /root/hash_gen.py /principalkeys/${STRONG_ROOT_PUB}`
 
-sed -i "/.*defenv RootDir()/ s:.*:defenv RootDir() \:- \"${strong_root}\:root\"\.:" /imports/strong/${SLANG_CONF}
+sed -i "/.*defenv RootDir()/ s:.*:defenv RootDir() \:- \"${strong_root}\:root\"\.:" /imports/${SLANG_CONF}
 
 # Run the strong server
-~/sbt/bin/sbt "project safe-server" "run -f /imports/strong/${SLANG_SCRIPT} -r safeService  -kd  /principalkeys"
+~/sbt/bin/sbt "project safe-server" "run -f /imports/${SLANG_SCRIPT} -r safeService  -kd  /principalkeys"
 # Start the CLI
 #~/sbt/bin/sbt "project safe-lang" "run" 
 

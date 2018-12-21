@@ -22,11 +22,9 @@ services:
       - '7777:7777'
     environment:
       - RIAK_IP=riak
-      - SLANG_SCRIPT=strong.slang
-      - SLANG_CONF=strong.conf.slang
+      - SLANG_SCRIPT=strong/strong.slang
+      - SLANG_CONF=strong/strong.conf.slang
       - STRONG_ROOT_PUB=strong-1.pub
     volumes:
-      - ../safe-apps/strong:/imports/strong
-      - ../safe-apps/safe.slang:/imports/safe.slang
-      - ../safe-apps/safe-client.slang:/imports/safe-client.slang
+      - ../safe-apps:/imports
       - ./principalkeys:/principalkeys

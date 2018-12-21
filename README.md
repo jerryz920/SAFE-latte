@@ -52,7 +52,7 @@ More information about SAFE:
 - SAFE Implementation
   - [SAFE implementation overview](docs/safe-implementation.md)
   - [Building SAFE](docs/safe-build.md)
-  - [Containerized SAFE](docs/safe-docker.md)
+  - [Containerized SAFE](docs/safe-docker.md) (SAFE in Docker and Vagrant)
 - SAFE Language (Slang)
   - [SAFE Language syntax](docs/safe-slang.md)
   - [SAFE primer using Strong policy library](docs/safe-strong-hello-world.md)
