@@ -1,7 +1,12 @@
-# In this running example, slang shell cli and safe server are running in the
-# the same container. And the server is on localhost:7777.
+# In this running example, slang shell cli and safe server are running
+# in the same container. The server is on localhost:7777.
 
-slang>import("/imports/strong-client.slang").
+# Import client slang into the shell
+slang>import("/imports/strong/strong-client.slang").
+
+
+# Designate five principals for this example and post identity set
+# for each of them.
 
 strong-1@slang> ?ServerJVM := "localhost:7777".
 strong-1@slang> ?P1 := postRawIdSet("strong-1").
@@ -18,25 +23,35 @@ strong-5@slang> ?UUID2 := "1b924687-a317-4bd7-a54f-a5a0151f49d3".
 strong-5@slang> ?UUID3 := "26dbc728-3c8d-4433-9c4b-2e065b644db5".
 strong-5@slang> ?UUID4 := "1ef7e6dd-5342-414e-8cce-54e55b3b9a83".
 
+
+# Create a namespace hierarchy rooted at $P1:$UUID1 and chain
+# delegations of sub-namespace along a path from the root to
+# $P2:$UUID2, $P3:$UUID3, and $P4:$UUID4.
+
 strong-5@slang> delegateName("project00", $P1, $UUID1, $P2, $UUID2)?
 xHjlQ-vLQREF5uwmNw4NdQPHt-TWKEKwo_oTqwtkCj0=@slang> delegateName("dataset00", $P2, $UUID2, $P3, $UUID3)?
 H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> delegateName("part00", $P3, $UUID3, $P4, $UUID4)?
 
+# Check name delegations
 TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> queryName("$P1:$UUID1", "project00/dataset00/part00")?
 
+# Tag a directory with a group privilege 
 H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> ?Self := $P3.
-
 P3@slang> postDirectoryAccess("$P5:group0", "$P3:$UUID3")?
 
+# Add a member into the group
 slang> ?Self := $P5.
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?Membership := postGroupMember("$P5:group0", $P5, "true")?
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?SubjectSet := updateSubjectSet($Membership).
 
+# Exercise access privilege using group membership
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?ReqEnvs := ":::$SubjectSet".
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?Self := $P4.
 TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> accessNamedObject($P5, "project00/dataset00", "$P1:$UUID1")?
 [satisfied] 
 TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> accessNamedObject($P5, "project00/dataset00/part00", "$P1:$UUID1")?
-[satisfied] 
+[satisfied]
+
+# Access to a directory not covered by a tag will not be authorized.
 TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> accessNamedObject($P5, "project00", "$P1:$UUID1")?
 [unsatisfied]
