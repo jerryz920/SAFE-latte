@@ -1,6 +1,5 @@
 import("../safe.slang").
 import("strong.conf.slang").
-import("../cloud-attestation/").
 
 //
 // Group Authority 

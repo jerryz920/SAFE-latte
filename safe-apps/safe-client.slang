@@ -1,6 +1,6 @@
-defcall postIdSetRaw(?CN) :-
+defcall postRawIdSet(?CN) :-
   {
-    postIdSetRaw($ServerJVM, $ReqEnvs, $CN).
+    postRawIdSet($ServerJVM, $ReqEnvs, $CN).
   }.
 
 defcall postIdSet(?CN, ?StoreAddr, ?Protocol, ?ServerID) :-

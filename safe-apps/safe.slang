@@ -8,7 +8,7 @@ defcon makeMyIdentitySet(?CN) :-
     principal($SelfKey) :- spec("identity set for $CN").
   }.
 
-defpost postIdSetRaw(?CN) :- [makeMyIdentitySet(?CN)].
+defpost postRawIdSet(?CN) :- [makeMyIdentitySet(?CN)].
 
 defcon makeMyIdentitySetWithPreferredStore(?CN, ?StoreAddr, ?Protocol, ?ServerID) :-
   spec('Construct an identity set for self'),
