@@ -6,61 +6,96 @@ The Strong policy framework permits set-based resource ownership with delegation
 
 ## Tutorial steps
 
-Ensure the SAFE docker entry point is just a shell (not starting a SAFE server), we will be using a CLI.
+Follow the instructions in [SAFE in Docker](safe-docker.md) to start up Riak and SAFE containers (and making sure 10 keys are generated for the principals in this example).
 
-Generate 10 keys with prefix 'strong-' in principalkeys/ directory under dockerfiles/:
+Login to the SAFE container (already running SAFE Strong server):
 ```
-$ cd dockerfiles
-$ mkdir principalkeys
-$ bash ../utility/safe_keygen.sh strong- 10 principalkeys
-```
-
-Using docker-compose will properly mount the volumes needed by the SAFE container.
-
-Build and start the Riak and SAFE containers:
-```
-$ cd dockerfiles
-$ docker-compose build
-$ docker-compose up
+$ docker exec -ti safe /bin/bash
+root@safe:/#
 ```
 
-slang>import("/imports/strong-client.slang").
+Start the SAFE Slang Shell inside the container - we will be issuing commands through the shell to the SAFE server running Strong to test the Strong policy. The shell can be started elsewhere as it communicated using REST with the SAFE server, this is a convenience choice for this simplified example. Change ServerJVM setting in the example below if not running from the same container.
 
+```
+$ cd root/SAFE
+$ ../sbt/bin/sbt "project safe-lang" "run"
+```
+You should see the following Slang Shell prompt. Refer to [SAFE Slang](safe-slang.md) document for details about syntax:
+```
+ldapUsername:     ldapPassword:
+Welcome to
+  ____       _      _____   _____
+ / ___|     / \    |  ___| | ____|
+ \___ \    / _ \   | |_    |  _|  
+  ___) |  / ___ \  |  _|   | |___
+ |____/  /_/   \_\ |_|     |_____|
+
+Safe Language v0.1: Fri, 21 Dec 2018 21:18:53 GMT (To quit, press Ctrl+D or q.)
+slang>
+```
+All the following commands are issued to the Slang shell (ignoring comment lines with start with '#' added for readability). To every statement the Shell should return a [satisfied] or [info] response:
+```
+# Import client slang into the shell
+# note that the container mounts SAFE/safe-apps as imports/
+slang>import("/imports/strong/strong-client.slang").
+
+# Point the shell to the SAFE server running Strong policy authorizer
 strong-1@slang> ?ServerJVM := "localhost:7777".
-strong-1@slang> ?P1 := postIdSetRaw("strong-1").
+
+# Designate five principals for this example and post identity set
+# for each of them. Their identities are known to Strong server from
+# the 10 keys we generated in principalkeys/
+# Every time we issue a ?Self := ... statement, the shell assumes the
+# identity of that principal. Strong-client script does the initial
+# ?Self := "strong-1" assignment
+
+strong-1@slang> ?P1 := postRawIdSet("strong-1").
 strong-1@slang> ?Self := "strong-2".
-strong-2@slang> ?P2 := postIdSetRaw("strong-2").
+strong-2@slang> ?P2 := postRawIdSet("strong-2").
 strong-2@slang> ?Self := "strong-3".
-strong-3@slang> ?P3 := postIdSetRaw("strong-3").
+strong-3@slang> ?P3 := postRawIdSet("strong-3").
 strong-3@slang> ?Self := "strong-4".
-strong-4@slang> ?P4 := postIdSetRaw("strong-4").
+strong-4@slang> ?P4 := postRawIdSet("strong-4").
 strong-4@slang> ?Self := "strong-5".
-strong-5@slang> ?P5 := postIdSetRaw("strong-5").
+strong-5@slang> ?P5 := postRawIdSet("strong-5").
+
+# create 4 UUIDs for namespaces
 strong-5@slang> ?UUID1 := "6ec7211c-caaf-4e00-ad36-0cd413accc91".
 strong-5@slang> ?UUID2 := "1b924687-a317-4bd7-a54f-a5a0151f49d3".
 strong-5@slang> ?UUID3 := "26dbc728-3c8d-4433-9c4b-2e065b644db5".
 strong-5@slang> ?UUID4 := "1ef7e6dd-5342-414e-8cce-54e55b3b9a83".
 
+# Create a namespace hierarchy rooted at $P1:$UUID1 and chain
+# delegations of sub-namespace along a path from the root to
+# $P2:$UUID2, $P3:$UUID3, and $P4:$UUID4.
+
 strong-5@slang> delegateName("project00", $P1, $UUID1, $P2, $UUID2)?
 xHjlQ-vLQREF5uwmNw4NdQPHt-TWKEKwo_oTqwtkCj0=@slang> delegateName("dataset00", $P2, $UUID2, $P3, $UUID3)?
 H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> delegateName("part00", $P3, $UUID3, $P4, $UUID4)?
 
+# check name delegations
 TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> queryName("$P1:$UUID1", "project00/dataset00/part00")?
 
+# Tag a directory with a group privilege
 H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> ?Self := $P3.
-
 P3@slang> postDirectoryAccess("$P5:group0", "$P3:$UUID3")?
 
+# Add a member into the group
 slang> ?Self := $P5.
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?Membership := postGroupMember("$P5:group0", $P5, "true")?
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?SubjectSet := updateSubjectSet($Membership).
 
+# Exercise access privilege using group membership
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?ReqEnvs := ":::$SubjectSet".
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?Self := $P4.
 TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> accessNamedObject($P5, "project00/dataset00", "$P1:$UUID1")?
 [satisfied]
 TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> accessNamedObject($P5, "project00/dataset00/part00", "$P1:$UUID1")?
 [satisfied]
+
+# Access to a directory not covered by a tag will not be authorized.
 TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> accessNamedObject($P5, "project00", "$P1:$UUID1")?
 [unsatisfied]
+
+```
 ~
