@@ -66,7 +66,7 @@ defcon addTokenToNameObjectSet(?Token, ?Scid) :-
 
 defpost updateNameObjectSet(?Token, ?Scid) :- [addTokenToNameObjectSet(?Token, ?Scid)].
 
-defcon createNameEntry(?NameComponent, ?ChildScid, ?ParentScid) :-
+defcon createNameEntry(?NameComponent, ?ParentScid, ?ChildScid) :-
   spec('Create a name entry'),
   ?ParentToken := label(?ParentScid),
   {
@@ -76,8 +76,8 @@ defcon createNameEntry(?NameComponent, ?ChildScid, ?ParentScid) :-
     label("$ParentScid/$NameComponent").
   }.
 
-defpost postNameDelegation(?NameComponent, ?ChildScid, ?ParentScid) :- 
-  [createNameEntry(?NameComponent, ?ChildScid, ?ParentScid)].
+defpost postNameDelegation(?NameComponent, ?ParentScid, ?ChildScid) :- 
+  [createNameEntry(?NameComponent, ?ParentScid, ?ChildScid)].
 
 
 defcon grantAccess(?Group, ?DirScid) :-

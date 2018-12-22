@@ -44,16 +44,18 @@ defcall updateNameObjectSet(?Token, ?Scid) :-
     updateNameObjectSet($ServerJVM, $ReqEnvs, $Token, $Scid).
   }.
 
-defcall postNameDelegation(?NameComponent, ?ChildScid, ?ParentScid) :-
+defcall postNameDelegation(?Name, ?ParentScid, ?ChildScid) :-
   {
-    postNameDelegation($ServerJVM, $ReqEnvs, $NameComponent, $ChildScid, $ParentScid).
+    postNameDelegation($ServerJVM, $ReqEnvs, $Name, $ParentScid, $ChildScid).
   }.
 
-delegateName(?NameComponent, ?DirPrincipalId, ?DirUUID, ?SubdirPrincipalId, ?SubdirUUID) :-
+delegateName(?Name, ?ParentScid, ?ChildScid) :-
+  ?DirPrincipalId := rootPrincipal(?ParentScid),
   switchSelfTo(?DirPrincipalId),
-  ?Token := postNameDelegation(?NameComponent, "?SubdirPrincipalId:?SubdirUUID", "?DirPrincipalId:?DirUUID"),
+  ?Token := postNameDelegation(?Name, ?ParentScid, ?ChildScid),
+  ?SubdirPrincipalId := rootPrincipal(?ChildScid),
   switchSelfTo(?SubdirPrincipalId),
-  updateNameObjectSet(?Token, "?SubdirPrincipalId:?SubdirUUID").  
+  updateNameObjectSet(?Token, ?ChildScid).
 
 defcall postDirectoryAccess(?GroupId, ?Scid) :-
   {
