@@ -857,12 +857,12 @@ trait ParserImpl
     println(s"${count-1} linked scripts:") 
     compiledSources.foreach(println(_))
 
-    val compileTime = (System.nanoTime - t0) / 1000
+    val compileTime = (System.nanoTime - t0) / 1000000
     println(s"\nTime used to compile all sources: $compileTime ms")
     //scala.io.StdIn.readLine()
 
     val monolithic: SafeProgram = linkPrograms(allPrograms)
-    val compilePlusLinkTime = (System.nanoTime - t0) / 1000
+    val compilePlusLinkTime = (System.nanoTime - t0) / 1000000
     println(s"Time used to compile and assemble all code: $compilePlusLinkTime ms")
     //scala.io.StdIn.readLine()
 

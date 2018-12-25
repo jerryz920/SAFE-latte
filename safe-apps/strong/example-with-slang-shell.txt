@@ -25,7 +25,7 @@ strong-4@slang> ?P4 := postRawIdSet("strong-4").
 strong-4@slang> ?Self := "strong-5".
 strong-5@slang> ?P5 := postRawIdSet("strong-5").
 
-# create 4 UUIDs for namespaces
+# Create 4 UUIDs for namespaces
 strong-5@slang> ?UUID1 := "6ec7211c-caaf-4e00-ad36-0cd413accc91".
 strong-5@slang> ?UUID2 := "1b924687-a317-4bd7-a54f-a5a0151f49d3".
 strong-5@slang> ?UUID3 := "26dbc728-3c8d-4433-9c4b-2e065b644db5".

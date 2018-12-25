@@ -6,7 +6,7 @@ The Strong policy framework permits set-based resource ownership with delegation
 
 ## Tutorial steps
 
-Follow the instructions in [SAFE in Docker](safe-docker.md) to start up Riak and SAFE containers (and making sure 10 keys are generated for the principals in this example).
+Follow the instructions in [SAFE in Docker](safe-docker.md) to start up Riak and SAFE containers (and making sure at least 5 keys are generated for the principals in this example).
 
 Login to the SAFE container (already running SAFE Strong server):
 ```
@@ -22,7 +22,6 @@ $ ../sbt/bin/sbt "project safe-lang" "run"
 ```
 You should see the following Slang Shell prompt. Refer to [SAFE Slang](safe-slang.md) document for details about syntax:
 ```
-ldapUsername:     ldapPassword:
 Welcome to
   ____       _      _____   _____
  / ___|     / \    |  ___| | ____|
@@ -59,7 +58,7 @@ strong-4@slang> ?P4 := postRawIdSet("strong-4").
 strong-4@slang> ?Self := "strong-5".
 strong-5@slang> ?P5 := postRawIdSet("strong-5").
 
-# create 4 UUIDs for namespaces
+# Create 4 UUIDs for namespaces
 strong-5@slang> ?UUID1 := "6ec7211c-caaf-4e00-ad36-0cd413accc91".
 strong-5@slang> ?UUID2 := "1b924687-a317-4bd7-a54f-a5a0151f49d3".
 strong-5@slang> ?UUID3 := "26dbc728-3c8d-4433-9c4b-2e065b644db5".
@@ -73,12 +72,13 @@ strong-5@slang> delegateName("project00", $P1, $UUID1, $P2, $UUID2)?
 xHjlQ-vLQREF5uwmNw4NdQPHt-TWKEKwo_oTqwtkCj0=@slang> delegateName("dataset00", $P2, $UUID2, $P3, $UUID3)?
 H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> delegateName("part00", $P3, $UUID3, $P4, $UUID4)?
 
-# check name delegations
+# Check name delegations
 TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> queryName("$P1:$UUID1", "project00/dataset00/part00")?
+[satisfied]
 
 # Tag a directory with a group privilege
 H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> ?Self := $P3.
-P3@slang> postDirectoryAccess("$P5:group0", "$P3:$UUID3")?
+6U4CtuwUY1CSJeDLVhplcdXKCmd9rGehNLi2tm0kWOc=@slang> postDirectoryAccess("$P5:group0", "$P3:$UUID3")?
 
 # Add a member into the group
 slang> ?Self := $P5.
@@ -98,4 +98,3 @@ TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> accessNamedObject($P5, "proj
 [unsatisfied]
 
 ```
-~
