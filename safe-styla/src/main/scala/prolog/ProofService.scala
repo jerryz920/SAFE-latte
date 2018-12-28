@@ -38,32 +38,32 @@ object ProofService {
   def formatProofln(s: String): String = {
     assert(s.length <= goalCharsPerLine,
              s"String too long to fit into a line: ${s}   length: ${s.length}    line limit: ${goalCharsPerLine}") 
-    println(s"s.length: ${s.length}   s: ${s}")
+    //println(s"s.length: ${s.length}   s: ${s}")
     val padding = mintUniformString(' ', goalCharsPerLine - s.length)
-    println(s"padding: ${padding}")
+    //println(s"padding: ${padding}")
     s"${linePrefixOfFrame}${s}${padding}${lineSuffixOfFrame}\n"
   }
 
   def formatProofBlock(additionalPrefix: String, content: String): String = {
     assert(additionalPrefix.length < goalCharsPerLine, s"Asked prefix too long: ${additionalPrefix.length}, maximum allowed length: ${goalCharsPerLine}")
     val numCharsPerLine = goalCharsPerLine - additionalPrefix.length
-    println(s"numCharsPerLine: ${numCharsPerLine}")
+    //println(s"numCharsPerLine: ${numCharsPerLine}")
     val numLines = content.length / numCharsPerLine + 1
-    println(s"numLines: ${numLines}")
+    //println(s"numLines: ${numLines}")
     val sb = new StringBuilder()
     var i = 0
     while (i < numLines-1) {
-      println(s"i: ${i}")
+      //println(s"i: ${i}")
       val line = content.substring(i*numCharsPerLine, (i+1)*numCharsPerLine)
-      println(s"line: ${line}")
+      //println(s"line: ${line}")
       val formatted = formatProofln(s"${additionalPrefix}${line}")
-      println(s"formatted: ${formatted}")
+      //println(s"formatted: ${formatted}")
       sb.append( formatProofln(s"${additionalPrefix}${line}") )  
       i = i + 1
     }
     // i == numLines - 1
 
-    println(s"end i: ${i}")
+    //println(s"end i: ${i}")
     sb.append( formatProofln(s"${additionalPrefix}${content.substring(i*numCharsPerLine, content.length)}") )
     sb.toString
   }
@@ -87,7 +87,7 @@ object ProofService {
   }
 
   def mintUniformString(c: Char, len: Int): String = {
-    println(s"mint a string c: ${c}   len: ${len}")
+    //println(s"mint a string c: ${c}   len: ${len}")
     val sb = new StringBuilder()
     var i = 0
     while(i < len) {
