@@ -2,7 +2,26 @@
 
 ## Overview
 
-The Strong policy framework permits set-based resource ownership with delegations over namespaces. The policy definition is located [here](../safe-apps/strong).
+The Strong policy framework permits set-based resource ownership and
+access privilege with delegations over namespaces. The namespace and
+privilege delegation are supported by a logical machinery that can
+issue and check statements about creation of a symbolic pathname for a
+resource object, and attach, delegate, and authorize resource
+privileges.
+
+A resource object is identified by a Self-Certifying Identifier
+(SCID). A Scid is a string comprised of two parts that are
+concatenated by a colon (:): the first part is the ID of the principal
+that owns the object; the second part is a label chosen by the
+principal. Based on Scids, Strong allows to assign a pathname to a
+resource object and attach policies. Resource pathnames are created
+under a many-rooted namespace hierarchy. Creation of a name entry
+ought to specify a parent scid, a child scid, and a name component. A
+pathname could originate from the namespace of any principal, but each
+name delegation requires mutual consent between the principals of the
+parent scid and child scid. 
+
+The Strong policy definition is located [here](../safe-apps/strong).
 
 ## Tutorial steps
 
