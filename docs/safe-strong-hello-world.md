@@ -9,17 +9,29 @@ issue and check statements about creation of a symbolic pathname for a
 resource object, and attach, delegate, and authorize resource
 privileges.
 
-A resource object is identified by a Self-Certifying Identifier
-(SCID). A Scid is a string comprised of two parts that are
-concatenated by a colon (:): the first part is the ID of the principal
-that owns the object; the second part is a label chosen by the
-principal. Based on Scids, Strong allows to assign a pathname to a
-resource object and attach policies. Resource pathnames are created
-under a many-rooted namespace hierarchy. Creation of a name entry
-ought to specify a parent scid, a child scid, and a name component. A
-pathname could originate from the namespace of any principal, but each
-name delegation requires mutual consent between the principals of the
-parent scid and child scid. 
+A resource object is represented by a Self-Certifying Identifier
+(SCID). A scid is a string comprised of two parts that are
+concatenated with a colon (**:**): the first part is the ID of the
+principal that owns the object; the second part is a label chosen by
+the principal for the represented object. Based on Scids, Strong
+allows assignment of a pathname to a resource object and attachment of
+policies. Typically, resource pathnames are created under a
+many-rooted naming hierarchy. Creation of a name entry ought to specify
+a parent scid, a child scid, and a name component. A pathname could
+originate from a namespace of any principal, but each name delegation
+requires mutual consent between the principals of the parent scid and
+the child scid. 
+
+Privileges and roles are groups. A privilege can be attached to a
+resource object or a directory as a group tag. A role can be assumed by
+a principal if it is part of a corresponding group. A group is also an
+object, identified by a scid and under its controlling principal. In
+particular, a group is governed by associated policy rules that
+determine who hold a group membership, who have privileges brought by
+the group, and who are able to further delegate membership and
+privilege. The Strong library provides a common set of policy rules
+for group management. Developers can extend it to incorporate
+customized policies and attach to a group.
 
 The Strong policy definition is located [here](../safe-apps/strong).
 
