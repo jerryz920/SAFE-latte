@@ -10,8 +10,8 @@ RUN apt-get install -y libpam0g-dev
 RUN apt-get install -y libssl-dev
 
 # install riak
-RUN wget http://s3.amazonaws.com/downloads.basho.com/riak/2.1/2.1.4/ubuntu/trusty/riak_2.1.4-1_amd64.deb
-RUN dpkg -i riak_2.1.4-1_amd64.deb
+RUN curl -s https://packagecloud.io/install/repositories/basho/riak/script.deb.sh | bash
+RUN apt-get install -y riak=2.2.3-1
 
 COPY start.sh   /root/
 COPY test.sh    /root/
