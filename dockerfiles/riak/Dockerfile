@@ -1,4 +1,4 @@
-from ubuntu:14.04
+from ubuntu:16.04
 
 RUN apt-get update && apt-get install -y build-essential
 RUN apt-get install -y gdb
