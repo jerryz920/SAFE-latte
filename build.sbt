@@ -169,6 +169,7 @@ lazy val safeServer = safeProject("safe-server")
     SbtMultiJvm.multiJvmSettings,
     sbtConnectInput in run  := true,   // send stdin to children
     fork                    := true,
+    logLevel                := Level.Error,
     // javaOptions in run   ++= Seq("-Xmx8G", "-XX:+UseNUMA",  "-XX:+UseCondCardMark", "-XX:-UseBiasedLocking", "-XX:+UseParallelGC", "-XX:+DTraceMonitorProbes"),
     // javaOptions in run   ++= Seq("-Xmx8G", "-XX:+UseParallelGC"),
     // javaOptions in run   ++= Seq("-Xmx8G", "-XX:+UseConcMarkSweepGC"),
@@ -283,6 +284,7 @@ lazy val safelang = safeProject("safe-lang")
   .settings( 
     sbtConnectInput in run  := true,   // send stdin to children
     fork                    := false,
+    logLevel                := Level.Error,
     javaOptions in run      += "-Xmx8G",
     // default main to start when "run" cmd is issued from sbt repl
     mainClass in (Compile, run) := Some("safe.safelang.Repl"), 
@@ -299,6 +301,7 @@ lazy val safelog = safeProject("safe-logic")
   .settings(
     sbtConnectInput in run  := true,   // send stdin to children
     fork                    := true,
+    logLevel                := Level.Error,
     // default main to start when "run" cmd is issued from sbt repl
     // mainClass in (Compile, run) := Some("safe.safelog.Repl"), 
     // libraryDependencies  ++= safeDeps,
