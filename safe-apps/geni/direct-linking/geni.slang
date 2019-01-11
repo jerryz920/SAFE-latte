@@ -394,14 +394,6 @@ defcon fedEndorsementStub() :-
     label("geni/endorse-self-stub").
   }.
 
-
-//
-// Disabled the following from anchorSet()
-// Caused infinite loops
-// ?FedEndorseRef := fedEndorsementStub(),
-//  link($FedEndorseRef).
-//
-
 defcon anchorSet() :-
   ?FedStructureRef := label("geni/trust-structure"),
   ?FedUserRef := label("geni/registered-user"),   
