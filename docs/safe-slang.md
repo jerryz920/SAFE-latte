@@ -116,6 +116,27 @@ end
 ```
 In addition, the defguard rule acts as an external entry point to the slang program, invoked via a REST API to check policy compliance (e.g., for an application-level request) when the slang interpreter is configured to run as a service. 
 
+## Context-layer Functions
+
+Slang provides several useful functions as a standard library to operate directly on slogsets. These functions include aggregate functions such as length(), max(), min(); parse functions operating on a safeset such as getName(), getSpeaker(), getSubject(), verifySignature(); functions to compute hash and load/generate keypairs; and support of speaksFor delegation. 
+
+| Function Name | Description |
+|------|-----|
+| parseCertificate(?Certificate) | parse a certificate to an internal representation and return a reference |
+| getName(?CertificateRef) | get the slogset name on the certificate |
+| getIssuer(?CertificateRef) | get the issuer’s ID on the certificate |
+| getSubject(?CertificateRef) | get the subject’s ID on the certificate |
+| verifySignature(?CertificateRef) | verify the signature on the certificate |
+| getID(?SubjectID, ?Name) | get the slogset identifier with issuer as subject id and local name as name |
+| mkLink(?Name) | get the slogset identifier with issuer as Self and local name as name |
+| import(?Name) | import the slogsets into the current proof context |
+| iName() | generate a self-certifying name; used for as- signing names to objects |
+| rootID(?IID) | extract the root ID of the self-certifying identifier, i.e., the ID of the principal which assigns the name to the object represented by this IID |
+| fetch(?BearerRef) | fetch a transitive closure of slogset ref by traversing all the links |
+| fetchSRN(?SetRef, ?SRN) | fetch a transitive closure of logic set reference by traversing the links as guided by the safe resource name (SRN) | 
+| post(?SlogSetRef) | post the set contents referenced by ?SlogSetRef and return the certificate reference |
+| for(?A, ?B, ?PC) | verify whether the subject A speaksFor the subject B given the proof context reference PC |
+
 ## Queries
 
 Guards (defguard) in Slang carry logical queries through which SAFE applications request to perform compliance check before approving an authorization.  These queries are written in standard Datalog and are evaluated against the proof context specified in a guard. The two exemplary queries below check the source IP address of a request, and the membership of a requesting principal, respectively.    
