@@ -44,7 +44,7 @@ Slang rules tagged with defun may include embedded native Scala code, which is c
 complex functions. For example, the builtins in the slang library for string interpolation, regular expressions, crypto operations, and networking are implemented using `defun` and native scala code.
 
 The function arguments are passed through the native Scala code enclosed in
-``` ``` as string arguments similar to invoking the main(args: Array[String]) function. Within the Scala code, the slang variables are accessed with the prefix $ instead of ? since all the variables are bound before invoking the native code. Following Scala conventions, the last expression is the return value of the function call, which is transformed into a constant atom in slang.
+`` ` ` `` as string arguments similar to invoking the main(args: Array[String]) function. Within the Scala code, the slang variables are accessed with the prefix $ instead of ? since all the variables are bound before invoking the native code. Following Scala conventions, the last expression is the return value of the function call, which is transformed into a constant atom in slang.
 Example:
 ```
   defun times(?X, ?Y) :-
