@@ -38,6 +38,8 @@ it is to initialize the context for a principal and will be invoked automaticall
 | {{ }} | immutable set of logic statements with a derived name | {{ [application/pdf] 0xcafe96f6e2f42}} | A content object with the name derived as hash of its set contents | 
 | def* | define rule as a function | defenv EFF :- 'const'. | $EFF will resolve to a constant value string | 
 
+Slang provides some builtin functional features for rules prefixed with keyword tags `defenv' for initializing environment variables; `defcon' for set construction; and `defguard' for externally visible entry points to the slang program for authorizing incoming requests.
+
 ## Queries
 
 Guards (defguard) in Slang carry logical queries through which SAFE applications request to perform compliance check before approving an authorization.  These queries are written in standard Datalog and are evaluated against the proof context specified in a guard. The two exemplary queries below check the source IP address of a request, and the membership of a requesting principal, respectively.    
