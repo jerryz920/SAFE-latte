@@ -222,4 +222,4 @@ denyAccessToFile("path/to/dir/f0")? =@= deny
 
 ## More Examples
 
-Working examples of SAFE policies can be found in [apps/](../apps) directory.
+Working examples of SAFE policies can be found in [safe-apps/](../safe-apps) directory.
