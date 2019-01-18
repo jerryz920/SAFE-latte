@@ -25,11 +25,11 @@ it is to initialize the context for a principal and will be invoked automaticall
 ## Common idioms
 
 | Syntax | Semantics | Example | Description |
-----------------------------------------------
+|--------|-----------|---------|-------------|
 | : | says | Bob:coworker(Charlie). | Bob says(signs) Charlie as his coworker |
-----------------
+|-----|------|-----|------|
 | := | assignment | ?Value := +(2, 4). | Evaluates the right expression and assigns the value to left variable | 
-----------------
+|----|-----|-----|-------|
 
 ## Queries
 
