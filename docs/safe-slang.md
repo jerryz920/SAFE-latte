@@ -22,6 +22,14 @@ string is the basic type. and a string can be converted to another required type
 definit will be invoked on any new server principal
 it is to initialize the context for a principal and will be invoked automatically on any new principal.
 
+## Common idioms
+
+| Syntax | Semantics | Example | Description |
+----------------------------------------------
+| : | says | Bob:coworker(Charlie). | Bob says(signs) Charlie as his coworker |
+----------------
+| := | assignment | ?Value := +(2, 4). | Evaluates the right expression and assigns the value to left variable | 
+----------------
 
 ## Queries
 
@@ -40,7 +48,3 @@ haveAcesssForTag(t1)? =@= require
 haveAccessToDir("path/to/dir")? =@= allow
 denyAccessToFile("path/to/dir/f0")? =@= deny
 ```
-
-
-
-== Slang trust script for Impact
