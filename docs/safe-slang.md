@@ -40,6 +40,21 @@ it is to initialize the context for a principal and will be invoked automaticall
 
 Slang provides some builtin functional features for rules prefixed with keyword tags `defenv` for initializing environment variables; `defcon` for set construction; and `defguard` for externally visible entry points to the slang program for authorizing incoming requests.
 
+Slang rules tagged with defun may include embedded native Scala code, which is compiled on-the-fly during load (or reload). This feature allows seamless interoperability with the host language and uses its libraries for implementing
+complex functions. For example, the builtins in the slang library for string interpolation, regular expressions, crypto operations, and networking are implemented using `defun` and native scala code.
+
+The function arguments are passed through the native Scala code enclosed in
+`` `` as string arguments similar to invoking the main(args: Array[String]) function. Within the Scala code, the slang variables are accessed with the prefix $ instead of ? since all the variables are bound before invoking the native code. Following Scala conventions, the last expression is the return value of the function call, which is transformed into a constant atom in slang.
+Example:
+```
+  defun times(?X, ?Y) :-
+    spec('multiply ?X and ?Y and return the value'),
+    `
+       $X.toInt * $Y.toInt
+    `
+end
+```
+
 ## Queries
 
 Guards (defguard) in Slang carry logical queries through which SAFE applications request to perform compliance check before approving an authorization.  These queries are written in standard Datalog and are evaluated against the proof context specified in a guard. The two exemplary queries below check the source IP address of a request, and the membership of a requesting principal, respectively.    
