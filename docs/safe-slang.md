@@ -162,6 +162,46 @@ Slang provides a set of common policy templates via libraries that are useful to
 | attach(slogSetRef:  IName, object:  IName):  IName | attach a slogset to an object; the caller must control the object|
 | checkAccessCap(subject:ID, object:  IName, priv:  Symbol, slogSetRef: Option[ID]): Boolean | check access capability ‘priv’ for a subject on an object. The subject may optionally provide the slogset reference set. |
 
+An endorsement set is identified by its issuer and an entity for which the endorsement is issued. Issuing an endorsement asserts the subject attributes. Below snippets show the slang templates for endorsement set.
+```
+defcon endorse(?Entity, ?Attr) :-
+  spec('endorse an entity ?Entity as ?Attr'),
+  ''endorse/$Entity''{
+     endorse($Entity, $Attr).
+  }
+end
+```
+
+```
+defcon endorseWithValue(?Entity, ?AttrName, ?AttrValue) :-
+  spec('endorse an entity ?Entity as ?AttrName and ?AttrValue'),
+  ''endorse/$Entity''{
+    endorse($Entity, $AttrName, $AttrValue).
+    }
+end
+```
+Instead of directly issuing the endorsements, the issuer can assert a rule for an attribute-based delegation from a trusted entity.
+```
+defcon endorseByDelegation(?TrustedRoot) :-
+  spec('delegate authority on an attribute to a trustedRoot'),
+  ''endorse/delegate/$Attr''{
+    endorse(?Entity, ?Attr) :-
+    endorse(?Delegator, $TrustedRoot),
+    ?Delegator: endorse(?Entity, ?Attr).
+  }
+end
+```
+
+A delegation set is identified by an issuer and a subject. A delegation set may grant unrestricted authority via speaksFor. Code Snippet shows the slang template for delegation set.
+```
+defcon delegate(?Subject) :-
+  spec('delegate authority to a subject'),
+  ''delegate/$Subject''{
+    speaksFor($Subject, $Self).
+  }
+end
+```
+
 ## Queries
 
 Guards (defguard) in Slang carry logical queries through which SAFE applications request to perform compliance check before approving an authorization.  These queries are written in standard Datalog and are evaluated against the proof context specified in a guard. The two exemplary queries below check the source IP address of a request, and the membership of a requesting principal, respectively.    
