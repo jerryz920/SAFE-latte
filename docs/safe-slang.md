@@ -28,6 +28,15 @@ it is to initialize the context for a principal and will be invoked automaticall
 |--------|-----------|---------|-------------|
 | : | says | Bob:coworker(Charlie). | Bob says(signs) Charlie as his coworker |
 | := | assignment | ?Value := +(2, 4). | Evaluates the right expression and assigns the value to left variable | 
+| ~ | statement suffix denoting a retraction | Bob:coworker(Charlie)~ | Bob retracts Charlie from his coworker’s list. |
+| ? | prefix of a named variable or suffix of a statement denoting a query | Bob:coworker(?Who)? | Bob queries for his coworkers list. |
+| _ | anonymous variable | Bob:coworker( )? | Bob queries for his coworkers list. |
+| $ | environment variable or a bounded variable passed from slang to the logic engine | ?Who:coworker($Self)? | List the speakers who said I am their coworker. |
+| " " | string interpolation | "My identity is $Self" | Interpolates the string by substituting the variable ?Self with a bounded value in scope. |
+|r" " | regular expression | coworker(r"^C.*?")? | List all coworkers starting with letter C |
+| { } | mutable set of logic statements with a name | 'Bob/coworkers' {Bob:coworker(Charlie).} | A credential with a local name as 'Bob/coworkers' in Bob's namespace |
+| {{ }} | immutable set of logic statements with a derived name | {{ [application/pdf] 0xcafe96f6e2f42}} | A content object with the name derived as hash of its set contents | 
+| def* | define rule as a function | defenv EFF :- 'const'. | $EFF will resolve to a constant value string | 
 
 ## Queries
 
