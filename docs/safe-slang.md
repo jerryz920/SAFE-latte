@@ -137,6 +137,31 @@ Slang provides several useful functions as a standard library to operate directl
 | post(?SlogSetRef) | post the set contents referenced by ?SlogSetRef and return the certificate reference |
 | for(?A, ?B, ?PC) | verify whether the subject A speaksFor the subject B given the proof context reference PC |
 
+## Policies
+
+Slang provides a set of common policy templates via libraries that are useful to issue certificates and write guard queries. Policy APIs for slang specified in Scala. These APIs are implemented as trust-logic functional rules in slang.
+
+| API | Description | 
+|-----|------|
+| endorse(entity:  IName, attr:  Symbol):  IName | endorse an entity by asserting an attribute |
+| endorseWithValue(entity: IName, attrName:  Symbol, attrValue:  Symbol):  IName | endorse an entity by asserting an attribute name-value pair |
+| delegate(subject:  ID): IName | issue delegation to subject via ‘speaksFor’ |
+| grantCap(subject:  ID, object:  IName, priv: Symbol):  IName | grant a capability for a subject on an object |
+| grantCapByPrefix(subject:ID, prefix:  IName, priv:Symbol):  IName |  grant a capability for a subject on all objects matching a prefix 
+| delegateCap(subject:ID, object:  SCN, priv:Symbol):  IName | grant a delegatable capability for a subject on an object |
+| delegateCapByPrefix(subject:ID, object:  SCN, priv: Symbol):  IName | grant a delegatable capability for a subject on all objects matching a prefix |
+| createGroup():  IName | create a group and return the self-certifying name that identifies the group |
+| createObject():  IName | create an object and return the self-certifying name that identifies the object |
+| createRole(roleName:Symbol, subject:  ID,slogSetRef:  IName):  IName | create a role for the subject and assign the creden- tials via ‘slogSetRef’ |
+| grantMembership(subject:ID, group:  IName):  IName | grant membership for a subject in the group |
+| attachSubGroup(targetGroup:IName, parentGroup:  SCN):IName | grant membership for ‘targetGroup’ in ‘parentGroup’ upon which the ‘targetGroup’ becomes a subset of ‘parentGroup’. The caller must control ‘parentGroup’.| 
+| resolveName(pathName:SRN): ID | resolve a multicomponent pathname, which may cross domain boundaries |
+| attachPolicy(policy:Policy, object:  IName): IName | attach a policy to an object; the caller must control the object |
+| attachCredential(credential:Credential, object: IName):  IName | attach a credential to an object; the caller must control the object |
+| attachGroup(group:  IName, object:  IName):  IName | attach a group to an object; the caller must control the object |
+| attach(slogSetRef:  IName, object:  IName):  IName | attach a slogset to an object; the caller must control the object|
+| checkAccessCap(subject:ID, object:  IName, priv:  Symbol, slogSetRef: Option[ID]): Boolean | check access capability ‘priv’ for a subject on an object. The subject may optionally provide the slogset reference set. |
+
 ## Queries
 
 Guards (defguard) in Slang carry logical queries through which SAFE applications request to perform compliance check before approving an authorization.  These queries are written in standard Datalog and are evaluated against the proof context specified in a guard. The two exemplary queries below check the source IP address of a request, and the membership of a requesting principal, respectively.    
