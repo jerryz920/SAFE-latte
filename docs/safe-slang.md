@@ -86,6 +86,36 @@ In general, the issuer/authorizer’s keypairs are declared as environment varia
 | ?Object | object IID for which the access is requested | 
 | ?BearerRef | set identifier passed by the requester |
 
+A `defcon` rule creates or modifies a named slogset and returns its value—a set constructor. These rules should end with a set of slog statements enclosed in name{}, where name is the local name (label) of the slogset assigned by its issuer. The constructed slogset is materialized as a certificate upon a subsequent export, e.g., a post to SafeSets.
+The slogset statements may contain some predefined predicates such as link/1, subject/2, issuer/3, validity/3, signatureAlgorithm/1, which are metapredicates that are interpreted by slang for encoding slogsets as certificates. In particular, link is useful to reference another logic set. 
+
+Example:
+```
+  defenv Charlie :- 'hash-of-Charlie-PK'.
+  defcon makeSlogSet() :-
+    spec('create a simple set with a local name coworker'),
+    "endorse/$Charlie"{ // the local name of this slogset 'endorse/Charlie'
+       endorse("$Charlie", coworker).
+       mkLink("controls/coworker-group").
+    }
+end
+```
+
+A `defguard` rule is where the guard queries are defined and access-check operations are performed. The rule imports the assembled proof context for each query through the import predicate, which takes a set reference as an argument, and performs certified evaluation through slog.
+Example:
+```
+  defguard authorizer(?Subject, ?Object, ?Priv) :-
+    spec('guard to check the authorization access for the subject'),
+    ?Controller := rootID(?Object),
+    ?ProofContext := fetch("?Controller:controls/?Object"),
+  {
+     import("$ProofContext").
+     grant($Subject, $Object, $Priv)?
+  }
+end
+```
+In addition, the defguard rule acts as an external entry point to the slang program, invoked via a REST API to check policy compliance (e.g., for an application-level request) when the slang interpreter is configured to run as a service. 
+
 ## Queries
 
 Guards (defguard) in Slang carry logical queries through which SAFE applications request to perform compliance check before approving an authorization.  These queries are written in standard Datalog and are evaluated against the proof context specified in a guard. The two exemplary queries below check the source IP address of a request, and the membership of a requesting principal, respectively.    
