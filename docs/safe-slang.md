@@ -40,7 +40,7 @@ it is to initialize the context for a principal and will be invoked automaticall
 
 Slang provides some builtin functional features for rules prefixed with keyword tags `defenv` for initializing environment variables; `defcon` for set construction; and `defguard` for externally visible entry points to the slang program for authorizing incoming requests.
 
-Slang rules tagged with defun may include embedded native Scala code, which is compiled on-the-fly during load (or reload). This feature allows seamless interoperability with the host language and uses its libraries for implementing
+Slang rules tagged with `defun` may include embedded native Scala code, which is compiled on-the-fly during load (or reload). This feature allows seamless interoperability with the host language and uses its libraries for implementing
 complex functions. For example, the builtins in the slang library for string interpolation, regular expressions, crypto operations, and networking are implemented using `defun` and native scala code.
 
 The function arguments are passed through the native Scala code enclosed in
@@ -54,6 +54,37 @@ Example:
     `
 end
 ```
+
+`definit` is invoked when a slang program is initially loaded. It invokes all the goals specified in its declaration.
+```
+  definit ?X := times(2, 4), times(?X, 8).
+  // Results in evaluating the goal terms giving us the
+  // result 8, 32 respectively.
+```
+
+`defenv` initializes environment variables via late binding, i.e., at the first reference to the variable. The environment variables declared through defenv are globally scoped but may be shadowed by the lexically scoped variables defined in rules with local scope.
+
+Example:
+```
+  (* Selfie initializes $Self and $SelfKey, the hash of the public key
+   * and the public key value respectively.
+   *)
+  defenv Selfie :-
+    spec('load the key pair for the issuer'),
+    principal('issuer_keyPair.pem')
+end
+```
+In general, the issuer/authorizer’s keypairs are declared as environment variables by initializing the variable Selfie. Selfie initializes Self and SelfKey, which contains the identity/fingerprint of the issuer/authorizer and public key respectively. The builtin variables in slang are described in the following table:
+
+| Variable Name | Description | 
+|------|-----|
+|?Self | hash of the issuer’s public key |
+| ?Selfie | issuer’s key pair |
+| ?SelfKey | issuer’s public key |
+| ?Subject | hash of the requester’s public key |
+| ?Speaker | hash of the server proxy (principal) that is making a request on the behalf of the subject (end-user) principal |
+| ?Object | object IID for which the access is requested | 
+| ?BearerRef | set identifier passed by the requester |
 
 ## Queries
 
