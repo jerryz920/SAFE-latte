@@ -219,3 +219,7 @@ haveAcesssForTag(t1)? =@= require
 haveAccessToDir("path/to/dir")? =@= allow
 denyAccessToFile("path/to/dir/f0")? =@= deny
 ```
+
+## More Examples
+
+Working examples of SAFE policies can be found in [apps/](../apps) directory.
