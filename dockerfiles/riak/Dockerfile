@@ -9,6 +9,9 @@ RUN apt-get install -y libssl1.0.0
 RUN apt-get install -y libpam0g-dev
 RUN apt-get install -y libssl-dev
 
+# install riak dependencies
+RUN apt-get install -y logrotate sudo libglu1-mesa libwxbase3.0-0v5 libwxgtk3.0-0v5
+
 # install riak
 # RUN curl -s https://packagecloud.io/install/repositories/basho/riak/script.deb.sh | bash
 # RUN apt-get install -y riak=2.2.3-1
