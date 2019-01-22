@@ -202,6 +202,32 @@ defcon delegate(?Subject) :-
 end
 ```
 
+## Logic Set Linking
+
+SAFE allows logic sets to be linked to one another, forming DAGs that can be exploited to e.g. supply necessary context information to guards by various principals or link elements of policies together.
+
+```
+‘ATTCPB3CQ0VMax0pFnINQk_NfK7De8EQsGupLFvUzo8'( speakerId('r0pUNKMk4YC7I1flIz19zMn3isqPedfD8pI0n6UqYO8’), subjectId('r0pUNKMk4YC7I1flIz19zMn3isqPedfD8pI0n6UqYO8’), notBefore(’Sun Aug 14 12:24:52 EDT 2016'),
+notAqer('Thu Aug 13 12:39:52 EDT 2017'), ’endorse/user/kIFJtaA8soeI...ozdUcxJF'{
+link('kGL0JxbIwn2C8z8--_gYdTYDqWD0WU6YAMOEmQ29Y80').
+geniUser(kIFJtaA8soeI...ozdUcxJF). },
+signature('ucWZE8A...ofS4294brFBk0TpvKw'), signatureAlgorithm('SHA256withRSA’)).
+```
+
+or in a defcon:
+```
+defcon endorseUser(?User) :-
+  spec(’GENI Member Authority endorses a user'),
+  ?SubjectSet := label(“subject($Self)”),
+  {
+    geniUser($User).                (* $User is a GENI user *)
+    link($SubjectSet).              (* pull in user's personal logic set *)
+    label(“endorse/user/$User”).    (* label this logic set endorse/user/$User *)
+  }.
+```
+
+Note the use of helper functions `label()` to generate a label and `link()` to retrieve a linked logic set. 
+
 ## Queries
 
 Guards (defguard) in Slang carry logical queries through which SAFE applications request to perform compliance check before approving an authorization.  These queries are written in standard Datalog and are evaluated against the proof context specified in a guard. The two exemplary queries below check the source IP address of a request, and the membership of a requesting principal, respectively.    
