@@ -120,7 +120,7 @@ defpost postProposalApproval(?Project) :- [approveProposal(?Project)].
 //
 
 defcon approveIRB(?Project) :-
-  spec("A institution approves an IRB."),
+  spec("An institution approves an IRB."),
   {
     subject($Subject, $BearerRef).
     approvedIRB($Project).
@@ -129,6 +129,15 @@ defcon approveIRB(?Project) :-
 
 defpost postIRBApproval(?Project) :- [approveIRB(?Project)]. 
 
+defcon workflowPolicySet(?WorkflowID, ?TermID) :- 
+  spec("Policy set for workflow"),
+  {
+    subject($Subject, $BearerRef).
+    complete(?User, $WorkflowID, ?Age) :-
+      ?User: accept($WorkflowID, $TermID),
+      ?User: register($WorkflowID, $TermID, ?Age).
+    label("workflow-policy/$WorkflowID/$TermID"). 
+  }.
 
 //
 // Infrastructure provider
