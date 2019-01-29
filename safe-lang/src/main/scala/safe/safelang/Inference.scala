@@ -71,6 +71,7 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
 
   val predef: Set[StrLit] = Set(
       StrLit("getId2"), StrLit("getId3"), StrLit("getId1")
+    , StrLit("getIdFromPub1")      // Get principal ID from key file
     , StrLit("rootId1")
     , StrLit("rootPrincipal1")
     , StrLit("computeId2")
@@ -169,7 +170,7 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
         //_ = println("[slangInference solveSetTerm] about to eval set: " + sTerm)
 
 	result = sTerm.evalSet(setType)(envContext, slangCallClient, setCache, contextCache)
-	if(result.toString != "false")
+	if(result.toString != "_false")
       } yield((x: Term) => if(x == defhead) result else x, goals.tail)
       res
     }
@@ -259,7 +260,9 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
 
       val principal: Principal = envContext.get(StrLit("Selfie")) match {
         case Some(p: Principal) => p
-        case _                  => null    // Since there is not signing key, the certificate will be posted without signature
+        case _                  => 
+          if(Config.config.unsignedCertsOn) null    // Since there is not signing key, the certificate will be posted without signature
+          else  throw UnSafeException(s"cannot sign since principal (Selfie) not defined ${envContext.keySet}") 
       }
 
       val unfoldedTerms: Seq[Term] = constantTerms.map(term => SlangTerm.unfoldSeq(term)).flatten 
@@ -952,6 +955,9 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
         val subject = Subject(args(0).toString())
         val id = subject.computeId(name = args(1).toString).value
 	Constant(StrLit(id.name), StrLit("nil"), StrLit("StrLit"), Encoding.AttrLiteral)
+      case (StrLit("getIdFromPub"), 1) =>
+        val pid = Principal.pidFromKeyFile(args(0).id.name)
+	Constant(StrLit(pid), StrLit("nil"), StrLit("StrLit"), Encoding.AttrLiteral) 
       case (StrLit("rootId"), 1) =>
         //val argArray = args(0).id.name.split(":")
 	//Constant(StrLit(s"${argArray(0)}"), StrLit("nil"), StrLit("StrLit"), Encoding.AttrLiteral)

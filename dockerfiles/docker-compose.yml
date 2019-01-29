@@ -1,0 +1,30 @@
+version: '3.3'
+services:
+
+  riak:
+    image: riak.local:latest
+    build:
+      context: ./riak/
+      dockerfile: Dockerfile
+    container_name: riak
+    hostname: riak
+    command: tail -f /dev/null
+
+  safe:
+    image: safe.local:latest
+    build:
+      context: ./safe/
+      dockerfile: Dockerfile
+    container_name: safe
+    hostname: safe
+    command: tail -f /dev/null
+    ports:
+      - '7777:7777'
+    environment:
+      - RIAK_IP=riak
+      - SLANG_SCRIPT=strong/strong.slang
+      - SLANG_CONF=strong/strong.conf.slang
+      - STRONG_ROOT_PUB=strong-1.pub
+    volumes:
+      - ../safe-apps:/imports
+      - ./principalkeys:/principalkeys

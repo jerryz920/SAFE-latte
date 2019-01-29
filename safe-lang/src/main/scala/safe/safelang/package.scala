@@ -25,8 +25,9 @@ package object safelang {
   //type SafeTable[K, V] = ConcurrentLinkedHashMap[K, V]
   //type SafeTableBuilder[K, V] = ConcurrentLinkedHashMap.Builder[K, V]
   val slangPerfCollector = new SlangPerfCollector()
-  //val REQ_ENV_DELIMITER = "|"
-  val REQ_ENV_DELIMITER = ":"
+  val REQ_ENV_DELIMITER = if(Config.config.reqEnvDelimiter == "colon") ":"
+                          else if(Config.config.reqEnvDelimiter == "pipe") "|"
+                          else ":"
 
   // Global constants for labeling queries/invokable guards
   val DEF_GUARD  = 0

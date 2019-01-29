@@ -5,6 +5,7 @@ import scala.collection.mutable.{ListBuffer, Queue, Set => MutableSet}
 import safe.safelog.AnnotationTags._
 import scala.collection.mutable.{LinkedHashSet => OrderedSet}
 import java.nio.file.{Path, Paths}
+import java.io.{File, FilenameFilter}
 
 trait ParserImpl
   extends scala.util.parsing.combinator.JavaTokenParsers 
@@ -809,9 +810,10 @@ trait ParserImpl
         val s = sourcesToCompile.dequeue
         //stmts = parseFileWithProgramArgs(s, fileArgs)
         stmts = parseFileWithProgramArgs(s)
-        rPath = Paths.get(s)
+        rPath = Paths.get(s).getParent
         compiledSources += s
       }
+      // println(s"reference path: ${rPath}")
       allPrograms += stmts
       val importedFiles: Seq[String] = stmts.get(new Index("import1")) match {
         case Some(importStmts: OrderedSet[Statement]) =>
@@ -820,11 +822,27 @@ trait ParserImpl
         case _ => Seq[String]()
       }
 
-      //println(s"""Imported files: ${importedFiles.mkString("; ")}""")
+      // println(s"""Imported files: ${importedFiles.mkString("; ")}""")
       // Processing relative paths
-      val additionalSources = importedFiles.map( f => rPath.resolve(f).toFile.getCanonicalPath )
+      // val additionalSources = importedFiles.map( f => rPath.resolve(f).toFile.getCanonicalPath )
+      // val additionalSources = importedFiles.map( f => Repl.expandPathname(f, rPath) )
+      val additionalSources = importedFiles.map{ imptf =>
+        val expanded: String = Repl.expandPathname(imptf, rPath)
+        val f = new File(expanded)
+        if(f.isFile) {
+          Seq(expanded)
+        } else if (f.isDirectory && imptf.endsWith("/")) {
+          f.listFiles( new FilenameFilter() {
+            def accept(p: File, name: String): Boolean = {
+              name.endsWith(".slang")
+            }
+          }).toSeq.map(jf => jf.getCanonicalPath)
+        } else {
+	  logger.warn(s"Invalid input: ${expanded}")
+          Seq[String]()
+        }
+      }.flatten
       //println(s"""Additional sources: ${additionalSources.mkString("; ")}""")
-
 
       val uncompiledAdditional = additionalSources.filter(!sourcesToCompile.contains(_)).filter(!compiledSources.contains(_))
       //println(s"""Uncompiled additional: ${uncompiledAdditional.mkString("; ")}""")
@@ -836,15 +854,15 @@ trait ParserImpl
     }  while(!sourcesToCompile.isEmpty)
 
     println(s"\n$count scripts in total are assembled")
-    println(s"${count-1} imported scripts:") 
+    println(s"${count-1} linked scripts:") 
     compiledSources.foreach(println(_))
 
-    val compileTime = (System.nanoTime - t0) / 1000
+    val compileTime = (System.nanoTime - t0) / 1000000
     println(s"\nTime used to compile all sources: $compileTime ms")
     //scala.io.StdIn.readLine()
 
     val monolithic: SafeProgram = linkPrograms(allPrograms)
-    val compilePlusLinkTime = (System.nanoTime - t0) / 1000
+    val compilePlusLinkTime = (System.nanoTime - t0) / 1000000
     println(s"Time used to compile and assemble all code: $compilePlusLinkTime ms")
     //scala.io.StdIn.readLine()
 
@@ -854,7 +872,7 @@ trait ParserImpl
 
   def compileAndLink(fileName: String, fileArgs: Option[String] = None): SafeProgram = {
     val fileContent: String = substituteAndGetFileContent(fileName, fileArgs)
-    val p: Path = Paths.get(fileName)
+    val p: Path = Paths.get(fileName).getParent
     compileAndLinkWithSource(fileContent, p)
   }
 
@@ -968,18 +986,22 @@ trait ParserImpl
 	  case Success(result, _) => 
 	    (Some(result), 'success)
 	  case Failure(msg, _)    => 
-	    logger.error("Parse error: " + msg)
+	    println("Parsing error: " + msg)
+	    //logger.error("Parsing error: " + msg)
 	    (None, 'failure)
 	  case Error(msg, _)      => 
-	    logger.error("Parse error: " + msg)
+	    println("Parsing error: " + msg)
+	    //logger.error("Parsing error: " + msg)
 	    (None, 'error)
 	}
       } catch {
 	case ex: ParserException => 
-	  logger.error("Parse error: " + ex)
+	  println("Parsing error: " + ex)
+	  //logger.error("Parsing error: " + ex)
 	  (None, 'error)
 	case ex: NumericException => 
-	  logger.error("Parse error: " + ex)
+	  println("Parsing error: " + ex)
+	  //logger.error("Parsing error: " + ex)
 	  (None, 'error)
       }
       case None => (None, 'continuation)

@@ -1,9 +1,11 @@
 package safe.safelang
-import safe.safelog._
-import prolog.terms.{Fun => StyFun, Const => StyConstant, Term => StyTerm}
 
 import scala.concurrent.Future
+
 import com.typesafe.scalalogging.LazyLogging
+
+import safe.safelog._
+import prolog.terms.{Fun => StyFun, Const => StyConstant, Term => StyTerm}
 
 trait SlangRemoteCallService {
   val slangCallClient: SlangRemoteCallClient
@@ -15,13 +17,13 @@ import spray.json._
  * Slangcall messages
  */
 case class SlangCallParams(speaker: Option[String], subject: Option[String], objectId: Option[String],
-                           bearerRef: Option[String], principal: Option[String], otherValues: Seq[String])
+                           bearerRef: Option[String], principal: Option[String], methodParams: Seq[String])
 
-case class SlangCallResponse(message: String)
+case class SlangCallResponse(result: String, message: String)
 
 object SlangCallMessageFormat extends DefaultJsonProtocol {
   implicit val paramsFormat = jsonFormat6(SlangCallParams)
-  implicit val repsFormat = jsonFormat1(SlangCallResponse)
+  implicit val repsFormat = jsonFormat2(SlangCallResponse)
 }
 
 /**
@@ -33,8 +35,8 @@ object SlangRemoteCallService extends LazyLogging {
     if(str.isEmpty) None else Some(str)
   }
 
-  // Structure example: method($Self, ?JVM, ?Principal, ?Envs, ?otherArg0, ?otherArg1, ...)  
-  // Envs example: [speaker]:[subject]:[object]:[bearerRef]
+  // Structure example: method($Self, ?JVM, ?Principal, ?ReqEnvs, ?arg0, ?arg1, ...)  
+  // Request envs example: [speaker]:[subject]:[object]:[bearerRef]
   def slangCall(struct: Structure, slangCallClient: SlangRemoteCallClient): Future[SlangCallResponse] = {
     if(struct.terms.size < 4) throw UnSafeException(s"Not enough args for slang call ${struct}")
     val jvmAddr: String = struct.terms(1).id.name
@@ -46,14 +48,16 @@ object SlangRemoteCallService extends LazyLogging {
     val objectId: Option[String] = stringOrNone(envs(2))
     val bearerRef: Option[String] = stringOrNone(envs(3))
     val method: String = struct.id.name 
-    val otherArgs: Seq[String] = struct.terms.drop(4).map{ t => t.id.name}
-    logger.info(s"================================== slang call: struct=${struct};  jvmAddr=${jvmAddr};  principal=${principal};  speaker=${speaker};  subject=${subject};  objectId=${objectId};  bearerRef=${bearerRef};  method=${method};  otherArgs=${otherArgs} ===========================================")
-    slangCallClient.sendSlangRequest(jvmAddr, method, speaker, subject, objectId, bearerRef, principal, otherArgs)
+    val methodParams: Seq[String] = struct.terms.drop(4).map{ t => t.id.name}
+    logger.info(s"""slang call: struct=${struct};  jvmAddr=${jvmAddr};  principal=${principal};
+                   |speaker=${speaker};  subject=${subject};  objectId=${objectId};
+                   |bearerRef=${bearerRef};  method=${method};  methodParams=${methodParams}""".stripMargin)
+    slangCallClient.sendSlangRequest(jvmAddr, method, speaker, subject, objectId, bearerRef, principal, methodParams)
   }
 
-  // StyFun format0: method(?JVM, ?Principal, ?Envs, ?otherArg0, ?otherArg1, ...)  
-  //        format1: ?Principal: method(?JVM, ?Envs, ?otherArg0, ?otherArg1, ...) // for interative slang shell 
-  // Envs example: [speaker]:[subject]:[object]:[bearerRef]
+  // StyFun format0: method(?JVM, ?Principal, ?ReqEnvs, ?arg0, ?arg1, ...)  
+  //        format1: ?Principal: method(?JVM, ?ReqEnvs, ?arg0, ?arg1, ...) // for interative slang shell 
+  // Request envs example: [speaker]:[subject]:[object]:[bearerRef]
   def slangCall(sfun: StyFun, slangCallClient: SlangRemoteCallClient): Future[SlangCallResponse] = {
     val fun = if(sfun.sym == ":" && sfun.args.size == 2) convertToStdFun(sfun) else sfun 
     if(fun.args.size < 3) throw UnSafeException(s"Not enough args for slang call ${fun} ${fun.args.size}")
@@ -67,14 +71,16 @@ object SlangRemoteCallService extends LazyLogging {
     val bearerRef: Option[String] = stringOrNone(envs(3))
     val method: String = fun.sym 
     //logger.info(s"fun.args.length=${fun.args.length}  Seq.range(0, fun.args.length -1).drop(3)=${Seq.range(0, fun.args.length -1).drop(3)}")
-    val otherArgs: Seq[String] = Seq.range(0, fun.args.length).drop(3).map{i => fun.getArg(i).toString} 
-    logger.info(s"================================== slang call (style engine): fun=${fun};  jvmAddr=${jvmAddr};  principal=${principal};  speaker=${speaker};  subject=${subject};  objectId=${objectId};  bearerRef=${bearerRef};  method=${method};  otherArgs=${otherArgs} ===========================================")
-    //println(s"================================== slang call (style engine): fun=${fun};  jvmAddr=${jvmAddr};  principal=${principal};  speaker=${speaker};  subject=${subject};  objectId=${objectId};  bearerRef=${bearerRef};  method=${method};  otherArgs=${otherArgs} ===========================================")
-    slangCallClient.sendSlangRequest(jvmAddr, method, speaker, subject, objectId, bearerRef, principal, otherArgs)
+    val methodParams: Seq[String] = Seq.range(0, fun.args.length).drop(3).map{i => fun.getArg(i).toString} 
+    logger.info(s"""slang call (style engine): fun=${fun};  jvmAddr=${jvmAddr};  principal=${principal};
+                   |speaker=${speaker};  subject=${subject};  objectId=${objectId};
+                   |bearerRef=${bearerRef};  method=${method};  methodParams=${methodParams}""".stripMargin)
+    //println(s"================================== slang call (style engine): fun=${fun};  jvmAddr=${jvmAddr};  principal=${principal};  speaker=${speaker};  subject=${subject};  objectId=${objectId};  bearerRef=${bearerRef};  method=${method};  methodParams=${methodParams} ===========================================")
+    slangCallClient.sendSlangRequest(jvmAddr, method, speaker, subject, objectId, bearerRef, principal, methodParams)
   }
 
   /**
-   * Convert a speak fun to a standard defcall fun
+   * Convert a speak fun to a standard defcall fun (defined above)
    */
   def convertToStdFun(f: StyFun): StyFun = {
     assert(f.sym == ":" && f.args.size == 2 && f.getArg(1).isInstanceOf[StyFun], s"Cannot convert ${f} to a standard defcall fun")
@@ -88,10 +94,10 @@ object SlangRemoteCallService extends LazyLogging {
 
   // Helper for per-request envs
   def parseSlangCallEnvs(envStr: String): Seq[String] = {
-    val envs = if(REQ_ENV_DELIMITER == "|") {  // Need to escape 
+    val envs = if(REQ_ENV_DELIMITER == "|") {  // Need to escape for the delimiter | 
        envStr.split(s"\\${REQ_ENV_DELIMITER}", -1) // keep the leading and trailing empty entries
-    } else {
-       envStr.split(s"${REQ_ENV_DELIMITER}", -1) // keep the leading and trailing empty entries
+    } else { // : as the delimiter
+       envStr.split(s"${REQ_ENV_DELIMITER}", -1)
     }
     if(envs.size != 4) { // we expect four envs: speaker, subject, object, bearerRef
       throw UnSafeException(s"Invalid slang call envs: ${envStr} ${envs.length} ${envs}")
@@ -159,4 +165,3 @@ object SlangRemoteCallService extends LazyLogging {
     tokensOrQueryres 
   }
 }
-

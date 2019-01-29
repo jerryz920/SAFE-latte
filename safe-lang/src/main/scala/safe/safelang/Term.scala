@@ -130,7 +130,7 @@ case class SetTerm(
         val stmts = slogset.statements.head._2 // TODO: process only the first stmt for now 
         //println(s"defcall statements: $stmts")
  
-        var respMsg = ""
+        var response = SlangCallResponse("", "")
         for(callStmt <- stmts) { // for each call stmt, send a request 
           val s = System.nanoTime
           var entrypoint = ""
@@ -154,21 +154,28 @@ case class SetTerm(
             respFuture.onFailure {
               case t => logger.error(s"defcall ${callStmt} failed: ${t.getMessage}")
             }
-            val response: SlangCallResponse = Await.result(respFuture, 500 seconds)
-            respMsg = response.message
+            response = Await.result(respFuture, 500 seconds)
           }
           val latency = (System.nanoTime -s) / 1000
           slangPerfCollector.addLatency(latency, entrypoint)
         }
         //val trimmedResp = respMsg.replaceAll("""(?m)\s+$""", "")   // trim before extracting the token
         //val tokensOrQueryres = parseSlangCallResponse(trimmedResp)  
-        logger.info(s"respMsg: $respMsg")
-        val tokensOrQueryres = parseSlangCallResponse(respMsg)
-        logger.info(s"tokensOrQueryres: ${tokensOrQueryres}")
-        //println(s"tokensOrQueryres: ${tokensOrQueryres}")
-        val defcallRes = if(tokensOrQueryres.isEmpty) Constant("false") 
-                         else tokensOrQueryres.head   
-                         // return the first token or the query results
+ 
+        val defcallRes = if(response.result == "fail") {
+                           logger.info(s"defcall failed with message: ${response.message}")
+                           Constant("_false")
+                         } else { 
+                           assert(response.result == "succeed", s"result of a non-failed response must be succeed: ${response}")
+                           val respMsg = response.message
+                           logger.info(s"defcall succeeded with message: $respMsg")
+                           val tokensOrQueryres = parseSlangCallResponse(respMsg)
+                           logger.info(s"tokensOrQueryres: ${tokensOrQueryres}")
+                           //println(s"tokensOrQueryres: ${tokensOrQueryres}")
+                           assert(!tokensOrQueryres.isEmpty, s"Unexpected empty message parsing result of a successful defcall: ${respMsg}")  
+                           tokensOrQueryres.head   
+                           // return the first token or the query results
+                         }
         defcallRes
     
       case StrLit("defcon")   => 
@@ -282,7 +289,7 @@ case class SetTerm(
           }
           res = executeDefguard(isRetry = true) // retry        
         }
-        val slogResult = if(res.flatten.isEmpty) Constant("false") else SlogResult(res.map(x => x.toSet))
+        val slogResult = if(res.flatten.isEmpty) Constant("_false") else SlogResult(res.map(x => x.toSet))
         //println("[slang Term] defguard evalSet slogResult: " + slogResult)
         //res = null
         slogResult
@@ -359,7 +366,7 @@ object SlangTerm extends safe.safelog.TermLike {
 
   override def isGrounded(term: Term): Boolean = term match {
     case c: Constant => true
-    case v: Variable => false
+    case v: Variable if v.id.name.startsWith("$") => true // env variable
     case Structure(id, terms, _, _, _) =>
       val resMap = terms.map{x => isGrounded(x)} // TODO: doing more computation than necessary
       if(resMap.contains(false)) false else true

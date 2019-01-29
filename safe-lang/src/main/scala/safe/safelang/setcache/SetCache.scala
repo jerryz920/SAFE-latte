@@ -181,10 +181,19 @@ class SetCache (localSetTable: SafeTable[SetId, SlogSet], safeSetsClient: SafeSe
     //println(s"validating set: ${slogset}")
     //if(!slogset.issuer.isDefined) { // Local slogset
     val validated: Boolean = slogset.synchronized { slogset.validated }
-    if(!slogset.issuer.isDefined || validated || !slogset.signature.isDefined || slogset.signature.get.isEmpty ) { // local slogset or verified set
+    if(!slogset.issuer.isDefined || validated || !slogset.signature.isDefined ) { // local slogset or verified set
       slogset.setValidated()
       true //throw UnSafeException(s"Validating a local slogset? Issuer is undefined: ${slogset.issuer}")
-    } else { 
+    }
+    else if (slogset.signature.get.isEmpty) {  // empty signature
+      if(Config.config.unsignedCertsOn) { // all certs must be signed 
+        logger.info(s"Unsigned certificate: ${slogset}")
+        false
+      } else { // pass unsigned cert
+        true
+      }
+    } 
+    else { 
       val idtoken = Index(slogset.issuer.get) 
       val idset: IDSet = idcache.get(idtoken)
       val speakerSubject: Subject = idset.getPrincipalSubject()

@@ -6,7 +6,6 @@ import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 
 import safe.safelog.UnSafeException
-import safe.safelang.Config
 
 import java.net.{NetworkInterface, InetAddress}
 import scala.collection.JavaConversions._
@@ -59,28 +58,25 @@ object BootService extends LazyLogging {
 
     if(argMap('help) == "true") {
       println(usage)
-    } else if(role == "safeService") {
-      startRestService(port = Some(argMap('port).toInt), masterRole = Some("safeService"), fileName = argMap('slangFile), fileArgs = argMap.get('fileArgs), numWorkers = argMap('numWorkers).toInt, httpPort = Some(argMap('httpPort).toInt), keypairDir = argMap('keyDir))
-    } else if(role == "safesetsService") {
-      startRestService(port = Some(argMap('port).toInt), masterRole = Some("safesetsService"), fileName = argMap('slangFile), fileArgs = argMap.get('fileArgs), numWorkers = argMap('numWorkers).toInt, httpPort = Some(argMap('httpPort).toInt), keypairDir = argMap('keyDir))
+    } else if(role == "safeService"  || role == "safesetsService") {
+      startRestService(port = Some(argMap('port).toInt), masterRole = Some(role), fileName = argMap('slangFile), fileArgs = argMap.get('fileArgs), numWorkers = argMap('numWorkers).toInt, httpPort = Some(argMap('httpPort).toInt), keypairDir = argMap('keyDir))
     } else {
       throw UnSafeException(s"Not yet implemented")
     }
   }
 
   def startRestService(port: Option[Int], masterRole: Option[String] = Some("safeService"), fileName: String, fileArgs: Option[String], numWorkers: Int, httpPort: Option[Int], keypairDir: String): Unit = {
-    val conf = ConfigFactory.parseString(s"akka.remote.netty.tcp.port=${port.getOrElse(0)} \n safe.service.port=${httpPort.getOrElse(0)}").withFallback(ConfigFactory.load())
+    val conf = ConfigFactory.parseString(s"akka.remote.netty.tcp.port=${port.getOrElse(0)}").withFallback(ConfigFactory.load())
 
-    //val ipAddr = conf.getString("safe.service.interface")
+    val ipAddr = Config.config.restIP
     //val interfaces = enumerationAsScalaIterator(NetworkInterface.getNetworkInterfaces).toList.filter(!_.isLoopback).filter(_.isUp)
     //val ipAddr = interfaces.head.getInterfaceAddresses.filter(_.getBroadcast != null).head.getAddress.getHostAddress.toString
-    val ipAddr = "0.0.0.0"
-    val hPort      = conf.getInt("safe.service.port")
+    
+    // Port passed in from run command override config
+    val hPort  = if(httpPort.isDefined) httpPort.get else Config.config.restPort
 
-    val storeURI = conf.getString("safe.safesets.storeURI")
-
-    import java.util.concurrent.TimeUnit
-    val requestTimeout   = Timeout(conf.getDuration("safe.service.requestTimeout", TimeUnit.SECONDS), TimeUnit.SECONDS)
+    val storeURI = Config.config.storeURI
+    val requestTimeout = Config.config.requestTimeout
 
     implicit val system = ActorSystem("SafeSystem", conf)
 

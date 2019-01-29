@@ -1,20 +1,21 @@
 package safe.safelang
 package util
 
-import model.Principal
-import safe.safelog.{SetId, StrLit}
-
 import java.io.File
 import java.io.PrintWriter
-import scala.collection.mutable.{Map => MutableMap}
-import com.typesafe.scalalogging.LazyLogging
-
-/* Crypto libraries */
 import java.security.spec._
 import javax.crypto._
 import javax.crypto.spec._
 
+import scala.collection.mutable.{Map => MutableMap}
+
+import org.apache.commons.io.FilenameUtils
+import com.typesafe.scalalogging.LazyLogging
+
+import model.Principal
+import safe.safelog.{SetId, StrLit}
 import safe.safelang.model.Identity
+
 
 trait KeyPairManager extends LazyLogging {
 
@@ -24,7 +25,7 @@ trait KeyPairManager extends LazyLogging {
   def filepathsOfDir(dirStr: String): Seq[String] = {
     val dir = new File(dirStr)
     if(dir.exists && dir.isDirectory) {
-      dir.listFiles.filter(_.isFile).toSeq.map(_.toString)
+      dir.listFiles.filter(_.isFile).toSeq.map(_.toString).filter(FilenameUtils.getExtension(_)=="key")
     } else {
       Seq[String]()
     }
@@ -62,27 +63,36 @@ trait KeyPairManager extends LazyLogging {
     loadKeyPairs(Config.config.keyPairDir)
   }
 
-  def loadKeyPairs(dir: String, nameToID: MutableMap[String, String] = MutableMap[String, String]()): MutableMap[String, Principal] = {
-    val serverPrincipalSet = MutableMap[String, Principal]()   
-    if(dir.isEmpty) return serverPrincipalSet
-    val filepaths = filepathsOfDir(dir)
-    println(s"[KeyPairManager] load key pairs from ${dir}")
-    println(s"[KeyPairManager] number of key pairs: ${filepaths.size}")
-    logger.info(s"All principals:")    
+  def loadKeyPairs(filepaths: Seq[String], nameToID: MutableMap[String, String], serverPrincipalSet: MutableMap[String, Principal]): Unit = {
+    println(s"[KeyPairManager] Number of keys: ${filepaths.size}")
+    logger.info(s"Loaded principals:")    
     var count = 0
     for(fname <- filepaths) {
       //println(s"[KeyPairManager loadKeyPairs] fname=${fname}");
       val p = Principal(pemFile = fname)
       val pid = p.pid
-      serverPrincipalSet.put(pid, p)
+      serverPrincipalSet.synchronized {
+        serverPrincipalSet.put(pid, p)
+      }
       val pname = fname.substring(fname.lastIndexOf('/')+1, fname.lastIndexOf('.'))
-      nameToID.put(pname, pid)
+      nameToID.synchronized {
+        nameToID.put(pname, pid)
+      }
       logger.info(s"${pname}: ${pid}")
       //println(s"[KeyPairManager loadKeyPairs] fname=${fname};    p.subject.id.toString=${p.subject.id.toString};    p.scid.toString=${p.scid.toString};   p.scid.speakerId.toString=${p.scid.speakerId.toString};     p.scid.name=${p.scid.name};     p=${p}")
       count += 1
       if(count % 10000 == 0)
         println(s"[KeyPairManager]  count = ${count}")
     }
+  }
+
+
+  def loadKeyPairs(dir: String, nameToID: MutableMap[String, String] = MutableMap[String, String]()): MutableMap[String, Principal] = {
+    val serverPrincipalSet = MutableMap[String, Principal]()   
+    if(dir.isEmpty) return serverPrincipalSet
+    val filepaths = filepathsOfDir(dir)
+    println(s"[KeyPairManager] Loading keys from ${dir}")
+    loadKeyPairs(filepaths, nameToID, serverPrincipalSet)
     serverPrincipalSet
   }
  

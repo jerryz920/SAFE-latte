@@ -462,7 +462,7 @@ class SlogSet (
       sig.initVerify(speaker.publicKey)
       val h: Array[Byte] = Identity.hash(setData.get.getBytes()) 
       sig.update(h)
-      val res = sig.verify(Identity.base64Decode(signature.get))
+      val res = sig.verify(Identity.base64DecodeURLSafe(signature.get))
 
       val t = (System.nanoTime -s) / 1000
       slangPerfCollector.addSetVerifyTime(t.toString, s"${label} ${setData.get.length}") // collect set verification time

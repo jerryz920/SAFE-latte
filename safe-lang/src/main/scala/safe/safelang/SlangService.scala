@@ -13,7 +13,7 @@ import com.typesafe.scalalogging.LazyLogging
 import com.google.common.net.InetAddresses
 
 /**
- * SlangService wraps up the internal working of Safelang
+ * SlangService wraps up the internal workings of Safelang
  * and exposes well-defined APIs to the outside world as
  * a standard library does. Developers who would like to
  * use Safe as a library can start with SlangService. 
@@ -120,14 +120,14 @@ class SlangService(keypairDir: String, slangFile: String, fileArgs: Option[Strin
 
   def invoke(defx: DefCallableDesc): String = {
     // Sanity check before call
-    if(sanityCheck(defx)) return ""
+    if(!sanityCheck(defx)) return "Invalid"
     val r = executeHandler(defx.methodName, defx.args, defx.envs)
     increaseCounter() 
     r
   }
 
   def invokeAsync(defx: DefCallableDesc): Unit = {
-    if(sanityCheck(defx)) return
+    if(!sanityCheck(defx)) return
     val resultFuture = Future {
       executeHandler(defx.methodName, defx.args, defx.envs)
     }

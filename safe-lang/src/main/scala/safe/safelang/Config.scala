@@ -36,7 +36,7 @@ class Config(config: com.typesafe.config.Config) {
   val perfCollectorOn: Boolean       = Try(config.getBoolean("safelang.perfCollectorOn")).getOrElse(false)
   val sslOn: Boolean                 = Try(config.getBoolean("safelang.ssl.sslOn")).getOrElse(false)
   val sslKeyStore: String            = Try(config.getString("safelang.ssl.keystorepath")).getOrElse("")
-  val keystorePasswd: String         = Try(config.getString("safelang.ssl.passwd")).getOrElse("qiangcao")
+  val keystorePasswd: String         = Try(config.getString("safelang.ssl.passwd")).getOrElse("")
   val metastore: SetStoreDesc        = SetStoreDesc(Try(config.getString("safelang.metastore.url")).getOrElse(""),
                                                     Try(config.getString("safelang.metastore.protocol")).getOrElse("http"),
                                                     Try(config.getString("safelang.metastore.serverID")).getOrElse("")
@@ -47,6 +47,8 @@ class Config(config: com.typesafe.config.Config) {
   val importGuardName: String        = Try(config.getString("safelang.importGuardName")).getOrElse("")
   val speaksForGuardSlangPath: String= Try(config.getString("safelang.speaksForGuardSlangPath")).getOrElse("") 
   val speaksForGuardName: String     = Try(config.getString("safelang.speaksForGuardName")).getOrElse("")
+  val unsignedCertsOn: Boolean       = Try(config.getBoolean("safelang.unsignedCertsOn")).getOrElse(false) 
+  val reqEnvDelimiter: String        = Try(config.getString("safelang.reqEnvDelimiter")).getOrElse("colon")
 }
 
 object Config {

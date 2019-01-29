@@ -7,7 +7,6 @@ object BuildSettings {
 
   object V {
     val akka                  = "2.3.9"
-    val apacheCodec           = "1.10"
     val build                 = "0.1-SNAPSHOT"
     val cryptoBC              = "1.51"
     val httpNing              = "1.8.7"
@@ -15,6 +14,8 @@ object BuildSettings {
     val scalac                = "2.11.7"
     val libScala              = "2.11"
     val spray                 = "1.3.3"
+    val apacheCodec           = "1.10"
+    val apacheIO              = "2.6"
     val apacheHttpClient      = "4.5.2"
     val apacheHttpAsyncClient = "4.1.2"
     //val apacheHttpClient = "4.3.6"
@@ -25,6 +26,7 @@ object BuildSettings {
     val jfiglet               = "0.0.8"
     // Need to explicitly name this, to avoid build failure.
     val javax_ws_rsapi        = "2.1"
+    val comet                 = "1.0.0"
   }
 
   val buildSettings = Seq (
@@ -55,11 +57,16 @@ object Dependencies {
   // decoders such as Base64, Hex, and URLs
   val apache = Seq(
       "commons-codec"             % "commons-codec"         % V.apacheCodec // for base 64 url safe encoding and decoding
+    , "commons-io"                % "commons-io"            % V.apacheIO
     , "org.apache.httpcomponents" % "httpclient"            % V.apacheHttpClient
     , "org.apache.httpcomponents" % "httpasyncclient"       % V.apacheHttpAsyncClient
     , "commons-validator"         % "commons-validator"     % V.apacheValidator
     //, "org.apache.cassandra"      % "cassandra-all"         % V.apacheCassandra
     , "org.apache.cassandra"      % "cassandra-all"         % V.apacheCassandra
+  )
+
+  val renci = Seq( 
+    "org.renci.io.swagger"      % "swagger-java-comet-client" % V.comet
   )
 
   // support operations on IP address
