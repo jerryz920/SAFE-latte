@@ -47,7 +47,7 @@ object TestHarness {
   }
  
   def benchmark(slangFile: String, fileArgs: Option[String], jvmmapFile: String, concurrency: Int): Unit = { 
-    val slangManager = SafelangManager()
+    val slangManager = SafelangManager.instance()
     val inference0 = slangManager.createSafelang()
     inference0.compileSlang(slangFile, fileArgs) 
 

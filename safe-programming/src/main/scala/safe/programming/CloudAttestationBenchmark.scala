@@ -247,7 +247,7 @@ class CloudAttestationBench(concurrency: Int, jvmmapFile: String, slangManager: 
 
 
     // Get perfStats async
-    val future = Future {
+    var future = Future {
       processStatsNow()
     }
 
@@ -270,7 +270,7 @@ class CloudAttestationBench(concurrency: Int, jvmmapFile: String, slangManager: 
 
 
     // Get perfStats async
-    val future = Future {
+    future = Future {
       processStatsNow()
     }
 
@@ -297,7 +297,7 @@ class CloudAttestationBench(concurrency: Int, jvmmapFile: String, slangManager: 
     }
 
     // Get perfStats async
-    val future = Future {
+    future = Future {
       processStatsNow()
     }
   }
