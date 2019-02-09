@@ -115,6 +115,29 @@ defcon approveProposal(?Project) :-
 defpost postProposalApproval(?Project) :- [approveProposal(?Project)]. 
 
 
+defcon twoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid) :-
+    spec('example data owner authz rule with two approval workflows (e.g., research and infrastructure)'),
+    ?RAWFpublisher := rootPrincipal(?RAWFscid),
+    ?RAWFtoken := label(?RAWFpublisher, ?RAWFscid),
+    ?IAWFpublisher := rootPrincipal(?IAWFscid),
+    ?IAWFtoken := label(?IAWFpublisher, ?IAWFscid),
+{
+ access($DataScid, ?u, ?NS, ?project) :- 
+   $RAWFpublisher:complete($RAWFscid, ?u, ?NS),
+   $IAWFpublisher: complete($IAWFscid, ?u, ?NS),
+   eligibleProject(?project),
+   trustedNS(?NS).
+
+ link($IAWFtoken).
+ link($RAWFtoken).
+ label($DataScid).
+}
+
+defpost postTwoFlowPolicy(?DataScid, ?RAWFscid, ?IAWFscid) :-
+  [twoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid)].
+
+
+
 //
 // Institution: niehs
 //
@@ -151,6 +174,33 @@ defcon attestCompliantIP(?IPList) :-
   }.
 
 defpost postCompliantIP(?IPList) :- [attestCompliantIP(?IPList)]. 
+
+//
+// Notary service
+//
+defcon generateCompletionReceipt(?user, ?project, ?flowScid, ?userFormScid) :-
+{
+   complete($user, $project, $userFormScid).
+   label("receipt: ($user, $project) completes $flowScid"). 
+}.
+
+defpost postCompletionReceipt(?user, ?project, ?flowScid, ?userFormScid) :-
+  [generateCompletionReceipt(?user, ?project, ?flowScid, ?userFormScid)].
+
+//
+// Workflow publisher
+//
+defcon perFlowRule(?WFScid) :-
+    spec('example generated workflow rule'),
+{
+  complete($WFScid, ?u, ?NS, ?project) :-
+     ?NS:complete(?project, commonFormScid1),
+     ?NS:complete(?u, ?project, userformScid1),
+     eligibleProject(?project),
+     trustedNS(?NS).    
+}
+
+defpost postFlowRule(?WFScid) :- [perFlowRule(?WFScid)].
 
  
 //
@@ -225,4 +275,23 @@ defguard checkOriginAddress(?IP) :-
     approveAccessFromIP($IP)?
   }.
 
-// TODO: Authorization of data access
+// Authorization of data access
+defguard access(?dataScid, ?u, ?NS, ?project, ?RAWFscid, ?IAWFscid) :-
+    ?dataOwner := rootPrincipal(?dataScid),
+    ?RAWFpublisher := rootPrincipal(?RAWFscid),
+    ?RAWFtoken := label(?RAWFpublisher, ?RAWFscid),
+    ?IAWFpublisher := rootPrincipal(?IAWFscid),
+    ?IAWFtoken := label(?IAWFpublisher, ?IAWFscid),
+    ?RAWFuserReceipt := label(?NS, "receipt: ($u, $project) completes $RAWFscid"),
+    ?IAWFuserReceipt := label(?NS, "receipt: ($u, $project) completes $IAWFscid"),
+{
+   link($dataScid).
+   link($IAWFuserReceipt).
+   link($RAWFuserReceipt).
+
+   grantAccess(?owner, ?dataScid, ?u, ?NS, ?project) :-
+      trustedNS(NS),
+      ?owner:access(?dataScid, ?u, ?NS, ?project).
+
+   grantAccess(?dataOwner, ?DataScid, ?u, ?NS, ?project)?
+}
