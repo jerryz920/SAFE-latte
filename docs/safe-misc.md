@@ -5,13 +5,13 @@
 SAFE allows a trust script to be loaded into an authorization server dynamically. A SAFE server reads the source code of a requested trust script, compiles it, and merges (with needed deduplication) the compiled SAFE constructs (logical templates and guards) into the script that the server currently runs.  SAFE includes two built-in guards for loading scripts: *import* and *importSource*. *import* requests the server to load a trust script specified by a pathname; *importSource* passes in source code via a request argument (a string).  Along with other guards defined in the start script, these loading guards are deployed on the server as REST APIs when SAFE stands up. The usage of import and importSource can be find from these two CURL requests and the server responses:
 
 ```
-$ curl -H "Content-Type:application/json" -XPOST http://152.3.136.26:7777/import -d  '{ "principal": "princpal010", "otherValues": ["/path/to/safe/safe-apps/multi-principal/fine-grained-linking/geni.slang"]}'
+$ curl -H "Content-Type:application/json" -XPOST http://${ServerJVM}:7777/import -d  '{ "principal": "principal010", "methodParams": ["/path/to/safe/safe-apps/geni/fine-grained-linking/geni.slang"]}'
 
 {
   "message": "Import completed"
 }
 
-$ curl -H "Content-Type:application/json" -XPOST http://152.3.136.26:7777/importSource -d  '{ "principal": "princpal010", "otherValues": ["defpost postObjectAcl(?ObjectId, ?Property) :- [addObjectAcl(?ObjectId, ?Property)]."]}'
+$ curl -H "Content-Type:application/json" -XPOST http://${ServerJVM}:7777/importSource -d  '{ "principal": "principal010", "methodParams": ["defpost postObjectAcl(?ObjectId, ?Property) :- [addObjectAcl(?ObjectId, ?Property)]."]}'
 
 {
   "message": "Import completed"
@@ -32,6 +32,9 @@ Transformation of logic statement sets by inferSet() is dynamic, flexible, and e
 
 Next: inferQuerySet()
 
+
+## SAFE testing
+[Benchmarking](../safe-benchmark) is conducted under coordination of a test harness. Under safe-benchmark directory, a ready-to-use SafeBench provides common functionalities needed for benchmarking a SAFE application. These reusable functions have implemented key loading and principal initialization, Id/subject set construction and posting, simple delegation and acceptance among principals, and cache testing via delegate-then-query and directing the query to a cold cache. It also interfaces with a slang performance collector to gather, order, compute, and persist performance statistics per a test harness. 
 
 ## SAFE debugging: an exemplary logical proof
 
