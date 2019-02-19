@@ -38,7 +38,7 @@ lazy val safeServerDeps: Seq[ModuleID] = Seq(
 ).flatten
 
 lazy val safeStylaDeps = safeServerDeps
-lazy val safeProgrammingDeps = safeServerDeps
+lazy val safeBenchmarkDeps = safeServerDeps
 
 lazy val hugeCollections = Seq(
   "net.openhft"          % "collections"                  % "3.2.1", // off heap caching library
@@ -234,14 +234,14 @@ lazy val safeStyla = safeProject("safe-styla")
   ).dependsOn(safelog)
 
 
-lazy val safeProgramming = safeProject("safe-programming")
+lazy val safeBenchmark = safeProject("safe-benchmark")
   .settings(
     sbtConnectInput in run  := true,   // send stdin to children
     fork                 := true,
     javaOptions in run   += "-Xmx8G",
     // default main to start when "run" cmd is issued from sbt repl
     //, mainClass in (Compile, run) := Some("safe.programming.GeniBenchmark") 
-    libraryDependencies ++= safeProgrammingDeps,
+    libraryDependencies ++= safeBenchmarkDeps,
     outputStrategy       := Some(StdoutOutput), // send child output to stdout
     resolvers            := commonResolvers,
     scalacOptions        ++= commonOps
