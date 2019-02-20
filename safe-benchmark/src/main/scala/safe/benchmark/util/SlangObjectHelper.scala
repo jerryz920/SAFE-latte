@@ -1,4 +1,4 @@
-package safe.programming
+package safe.benchmark
 package util
 
 import safe.safelog._

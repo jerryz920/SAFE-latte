@@ -1,4 +1,4 @@
-package safe.programming
+package safe.benchmark
 
 import com.typesafe.config.{ConfigException, ConfigFactory}
 import scala.util.Try
@@ -6,7 +6,7 @@ import scala.util.Try
 import scala.concurrent.duration._
 
 class Config(config: com.typesafe.config.Config) {
-  config.checkValid(ConfigFactory.defaultReference(), "safeprogramming")
+  config.checkValid(ConfigFactory.defaultReference(), "safebenchmarking")
   def this() {
     this(ConfigFactory.load())
   }
