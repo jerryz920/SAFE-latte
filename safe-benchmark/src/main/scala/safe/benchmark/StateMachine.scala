@@ -1,4 +1,4 @@
-package safe.programming
+package safe.benchmark
 
 import scala.util.control.Breaks._
 import scala.collection.mutable.{Map => MutableMap, LinkedHashSet => OrderedSet}

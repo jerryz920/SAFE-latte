@@ -1,4 +1,4 @@
-package safe.programming
+package safe.benchmark
 
 import safe.safelang.{Safelang, slangPerfCollector, SafelangManager}
 import safe.safelog.{UnSafeException, Query, Structure}
