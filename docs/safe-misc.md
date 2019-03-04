@@ -5,13 +5,13 @@
 SAFE allows a trust script to be loaded into an authorization server dynamically. A SAFE server reads the source code of a requested trust script, compiles it, and merges (with needed deduplication) the compiled SAFE constructs (logical templates and guards) into the script that the server currently runs.  SAFE includes two built-in guards for loading scripts: *import* and *importSource*. *import* requests the server to load a trust script specified by a pathname; *importSource* passes in source code via a request argument (a string).  Along with other guards defined in the start script, these loading guards are deployed on the server as REST APIs when SAFE stands up. The usage of import and importSource can be find from these two CURL requests and the server responses:
 
 ```
-$ curl -H "Content-Type:application/json" -XPOST http://152.3.136.26:7777/import -d  '{ "principal": "princpal010", "otherValues": ["/path/to/safe/safe-apps/multi-principal/fine-grained-linking/geni.slang"]}'
+$ curl -H "Content-Type:application/json" -XPOST http://${ServerJVM}:7777/import -d  '{ "principal": "principal010", "methodParams": ["/path/to/safe/safe-apps/geni/fine-grained-linking/geni.slang"]}'
 
 {
   "message": "Import completed"
 }
 
-$ curl -H "Content-Type:application/json" -XPOST http://152.3.136.26:7777/importSource -d  '{ "principal": "princpal010", "otherValues": ["defpost postObjectAcl(?ObjectId, ?Property) :- [addObjectAcl(?ObjectId, ?Property)]."]}'
+$ curl -H "Content-Type:application/json" -XPOST http://${ServerJVM}:7777/importSource -d  '{ "principal": "principal010", "methodParams": ["defpost postObjectAcl(?ObjectId, ?Property) :- [addObjectAcl(?ObjectId, ?Property)]."]}'
 
 {
   "message": "Import completed"
@@ -31,6 +31,39 @@ Transformation of logic statement sets by inferSet() is dynamic, flexible, and e
 ```
 
 Next: inferQuerySet()
+
+
+## SAFE testing
+[Benchmarking](../safe-benchmark) is conducted under coordination of a test harness. Under safe-benchmark directory, a ready-to-use SafeBench provides common functionalities needed for benchmarking a SAFE application. These reusable functions have implemented key loading and principal initialization, Id/subject set construction and posting, simple delegation and acceptance among principals, and cache testing via delegate-then-query and directing the query to a cold cache. It also interfaces with a slang performance collector to gather, order, compute, and persist performance statistics per a test harness.In the following, we use STRONG as an example to walk through a typcial process of SAFE testing.
+
+A principal of STRONG uses a trusted SAFE server instance to publish statements, delegate access privileges, and guard its ImPACT data repositories. Testing of this multi-principal, multi-action, and multi-server identity, access, and trust management service is conducted under coordination of a test harness. The test harness is configured with location of each principal, keeps track of various delegation states in the system, and implements workloads to stress test interested SAFE components. For example, it builds delegation chains of varying length to evaluate how fast the logic engine solves queries and how it scales with chain length, navigates delegations to principals across server JVMs to create desired patterns that evaluate the efficiency of SafeSets linking and help identify performant linking patterns for ImPACT, and controls cache states and query directives to servers to examine how SAFE cache performs and how caching impacts overall performance in resolving queris. 
+
+
+#### Set up SAFE servers and load each key pairs of principals who trust it
+```
+  Follow [safe-docker](safe-docker.md) or [safe-build](safe-build.md) to create key pairs and launch multiple SAFE server instances.
+```
+
+#### Create a principal-jvm map under resources to inform test harness the locations of principals
+```
+<key-dir> <jvm-addr>
+```
+An exmaple map:
+```
+/opt/multi-principal-keys-duke/     10.10.1.1:7777
+/opt/multi-principal-keys-renci/    10.10.1.2:7777
+/opt/multi-principal-keys-odum/     10.10.1.3:7777
+```
+
+#### Run test harness
+```
+sbt
+project safe-benchmark
+run -f ../safe-apps/strong/strong-client.slang  -jvmm src/main/resources/principal_jvm.map -c ${numConReqs}
+```
+
+#### Caveat: code needs to be cleaned up before these fully function. When it's done, this disclaimer will be gone.
+
 
 
 ## SAFE debugging: an exemplary logical proof
