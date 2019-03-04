@@ -108,11 +108,10 @@ run -f ../safe-apps/strong/strong-client.slang  -jvmm src/main/resources/princip
 
 #### Caveat: code needs to be cleaned up before these fully function. When it's done, this disclaimer will be gone.
 
-[Benchmarking](../safe-benchmark) is conducted under coordination of a test harness. Under safe-benchmark directory, a ready-to-use SafeBench provides common functionalities needed for benchmarking a SAFE application. These reusable functions have implemented key loading and principal initialization, Id/subject set construction and posting, simple delegation and acceptance among principals, and cache testing via delegate-then-query and directing the query to a cold cache. It also interfaces with a slang performance collector to gather, order, compute, and persist performance statistics per a test harness. 
+
 
 ## SAFE debugging: an exemplary logical proof
 
-```
      ========================================== SAFE PROOF ========================================
     |                                                                                              |
     |                                                                                              |
@@ -230,4 +229,3 @@ run -f ../safe-apps/strong/strong-client.slang  -jvmm src/main/resources/princip
     |                  {}                                                                          |
     |                                                                                              |
      ========================================= END OF PROOF =======================================
-```
