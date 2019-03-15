@@ -35,21 +35,21 @@ Next: inferQuerySet()
 
 ## SAFE testing
 
-SAFE's testing mainly covers four parts of the SAFE system: logical-layer parsing and inference, slang script-layer parsing and runtime, slang shell environment creation, persistence, and restoration, and cross-JVM authorization with caching, retirement, and updates to certificates.
+SAFE's testing mainly covers four parts of the SAFE system: logical-layer parsing and inference, slang script-layer parsing and runtime, slang shell environment creation, persistence and restoration, and cross-JVM authorization with caching, retirement and updates to certificates.
 
-[Logic] SAFE has an implementation of Datalog, but uses Styla as the default underlying logic engine. The set of [testing logical programs](../safe-styla/progs) by Styla are put under safe-styla. SAFE also has a [weaver utility](path-to-be-added) that takes predicates, rules, and configuration parameter and generates Datalog programs with various logic chaining patterns such as chain length.
+[Logic] SAFE has an implementation of Datalog, but uses Styla as the default underlying logic engine. The set of [testing logical programs](../safe-styla/progs) by Styla are put under progs of safe-styla. SAFE also has a [weaver utility](path-to-be-added) that takes predicates, rules, and configuration parameters and generates Datalog programs with various logic chaining patterns such as chain length.
 
-#### Run SAFE login engine against a Styla testing programming (also for SAFE's own inference engine?)
+#### Run SAFE login engine against a Styla testing program (also for SAFE's own inference engine?)
 ```
 cmd to be added
 ```
 
-#### Run SAFE weaver utility to generate customized testing logical programs
+#### Run SAFE weaver utility to generate customized testing logic
 ```
 cmd to be added
 ```
 
-[Slang] The scripts under [safe-apps](../safe-apps) can be used to test slang parsing. We use [Strong](../safe-apps/strong) to test functionalities of Slang primitives, including defcon, defguard, defpost, defcall, defenv, and definit. 
+[Slang] Scripts under [safe-apps](../safe-apps) can be used to test slang parsing. We use [Strong](../safe-apps/strong) to test functionalities of Slang primitives, including defcon, defguard, defpost, defcall, defenv, and definit. 
 
 #### Run Slang to parse a Slang script
 ```
@@ -60,15 +60,15 @@ cmd to be addded
 ```
 \# post set
 
-\# fetch from SafeSets to verify post
+\# fetch from SafeSets and verify post
 ```
 
 #### ToDo: testing the rest of Slang primitives
 
 
-[Slang Shell] Slang shell builds an execution environment for a client and exposes defcalls to it to interact with a remote server. We documented a [Strong running example](../safe-apps/strong/example-with-slang-shell.txt) to demonstrate using commands to build an envrioment and execute queries. We use it for testing.
+[Slang Shell] Slang shell builds an execution environment for a client and exposes defcalls for it to interact with remote SAFE servers. We documented a [Strong running example](../safe-apps/strong/example-with-slang-shell.txt)  with commands used to build an envrioment and execute queries. We use this for testing.
 
-#### Run Slang shell with Strong commands
+#### Run Slang shell and load a sequence of Strong commands per the Strong running example
 ```
 CMDs to be segregated from the running example
 ```
@@ -76,7 +76,7 @@ CMDs to be segregated from the running example
 
 [Integral benchmark involving multiple JVMs](../safe-benchmark) is conducted under coordination of a test harness. Under safe-benchmark directory, a ready-to-use SafeBench provides common functionalities needed for benchmarking a SAFE application. These reusable functions have implemented key loading and principal initialization, Id/subject set construction and posting, simple delegation and acceptance among principals, and cache testing via delegate-then-query and directing the query to a cold cache. It also interfaces with a slang performance collector to gather, order, compute, and persist performance statistics per a test harness.In the following, we use STRONG as an example to walk through a typcial process of SAFE testing.
 
-A principal of STRONG uses a trusted SAFE server instance to publish statements, delegate access privileges, and guard its ImPACT data repositories. Testing of this multi-principal, multi-action, and multi-server identity, access, and trust management service is conducted under coordination of a test harness. The test harness is configured with location of each principal, keeps track of various delegation states in the system, and implements workloads to stress test interested SAFE components. For example, it builds delegation chains of varying length to evaluate how fast the logic engine solves queries and how it scales with chain length, navigates delegations to principals across server JVMs to create desired patterns that evaluate the efficiency of SafeSets linking and help identify performant linking patterns for ImPACT, and controls cache states and query directives to servers to examine how SAFE cache performs and how caching impacts overall performance in resolving queris. 
+A principal of STRONG uses a trusted SAFE server instance to publish statements, delegate access privileges, and guard its ImPACT data repositories. Testing of this multi-principal, multi-action, and multi-server identity, access, and trust management service is conducted under coordination of a test harness. The test harness is configured with location of each principal, keeps track of various delegation states in the system, and implements workloads to stress test interested SAFE components. For example, it builds delegation chains of varying length to evaluate how fast the logic engine solves queries and how it scales with chain length, navigates delegations to principals across server JVMs to create desired patterns that evaluate the efficiency of SafeSets linking and help identify performant linking patterns for ImPACT, and controls cache states and query directives to servers to examine how SAFE cache performs and how caching impacts overall performance in resolving queries. 
 
 
 #### Set up SAFE servers and load each key pairs of principals who trust it
