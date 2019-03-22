@@ -112,7 +112,7 @@ H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> ?Self := $P3.
 6U4CtuwUY1CSJeDLVhplcdXKCmd9rGehNLi2tm0kWOc=@slang> postDirectoryAccess("$P5:group0", "$P3:$UUID3")?
 
 # Add a member into the group
-slang> ?Self := $P5.
+6U4CtuwUY1CSJeDLVhplcdXKCmd9rGehNLi2tm0kWOc=@slang> ?Self := $P5.
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?Membership := postGroupMember("$P5:group0", $P5, "true")?
 hD_uYbm1ivhX_5Ph5C08_A1MvCAVZfvQq128BQuXjYA=@slang> ?SubjectSet := updateSubjectSet($Membership).
 
