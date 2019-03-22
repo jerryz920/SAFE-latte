@@ -52,7 +52,7 @@ $ cd root/SAFE
 $ ../sbt/bin/sbt "project safe-lang" "run"
 ```
 You should see the following Slang Shell prompt. Refer to [SAFE Slang](safe-slang.md) document for details about syntax:
-```
+```console
 Welcome to
   ____       _      _____   _____
  / ___|     / \    |  ___| | ____|
@@ -64,10 +64,10 @@ Safe Language v0.1: Fri, 21 Dec 2018 21:18:53 GMT (To quit, press Ctrl+D or q.)
 slang>
 ```
 All the following commands are issued to the Slang shell (ignoring comment lines with start with '#' added for readability). To every statement the Shell should return a [satisfied] or [info] response:
-```
+```console
 # Import client slang into the shell
 # note that the container mounts SAFE/safe-apps as imports/
-slang>import("/imports/strong/strong-client.slang").
+slang> import("/imports/strong/strong-client.slang").
 
 # Point the shell to the SAFE server running Strong policy authorizer
 strong-1@slang> ?ServerJVM := "localhost:7777".
@@ -99,9 +99,9 @@ strong-5@slang> ?UUID4 := "1ef7e6dd-5342-414e-8cce-54e55b3b9a83".
 # delegations of sub-namespace along a path from the root to
 # $P2:$UUID2, $P3:$UUID3, and $P4:$UUID4.
 
-strong-5@slang> delegateName("project00", $P1, $UUID1, $P2, $UUID2)?
-xHjlQ-vLQREF5uwmNw4NdQPHt-TWKEKwo_oTqwtkCj0=@slang> delegateName("dataset00", $P2, $UUID2, $P3, $UUID3)?
-H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> delegateName("part00", $P3, $UUID3, $P4, $UUID4)?
+strong-5@slang> delegateName("project00", "$P1:$UUID1", "$P2:$UUID2")?
+xHjlQ-vLQREF5uwmNw4NdQPHt-TWKEKwo_oTqwtkCj0=@slang> delegateName("dataset00", "$P2:$UUID2", "$P3:$UUID3")?
+H3RFFi8NYRUlAa9wQTPgFzW4RqicobTcdsxnWLxn9S8=@slang> delegateName("part00", "$P3:$UUID3", "$P4:$UUID4")?
 
 # Check name delegations
 TJD9gT4DC4VQXdWNNiIB7MJlAlzqbqCatZ2vO-7Y3Kw=@slang> queryName("$P1:$UUID1", "project00/dataset00/part00")?
