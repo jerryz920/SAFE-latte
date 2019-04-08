@@ -1,4 +1,4 @@
-ssfrom ubuntu:18.04
+from ubuntu:18.04
 
 RUN apt-get update && apt-get install -y build-essential
 RUN apt-get install -y gdb default-jdk python git curl make htop wget libssl1.0.0 libpam0g-dev libssl-dev python-crypto python
