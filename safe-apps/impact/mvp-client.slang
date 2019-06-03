@@ -42,18 +42,18 @@ defcall checkComplete(?U, ?NS, ?Project, ?WF, ?T) :-
 
 // As data owner
 
-defcall postTwoFlowDataOwnerPolicy(?DataScid, ?RAWFScid, ?IAWFScid) :-
+defcall postTwoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid) :-
 {
-    postTwoFlowDataOwnerPolicy($ServerJVM, $ReqEnvs, $DataScid, $RAWFScid, $IAWFScid).
+    postTwoFlowDataOwnerPolicy($ServerJVM, $ReqEnvs, $DataScid, $RAWFscid, $IAWFscid).
 }.
 
 // As data server
 // For debugging added two workflow scids: remove these.
 
 
-defcall access(?DataScid, ?U, ?NS, ?Project, ?WF1, ?WF2) :-
+defcall access(?DataScid, ?U, ?NS, ?Project) :-
 {
-    access($ServerJVM, $ReqEnvs, $DataScid, $U, $NS, $Project, $WF1, $WF2).
+    access($ServerJVM, $ReqEnvs, $DataScid, $U, $NS, $Project).
 }.
 
 

@@ -81,7 +81,7 @@ From this point, we run the `links` scenario by typing commands to the slang-she
 
 You are encouraged to play around with it.  We can also issue ordinary `curl` requests to Riak from another terminal to observe certificates as they are stored.
 
-The links application lets participants issue simple certificates, chain them together, and query the chains.  Each links certificate has a name, and a logic statement that asserts the name is present.  You can  query if a particular named certificate is in a chain.  Each issuer has its own name space for certificates.  You can query if a particular principal has asserted the name.  There is a shorthand to query if the current principal (`$Self`) has asserted the name.
+The links application lets participants issue simple certificates, chain them together, and query the chains.  Each links certificate has a name, and a logic statement that asserts that the name is present, i.e., it asserts an entry for the name within some common name space.  You can  query if a particular named certificate is in a chain.  Each issuer has its own name space for certificates.  You can query if a particular principal has asserted the name.  There is a shorthand to query if the current principal (`$Self`) has asserted the name.
 
 
 Each certificate in the links application has either zero links or one link: this application builds certificate chains, but not generalized DAGs.   We arbitrarily call a certificate with zero links an *anchor certificate*, and a certificate with one link a *link certificate*.  In addition, each principal has a self-signed certificate called a *principal certificate* that contains the principal's full public key.
@@ -150,7 +150,7 @@ On the safe-server, dropAnchor lands in the `links.slang` script.  It posts a ce
 ```
 defcon conAnchor(?Name) :-
 {
-   present($Name).
+   nameEntry($Name, 0).
    label($Name). 
 }.
    
@@ -161,7 +161,7 @@ defpost dropAnchor(?Name) :-
 Slang's syntax is what it is.   In a nutshell, each script element **def**ines an action: make a call (**defcall**), construct a logic set (**defcon**), post to the store (**defpost**).   Slang also has **defguard** to query a logic context assembled from certificates (see below).
 
 
-The curly brackets `{}` in the **defcon** constructor open a logic set template, whose evaluation results in a logic set.  The lines in the template are statements in the trust logic language, and not in slang.  In this example, the first statement is a simple logic fact with a user-defined predicate (**present**).  The second statement is a pseudo-fact with the builtin **label** predicate, which labels the set with a string.   Slang scripts may pass slang variables into a set template; within the template, always use the `$` escape to substitute (interpolate) them with their values.
+The curly brackets `{}` in the **defcon** constructor open a logic set template, whose evaluation results in a logic set.  The lines in the template are statements in the trust logic language, and not in slang.  In this example, the first statement is a simple logic fact with a user-defined predicate (**nameEntry**).   The `nameEntry` predicate binds a name to a value, but for purposes of the links example the value is not important, so we use 0.  The second statement is a pseudo-fact with the builtin **label** predicate, which labels the set with a string.   Slang scripts may pass slang variables into a set template; within the template, always use the `$` escape to substitute (interpolate) them with their values.
 
 
 The square brackets `[]` in the **defpost** define a list, in this case a list of items to be posted.  This list has only one element: a logic set value returned from the defcon. The defpost issues a certificate encoding the logic set and signed under the issuer `$Self`, and posts it to the store.  It derives the token (index key) from the set's label and the issuer's principal ID.  The defpost returns the token to the client, which passes it back into slang-shell as the return value of the defcall.that 
@@ -221,13 +221,13 @@ On the safe-server, dropLink is implemented in the `links.slang` script.  It pos
 ```
 defcon conLink(?Name, ?PrevToken) :-
 {
-   present($Name).
+   nameEntry($Name, 0).
    link($PrevToken).
    label($Name). 
 }.
 ```
 
-Like the anchor certificates, the link certificate asserts that the name string is present, and labels the set with the name.  As with the anchor certificates, the corresponding defpost (not shown) converts the logic set to a certificate, generates the token from the set's label and the issuer's PrincipalID (its public key hash, which also serves as its IdSet token), and posts it in the key-value store indexed by its token.   What is different here is that the new link certificate also includes a link to the target certificate, forming a chain.
+Like the anchor certificates, the link certificate asserts an entry for the name string, and labels the set with the name.  As with the anchor certificates, the corresponding defpost (not shown) converts the logic set to a certificate, generates the token from the set's label and the issuer's PrincipalID (its public key hash, which also serves as its IdSet token), and posts it in the key-value store indexed by its token.   What is different here is that the new link certificate also includes a link to the target certificate, forming a chain.
 
 
 There is no requirement that all the certificates in the chain have the same issuer, as in this chain.   The issuer could be anyone.  For example, Bob can create a certificate that links to the head of Alice's chain, forming a chain with three certificates issued by two different principals.
@@ -295,7 +295,9 @@ There are two points to note about this code:
 
 ###7. Adding a trust policy rule to reason from belief
 
-We added an exemplary trust policy to demonstrate the use of logical policy rules.  This example is a bit contrived: it introduces the idea that someone might not accept that a given named certificate is present just because some untrusted party asserts it.   It introduces an endorsing principal that endorses other principals as trusted (an arbitrary predicate), and a rule that believes an assertion only if its speaker is trusted.  Obviously, this idea has value in other contexts, but for the links example it is only an illustration.  A later version should split the logical policy concept into a separate tutorial.
+We added an exemplary trust policy to demonstrate the use of logical policy rules.    The certificates in the links application assert names within a common name space.  The exemplary trust policy introduces governance of the name space.
+
+The idea is that the principals who manage the name space (by registering names) must coordinate their names amongst themselves, and must be trusted to do so.  This idea is fundamental to any secure naming system.  Real-world naming systems such as DNSSEC often partition the name space and delegate authority to each name registrar to assert names within a specific partition or domain.  The exemplary policy simply requires that each registrar of trusted names must be endorsed as a trusted name registrar by a specific endorsing authority.
 
 The scenario starts with Cindy endorsing Alice.  In slang-shell:
 
@@ -314,7 +316,7 @@ defcon endorsement(?Endorsee) :-
 }.
 ```
 
-This logic set constructor defines a standard for endorsement certificates.  It has a single statement by which the issuer asserts that the endorsee is trusted, a new predicate defined in the policy, and whose name is arbitary.   The statement includes the public key of the endorsee (the subject), which is included under the issuer's signature, so it is not possible to forge an endorsement certificate or use it for the wrong principal.  The label also includes the PrincipalID of the endorsee, so that endorsements of different principals have different labels, and therefore different tokens, and so won't overwrite each other in the key-value store.   Endorsements of the same principal by different issuers also have different tokens, since defpost derives the token from both the label and the issuer together.  Although Riak does not check it, SAFE assumes that the key-value store disallows any principal from writing on a token that it does not own, to block malicious entities from overwriting a victim's certificates as a denial-of-service attack.
+This logic set constructor defines a standard for endorsement certificates.  It has a single statement by which the issuer asserts that the endorsee is **trusted**---a new arbitrarily named predicate defined in the policy.   The statement includes the public key of the endorsee (the subject), which is included under the issuer's signature, so it is not possible to forge an endorsement certificate or use it for the wrong principal.  The label also includes the PrincipalID of the endorsee, so that endorsements of different principals have different labels, and therefore different tokens, and so won't overwrite each other in the key-value store.   Endorsements of the same principal by different issuers also have different tokens, since defpost derives the token from both the label and the issuer together.  Although Riak does not check it, SAFE assumes that the key-value store disallows any principal from writing on a token that it does not own, to block malicious entities from overwriting a victim's certificates as a denial-of-service attack.
 
 
 Next, Alice issues a link certificate asserting that name "a2" is present, and linking to Cindy's endorsement of Alice.  In slang-shell:
@@ -327,38 +329,34 @@ Next, Alice issues a link certificate asserting that name "a2" is present, and l
 It is useful for a principal to link a certificate to others that substantiate its authority to issue the certificate in this way.  The trust scripts for all example SAFE applications link to support in this way to build certificate DAGs by construction, enabling a requester to assemble a logic context with information that is relevant to a given query.  It is trivial to link certificates when all principals run in the same slang-shell with shared global variables!  The real world is more complicated: Cindy must pass the endorsement token ($CEAT) to Alice out of band, e.g., maybe Alice requests the endorsement from Cindy, or maybe Cindy advertises it on a web site, links all her endorsements at a well-known link (an anchor set), or posts the endorsement with a well-known label so that other principals can find it.  These choices are part of the software embedding for a SAFE application.
 
 
-Now we are ready to consider logical policy rules.   Bob creates a policy package that declares and governs when Bob believes or accepts a present assertion that is spoken by another principal.  
+Now we are ready to consider logical policy rules.   Bob creates a policy package that declares and governs when Bob believes or accepts a name assertion that is spoken by another principal.  
 
 ```
 ?Self:=$B.
 ?BPT := trustPolicy($C).
 ```
 
-The request lands at the slang constructor for the policy package in the safe-server's links script.   The example policy states that Bob trusts a name only if its issuer is trusted.  Bob passes the PrincipalID of an endorser principal---Cindy in this case---whose endorsements Bob accepts.   Bob trusts a name if Bob asserted the name himself (Rule 1), or if some other principal asserted the name, and Cindy endorsed the speaking principal as trusted (Rule 2).
+The request lands at the slang constructor for the policy package in the safe-server's links script.   The example policy states that Bob trusts a name only if its issuer is trusted.  Bob passes the PrincipalID of an endorser principal---Cindy in this case---whose endorsements Bob accepts.   Bob trusts a name only if Cindy endorsed the speaking principal (name registrar) as trusted.
 
 ```
 defcon trustPolicySet(?Endorser) :-
 {
    endorser($Endorser).
-   // **Rule 1**:
-   trustedName(?Name) :-
-        present(?Name).
-   // **Rule 2**:
-   trustedName(?Name) :-
-        ?Speaker:present(?Name),
+   trustedName(?Name, ?Value) :-
+        ?Speaker:nameEntry(?Name, Value?),
         ?Endorser:trusted(?Speaker),
 		endorser(?Endorser).
    label("accept trustedName endorsements from $Endorser").	   
 }.
 ```
 
-The policy set contains three logic statements and a label.   The resulting logic set contains these statements spoken by Bob, which is posted as a certificate signed by Bob.
+The policy set contains two logic statements and a label.   The resulting logic set contains these statements spoken by Bob, which is posted as a certificate signed by Bob.
 
 
 The first statement is a fact in which Bob accepts Cindy as an endorser.  The endorser identity is interpolated from the slang parameter, so this endorser trust anchor appears as a constant (Cindy's PrincipalID) in the logic certificate.
 
 
-The next two statements are logical policy rules for a new "trustedName" predicate.  The rules contain logic variables: each variable is scoped to its containing rule and assigned to a constant value if the rule is satisfied, in accordance with the requirements of safe ordinary datalog logic.  These rules are self-contained and tractable to evaluate in any query context.
+The second statement is a logical policy rule for a new "trustedName" predicate.  The rule contains logic variables: each variable is scoped to its containing rule and assigned to a constant value if the rule is satisfied, in accordance with the requirements of safe ordinary datalog logic.  Any such rule is self-contained and tractable to evaluate in any query context.
 
 
 Now suppose Bob issues a query on Alice's certificate chain $AT2 consructed above, and using his policy set.  Does the chain contain the trusted name "a2"?  In slang-shell:
@@ -383,7 +381,7 @@ As with queryPresent above, this query takes the name and a link to the certific
 
 
 In this case, the guard assembles a context containing the policy set and the certificate chain, and issues the query.  The query asks whether the certificate chain contains a trustedName according to the policy of the caller---Bob.  In this case, the logic engine sees that the answer is yes: Alice asserts the requested name, and
-Cindy endorses Alice, and Bob trusts Cindy as an endorser.  Logic rules are a powerful formalism to specify a wide range of validation criteria for certificate collections, and to evaluate them automatically.
+Cindy endorses Alice, and Bob trusts Cindy as an endorser.  This example shows how logical rules can capture the validation criteria for a certificate collection, and validate automatically according to the specified criteria.
 
 
 We again emphasize that Bob's policy set is specific to Bob.  Bob has no authority to specify policy for Alice, or even for Cindy.  For example, if Alice issues the same query, it is unsatisfied because the logic engine has no rules to determine when Alice believes a trustedName.  The query fails even though Alice asserted the name herself!  In slang-shell:
@@ -396,17 +394,19 @@ queryTrustedName("a2", $AT2, $BPT)?
 The logic engine approves compliance only if an applicable governing policy states a set of requirements, and the authenticated logic statements in the context meet those requirements according to some valid chain of logical reasoning---a proof.  In this case, the query fails because the logic engine cannot prove that it succeeds from the certified logic in the context.
 
 
-SAFE is a powerful environment, but a key remaining challenge is to provide better tools for developers and (to a lesser extent) for users to understand why a query fails and how to obtain the credentials to enable access.  A failing query suggests that either the statements required to proof it were never issued, or they exist somewhere but are missing from the context, or they are invalid in some way. 
+A query fails either because the statements required to prove it were never issued, or they exist somewhere but are missing from the context, or they are invalid in some way.   In this case the linking structure incorporates all logic statements needed by any step in the proof, and those statements are valid and issued within certificates that are valid.  If a query fails, it may be difficult to determine why.  A key remaining challenge for SAFE is to provide better tools for developers and (to a lesser extent) for users to understand why a query fails and how to obtain the credentials to enable access.  
 
 
-This example demonstrates that policy rules are principal-specific, and no principal can unilaterally issue policy rules on another principal's behalf.   However, logical policies are transportable among principals: it is easy for a principal to apply the policy of another principal on that principal's behalf.  This property of policy mobility enables more powerful forms of delegation.  Various example SAFE applications depend on it.
+This example demonstrates that policy rules are principal-specific, and no principal can unilaterally issue policy rules on another principal's behalf.   A governance policy (e.g., for a common name space) requires acceptance of all parties governed by the policy.   We see how to do that below.
+
+But first, we illustrate that logical policies are transportable among principals: it is easy for a principal to apply the policy of another principal on that principal's behalf.  This property of policy mobility enables more powerful forms of delegation.  Various example SAFE applications depend on it.
 
 
-To demonstrate mobile policy rules, another variant of queryTrustedName takes another "believer" PrincipalID as an argument, and asks whether the believer believes the trustedName, according to the believer's known policy rules.
+To demonstrate mobile policy, the variant `queryNameTrustedByPrincipal` takes another PrincipalID (the believer) as an argument, and asks whether the believer believes the trustedName, according to the believer's known policy rules.
 
 ```
 ?Self:=$A. 
-queryTrustedName("a2", $B, $AT2, $BPT)?
+queryNameTrustedByPrincipal("a2", $B, $AT2, $BPT)?
 ```
 
 This query is satisfied because the context includes Bob's policy rules, and the logic engine can prove the query goal from those rules and the assertions in the context, in the same way as for Bob's query above.  The corresponding guard query for this variant of queryTrustedName is slightly different:
@@ -415,8 +415,39 @@ This query is satisfied because the context includes Bob's policy rules, and the
      $Believer:trustedName($Name)?
 ```
 
-The query applies the policy on behalf of the believer by using the says (`:`) operator to query if the believer says or believes the query goal.  It then does not matter whether the caller believes the goal according to its own policy. 
+The query applies the policy on behalf of the believer by using the says (`:`) operator to query if the believer says or believes the query goal.  It then does not matter whether the caller believes the goal according to its own policy.
 
+
+Mobile policy rules make it easy for participants to import policy conventions from a trusted policy authority.  For example, Alice can subscribe to Bob's governance rules.  To do that, Alice simply links to Bob's rules and issues her own policy rule stating that she accepts any name that is valid according to Bob's policy as a trusted name.
+
+```
+?Self:=$A. 
+?APT := delegatePolicyAuthority($B, $BPT).
+```
+
+In the safe-server, ` delegatePolicyAuthority` lands in the following logic constructor:
+
+```
+defcon delegatePolicyAuthoritySet(?PolicyMaker, ?PolicyToken) :-
+{
+    trustedName(?Name, ?Value) :-
+         $PolicyMaker:trustedName(?Name, ?Value).
+	link($PolicyToken).
+    label("delegate trustedName authority to policy $PolicyToken by maker $PolicyMaker").	   
+}.
+```
+
+The logic set contains a single rule delegating policy authority for the `trustedName` predicate to the specified policy authority (Bob), and a link to the authority's policy.  The slang script also posts the policy in the usual fashion, and returns a token.  
+
+
+Now Alice issues the earlier query with her own policy token:
+
+```
+?Self:=$A.
+queryTrustedName("a2", $AT2, $APT)?
+```
+
+This query succeeds because the context includes Bob's policy logic and Alice's policy delegating authority for the `trustedName` predicate to Bob.  This example demonstrates that it is easy for participants in a distributed system to subscribe to a common set of governance rules defining the criteria to validate certificate collections.
 
 ###Slang-shell basics
 

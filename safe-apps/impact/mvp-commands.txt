@@ -1,0 +1,37 @@
+import("safe-apps/impact/mvp-client.slang").
+?ServerJVM := "localhost:7777".
+
+?Self := "strong-1".
+?WP := postRawIdSet("strong-1").
+?Self := "strong-2".
+?DSO := postRawIdSet("strong-2").
+?Self := "strong-3".
+?NSV := postRawIdSet("strong-3").
+?Self := "strong-4".
+?DP := postRawIdSet("strong-4").
+
+?UUID1 := "6ec7211c-caaf-4e00-ad36-0cd413accc91".
+?UUID2 := "1b924687-a317-4bd7-a54f-a5a0151f49d3".
+?UUID3 := "26dbc728-3c8d-4433-9c4b-2e065b644db5".
+
+// Workflow Publisher: post completion rules for workflows
+?Self := $WP.
+?PFR1 := postPerFlowRule("$WP:$UUID1").
+?PFR2 := postPerFlowRule("$WP:$UUID2").
+
+// Data Set Owner: post policy for dataset access
+?Self := $DSO.
+?DSOP := postTwoFlowDataOwnerPolicy("$DSO:$UUID3", "$WP:$UUID1", "$WP:$UUID2").
+
+// Notary Service: post completion receipts for both workflows.
+?Self := $NSV.
+?NSCCR1 := postCommonCompletionReceipt("someProject", "$WP:$UUID1").
+?NSUCR1 := postUserCompletionReceipt("someUser", "someProject", "$WP:$UUID1").
+?NSLR1 := postLinkReceiptForDataset("someUser", "someProject", "$DSO:$UUID3", "$WP:$UUID1").
+?NSCCR2 := postCommonCompletionReceipt("someProject", "$WP:$UUID2").
+?NSUCR2 := postUserCompletionReceipt("someUser", "someProject", "$WP:$UUID2").
+?NSLR2 := postLinkReceiptForDataset("someUser", "someProject", "$DSO:$UUID3", "$WP:$UUID2").
+
+// Data Provider (Presidio): check access
+?Self := $DP.
+access("$DSO:$UUID3", "someUser", $NSV, "someProject" )?
