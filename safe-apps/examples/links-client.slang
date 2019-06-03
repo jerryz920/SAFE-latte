@@ -90,14 +90,22 @@ defcall trustPolicy(?Endorser) :-
    trustPolicy($ServerJVM, $ReqEnvs, $Endorser).
 }.
 
+
+defcall delegatePolicyAuthority(?PolicyMaker, ?PolicyToken) :-
+{
+   delegatePolicyAuthority($ServerJVM, $ReqEnvs, $PolicyMaker, $PolicyToken).
+}.
+  
+
 defcall queryTrustedName(?Name, ?RootToken, ?Policy) :-
 {
     queryTrustedName($ServerJVM, $ReqEnvs, $Name, $RootToken, $Policy).
 }.
 
-defcall queryTrustedName(?Name, ?Believer, ?RootToken, ?Policy) :-
+
+defcall queryNameTrustedByPrincipal(?Name, ?Believer, ?RootToken, ?Policy) :-
 {
-    queryTrustedName($ServerJVM, $ReqEnvs, $Name, $Believer, $RootToken, $Policy).
+    queryNameTrustedByPrincipal($ServerJVM, $ReqEnvs, $Name, $Believer, $RootToken, $Policy).
 }.
 
 

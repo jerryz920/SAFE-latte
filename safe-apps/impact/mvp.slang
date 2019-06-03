@@ -1,7 +1,7 @@
 import("../safe.slang").
 
 //
-// NS
+// Notary Service (NS): internal certificate constructors.
 
 defcon generateCommonCompletionReceipt(?Project, ?FlowScid) :-
 {
@@ -17,19 +17,15 @@ defcon generateUserCompletionReceipt(?User, ?Project, ?FlowScid) :-
    label("receipt: ($User, $Project) completes $FlowScid"). 
 }.
 
-
-// For required MVP root receipt.
-
+//
+// NS: for required MVP root receipt.
+//
 defcon linkReceiptForDataset(?User, ?Project, ?DataScid, ?FlowScid) :-
     ?ReceiptToken := label("receipt: (?User, ?Project) completes ?FlowScid"),
 {
-//debug
-    linked($User,$Project).
-//debug
     link($ReceiptToken).
     label("receipt root: ($User, $Project) for $DataScid"). 
 }.
-
 
 // Debug
 defguard checkComplete(?U, ?NS, ?Project, ?WF, ?T) :-
@@ -39,9 +35,10 @@ defguard checkComplete(?U, ?NS, ?Project, ?WF, ?T) :-
   $NS:complete($U,$Project,$WF)?
 }.
 
-
-// Here are the NS entry points for MVP demo.
+//
+// NS REST entry points
 // Required arguments: ?user, ?project, ?dataScid, ?flowScid
+//
 
 defpost postCommonCompletionReceipt(?Project, ?FlowScid) :-
     [generateCommonCompletionReceipt(?Project, ?FlowScid)].
@@ -53,37 +50,27 @@ defpost postLinkReceiptForDataset(?User, ?Project, ?DataScid, ?FlowScid) :-
     [linkReceiptForDataset(?User, ?Project, ?DataScid, ?FlowScid)].
 
 //
-// workflow publisher
+// Workflow Publisher (WP).
 //
 
 defcon perFlowRule(?WFScid) :-
    spec('example generated workflow rule'),
 {
-//debug
-gotrule($WFScid).
-//debug
-    complete($WFScid, ?U, ?NS, ?Project) :-
+   complete($WFScid, ?U, ?NS, ?Project) :-
        ?NS:common(?Project, $WFScid),
        ?NS:complete(?U, ?Project, $WFScid).
-//       eligibleProject(?Project),
-//       trustedNS(?NS).
+//     eligibleProject(?Project),
+//     trustedNS(?NS).
 
-    label($WFScid).
+     label($WFScid).
 }.
 
 defpost postPerFlowRule(?WFScid) :-
     [perFlowRule(?WFScid)].
 
-defguard letsDoACheck(?WFScid, ?T) :-
-   ?WFpublisher := rootPrincipal(?WFScid),
-   ?Token := label(?WFpublisher, ?WFScid),
-{
-    link($T).
-//    link($Token).
-    $WFpublisher:gotrule($WFScid)?
-}.
-
-// Data provider
+//
+// Data provider (DP).
+//
 
 defcon twoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid) :-
    spec('example data owner authz rule with two approval workflows (e.g., research and infrastructure)'),
@@ -95,44 +82,34 @@ defcon twoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid) :-
    access($DataScid, ?U, ?NS, ?Project) :- 
       $RAWFpublisher:complete($RAWFscid, ?U, ?NS, ?Project),
       $IAWFpublisher:complete($IAWFscid, ?U, ?NS, ?Project).
-//      eligibleProject(?Project),
-//      trustedNS(?NS).
-    putAccessRule($DataScid).
+//    eligibleProject(?Project),
+//    trustedNS(?NS).
 
     link($IAWFtoken).
     link($RAWFtoken).
     label($DataScid).
 }.
 
-defpost postTwoFlowDataOwnerPolicy(?DataScid, ?RAWFScid, ?IAWFScid) :-
-    [twoFlowDataOwnerPolicy(?DataScid, ?RAWFScid, ?IAWFScid)].
+defpost postTwoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid) :-
+    [twoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid)].
 
-// Data server -- Presidio
-// For debugging added two workflow scids: remove these.
-// and also from mvp-client
+//
+// Data server (DS)-- Presidio.
+//
 
-defguard access(?DataScid, ?U, ?NS, ?Project, ?WF1, ?WF2) :-
+defguard access(?DataScid, ?U, ?NS, ?Project) :-
    ?DataOwner := rootPrincipal(?DataScid),
    ?DataToken := label(?DataOwner, ?DataScid),
    ?ReceiptRootToken := label(?NS, "receipt root: (?U, ?Project) for ?DataScid"),
-   ?WF1publisher := rootPrincipal(?WF1),
-   ?WF2publisher := rootPrincipal(?WF2),
 {
    link($DataToken).
    link($ReceiptRootToken).
 
-//Debug
-$NS:complete($U,$Project,$WF1)?
-$NS:linked($U,$Project)?
-$DataOwner:putAccessRule($DataScid)?
-$WF1publisher:complete($WF1,$U,$NS,$Project)?
-$WF2publisher:complete($WF2,$U,$NS,$Project)?
-
    grantAccess(?Owner, ?DataScid, ?U, ?NS, ?Project) :-
- //  // keep this out until satisfied:  trustedNS(NS),
+ //  trustedNS(NS),
      ?Owner:access(?DataScid, ?U, ?NS, ?Project).
 
-  grantAccess($DataOwner, $DataScid, $U, $NS, $Project)?
+   grantAccess($DataOwner, $DataScid, $U, $NS, $Project)?
 }.
 
 

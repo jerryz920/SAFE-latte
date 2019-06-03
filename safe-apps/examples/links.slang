@@ -24,7 +24,7 @@ import("../safe.slang").
 
 defcon conAnchor(?Name) :-
 {
-   present($Name).
+   nameEntry($Name, 0).
    label($Name). 
 }.
 
@@ -39,7 +39,7 @@ defpost dropAnchor(?Name) :-
 
 defcon conLink(?Name, ?PrevToken) :-
 {
-   present($Name).
+   nameEntry($Name, 0).
    link($PrevToken).
    label($Name). 
 }.
@@ -47,16 +47,6 @@ defcon conLink(?Name, ?PrevToken) :-
 defpost dropLink(?Name, ?Token) :-
    [conLink(?Name, ?Token)].
 
-
-defcon cons(?CarToken, ?CdrToken) :-
-{
-   link($CarToken).
-   link($CdrToken).
-   label("car $CarToken cdr $CdrToken"). 
-}.
-
-defpost postCell(?CarToken, ?CdrToken) :-
-   [cons(?CarToken, ?CdrToken)].
 
 //
 // Create a labeled logic set that links (includes) another set by name.
@@ -68,7 +58,7 @@ defpost postCell(?CarToken, ?CdrToken) :-
 defcon conLinkByName(?Name, ?PrevName) :-
    ?PrevToken = label(?PrevName),
 {
-   present($Name).
+   nameEntry($Name, 0).
    link($PrevToken).
    label($Name). 
 }.
@@ -85,7 +75,7 @@ defpost dropLinkByName(?Name, ?PrevName) :-
 defcon conCrossLinkByName(?Name, ?PrevName, ?Owner) :-
    ?PrevToken = label(?Owner, ?PrevName),
 {
-   present($Name).
+   nameEntry($Name, 0).
    link($PrevToken).
    label($Name). 
 }.
@@ -101,7 +91,7 @@ defpost dropCrossLinkByName(?Name, ?PrevName, ?Owner) :-
 defguard queryPresent(?Name, ?Owner, ?RootToken) :-
 {
    link($RootToken).
-   $Owner:present($Name)?
+   $Owner:nameEntry($Name, ?Value)?
 }.
 
 //
@@ -113,7 +103,7 @@ defguard queryPresent(?Name, ?Owner, ?RootToken) :-
 defguard queryInHere(?Name, ?RootToken) :-
 {
    link($RootToken).
-   present($Name)?
+   nameEntry($Name, ?Value)?
 }.
 
 //
@@ -125,8 +115,30 @@ defguard queryPresentByName(?Name, ?Owner, ?RootName, ?RootOwner) :-
    ?RootToken = label(?RootOwner, ?RootName),
 {
    link($RootToken).
-   $Owner:present($Name)?
+   $Owner:nameEntry($Name, ?Value)?
 }.
+
+//
+// Cons and postcell are for a future extension to build general nested link lists (like lisp).
+//
+
+defcon cons(?CarToken, ?CdrToken) :-
+{
+   link($CarToken).
+   link($CdrToken).
+   label("car $CarToken cdr $CdrToken"). 
+}.
+
+defpost postCell(?CarToken, ?CdrToken) :-
+   [cons(?CarToken, ?CdrToken)].
+
+
+//
+// The following script elements illustrate governance policy rules and policy mobility.
+// We are a little light on comments here but they are written up in the markdown.
+//
+
+
 
 //
 // Issue a certificate endorsing another principal as "trusted".  We refer to the
@@ -145,10 +157,8 @@ defpost endorse(?Endorsee) :-
 defcon trustPolicySet(?Endorser) :-
 {
    endorser($Endorser).
-   trustedName(?Name) :-
-        present(?Name).
-   trustedName(?Name) :-
-        ?Speaker:present(?Name),
+   trustedName(?Name, ?Value) :-
+        ?Speaker:nameEntry(?Name, ?Value),
         ?Endorser:trusted(?Speaker),
 	endorser(?Endorser).
    label("accept trustedName endorsements from $Endorser").	   
@@ -157,17 +167,28 @@ defcon trustPolicySet(?Endorser) :-
 defpost trustPolicy(?Endorser) :-
     [trustPolicySet(?Endorser)].
 
+defcon delegatePolicyAuthoritySet(?PolicyMaker, ?PolicyToken) :-
+{
+    trustedName(?Name, ?Value) :-
+         $PolicyMaker:trustedName(?Name, ?Value).
+    link($PolicyToken).
+    label("delegate trustedName authority to policy $PolicyToken by maker $PolicyMaker").	   
+}.
+
+defpost delegatePolicyAuthority(?PolicyMaker, ?PolicyToken) :-
+    [delegatePolicyAuthoritySet(?PolicyMaker, ?PolicyToken)].
+
 defguard queryTrustedName(?Name, ?RootToken, ?Policy) :-
 {
    link($RootToken).
    link($Policy).
-   trustedName($Name)?
+   trustedName($Name, ?Value)?
 }.
 
-defguard queryTrustedName(?Name, ?Believer, ?RootToken, ?Policy) :-
+defguard queryNameTrustedByPrincipal(?Name, ?Believer, ?RootToken, ?Policy) :-
 {
      link($RootToken).
      link($Policy).
-     $Believer:trustedName($Name)?
+     $Believer:trustedName($Name, ?Value)?
 }.
 
