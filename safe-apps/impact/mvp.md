@@ -46,7 +46,7 @@ Once the slang-shell gives you a prompt, point it at your safe-server.    Someth
 ?ServerJVM := "localhost:7777".
 ```
 
-If your safe-server is indeed running on localhost on port 7777, this command is optional: it given as the default in the `mvp.slang` safe-server script.
+If your safe-server is indeed running on localhost on port 7777, this command is optional: it is given as the default in the `mvp.slang` safe-server script.
 
 Finally, load the MVP client script into your slang-shell:
 
@@ -54,7 +54,7 @@ Finally, load the MVP client script into your slang-shell:
 import("safe-apps/impact/mvp-client.slang").
 ```
 
-###2. Post the principal certificates
+### 2. Post the principal certificates
 
 As always, the principals must post their IdSet certificates.   These slang-shell commands presume that you are using the same keypairs generated as for the STRONG example:
 
@@ -69,9 +69,10 @@ As always, the principals must post their IdSet certificates.   These slang-shel
 ?DP := postRawIdSet("strong-4").
 ```
 
-Each principal certificates is posted in the shared K/V store at a token that is the principal's keyhash.  Each `postRawIdSet` returns the keyhash, and slang-shell saves it in a shell variable that names the principal for future commands.
+Each principal certificate is posted in the shared K/V store at a token that is the principal's keyhash.  Each `postRawIdSet` returns the keyhash, and slang-shell saves it in a shell variable that names the principal for future commands.
 
 ####The players
+
 There are four principals involved in the demo:
 
 
@@ -85,9 +86,11 @@ There are four principals involved in the demo:
 
 ###3. Set up scids for workflows and dataset
 
-This example involves three *secure objects*: two workflows (**$WF1** and **$WF2**) and the dataset (**$DataSet**).  They are *objects* in a particular sense.  Like principals,  we can make logical statements about them (e.g., in certificates) and reason about them according to those statements and various logical policy rules.  However, the objects do not themselves issue statements or certificates: they are not principals, and therefore do not have keypairs.  The objects are *secure* in the sense that their names (constants in the logic) are certified, so that an untrusted principal cannot hijack another principal's object and make undetectably bogus statements about it.
+This example involves three *secure objects*: two workflows (**$WF1** and **$WF2**) and the dataset (**$DataSet**).  They are *objects* in a particular sense.  Like principals,  we can make logical statements about them (e.g., in certificates) and reason about them according to those statements and various logical policy rules.  However, the objects do not themselves issue statements or certificates: they are not principals, and therefore do not have keypairs.  The objects are *secure* in the sense that their names are certified, so that an untrusted principal cannot hijack another principal's object and make undetectably bogus statements about it.
 
 Specifically, each secure object is named by a *self-certifying identifier* (scid).  The scid is bound to the object's *controlling principal* or *owner*: an object's owner is the principal who creates the object and is empowered to direct how others should reason about the object.  A scid is formed by concatenating the owner's keyhash with a unique object name chosen by the owner, e.g., a UUID.
+
+Scids act as constants that name the objects in the scripts and logic rules.  Logic or slang scripts can extract the owner keyhash from a scid, and verify that other statements (e.g., object attributes or policy rules) are spoken by the object's owner.
 
 So we make three scids to represent these objects in future commands:
 
@@ -138,7 +141,7 @@ postCommonCompletionReceipt("someProject", $WF2).
 postUserCompletionReceipt("someUser", "someProject", $WF2).
 ```
 
-In the MVP, the NS also knows the dataset that the user intends to request, and the workflows required to access the dataset.   Also, in the MVP the same NS attests all required workflows for each given dataset: the NS links the attestations for all required workflows into a *link receipt* for the dataset, user, and project.  A sequence of calls can add multiple workflow completions to the same link receipt.
+In the MVP, the NS also knows the dataset that the user intends to request, and the workflows required to access the dataset.   Also, in the MVP the same NS attests all required workflows for each given dataset.  These restrictions in the MVP enable the NS to link the attestations for all required workflows into a *link receipt* for the dataset, user, and project.  A sequence of calls can add multiple workflow completions to the same link receipt.
 
 ```
 postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF1).
@@ -147,9 +150,9 @@ postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF2).
 
 ###7. Data Provider (Presidio): check access
 
-Now we are ready for a DP to check access for the dataset.   We assume in this scenario that the DP is operated by a separate principal from the dataset owner (DSO), but this is optional: nothing about the example or the code requires it.
+Now we are ready for a DP to check access for the dataset.   We assume in this scenario that the DP is operated by a separate principal from the dataset owner (DSO), but that is optional: nothing about the example or the code requires it.
 
-The DP must know the authenticated identities of the user and project.  These are authenticated via SSO (e.g., Shibboleth) in the same way as for the NS, and so they are given as strings.  It also must know the the public key of the NS that attested this user and project.   In the real scenario the user passes the selected project name and NS public key as web tokens (JWT).
+The DP must know the authenticated identities of the user and project.  These are authenticated via SSO (e.g., Shibboleth) in the same way as for the NS, and so they are given as strings.  The DP also must know the the public key of the NS that attested this user and project.   In the real scenario the user passes the selected project name and NS public key as web tokens (JWT).
 
 The DP issues a guard query against this information.  The trust script retrieves all needed policies and attestations: it fetches policy for the dataset, which links to the WP's completion rules for the required workflows.  It fetches the link receipt issued by the NS for the dataset, user, and project.  The closure of the link receipt includes all required attestations.
 

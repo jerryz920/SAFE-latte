@@ -64,7 +64,7 @@ This is exactly the same as the mvp.slang demo, EXCEPT:
 - Each slang-shell receives only the commands for the corresponding principal.
 
 In the unified example (using mvp.slang), all of the principals share a slang-shell with its variables.  Various keyhashes
-and skids are saved in shared slang-shell variables.  But when we run the split example, we must manage out-of-band
+and scids are saved in shared slang-shell variables.  But when we run the split example, we must manage out-of-band
 communication of certains keyhashes and scids among the principals.  This is well-understood in planning for the
 real-world scenario.
 
