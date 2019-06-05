@@ -29,7 +29,7 @@ sbt "project safe-server" "run -f ../safe-apps/impact/mvp.slang -r safeService  
 
 Your slang-shell loads the matching `mvp-client.slang` script, as described below.
 
-###1. Start a slang-shell
+### 1. Start a slang-shell
 
 Start your slang-shell in the usual fashion.  Something like:
 
@@ -71,7 +71,7 @@ As always, the principals must post their IdSet certificates.   These slang-shel
 
 Each principal certificate is posted in the shared K/V store at a token that is the principal's keyhash.  Each `postRawIdSet` returns the keyhash, and slang-shell saves it in a shell variable that names the principal for future commands.
 
-####The players
+#### The players
 
 There are four principals involved in the demo:
 
@@ -84,7 +84,7 @@ There are four principals involved in the demo:
 
 * **$DP**: Data Provider (Presidio)
 
-###3. Set up scids for workflows and dataset
+### 3. Set up scids for workflows and dataset
 
 This example involves three *secure objects*: two workflows (**$WF1** and **$WF2**) and the dataset (**$DataSet**).  They are *objects* in a particular sense.  Like principals,  we can make logical statements about them (e.g., in certificates) and reason about them according to those statements and various logical policy rules.  However, the objects do not themselves issue statements or certificates: they are not principals, and therefore do not have keypairs.  The objects are *secure* in the sense that their names are certified, so that an untrusted principal cannot hijack another principal's object and make undetectably bogus statements about it.
 
@@ -104,7 +104,7 @@ So we make three scids to represent these objects in future commands:
 ?DataSet := "$DSO:$UUID3".
 ```
 
-###4. Workflow Publisher: post completion rules for workflows
+### 4. Workflow Publisher: post completion rules for workflows
 
 When a WP publishes a new workflow, it posts rules to verify that the workflow is complete for a specified user under a specified project.   An NS attests that various parties have completed various elements of the workflow.  The workflow rules validate these attestations and verify that all required attestations are present.
 
@@ -115,7 +115,7 @@ This example has two workflows.  The WP posts completion rules for each of them.
 postPerFlowRule($WF1).
 postPerFlowRule($WF2).
 ```
-###5. DataSet Owner: post access policy for dataset
+### 5. DataSet Owner: post access policy for dataset
 
 The DSO posts an access policy for each dataset.   In this example the DSO policy requires completion of two workflows.
 
@@ -124,7 +124,7 @@ The DSO posts an access policy for each dataset.   In this example the DSO polic
 postTwoFlowDataOwnerPolicy($DataSet, $WF1, $WF2).
 ```
 
-###6. Notary Service: post completion receipts for both workflows
+### 6. Notary Service: post completion receipts for both workflows
 
 Users and administrators interact with the NS through a Web browser to view and complete the workflows.  A workflow may have common elements (e.g., administrative approval) as well as user-specific elements.
 
@@ -148,7 +148,7 @@ postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF1).
 postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF2).
 ```
 
-###7. Data Provider (Presidio): check access
+### 7. Data Provider (Presidio): check access
 
 Now we are ready for a DP to check access for the dataset.   We assume in this scenario that the DP is operated by a separate principal from the dataset owner (DSO), but that is optional: nothing about the example or the code requires it.
 
