@@ -71,7 +71,7 @@ defpost postPerFlowRule(?WFScid) :-
     [perFlowRule(?WFScid)].
 
 //
-// Data provider (DP).
+// Dataset owner (DSO).
 //
 
 defcon twoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid) :-
@@ -96,7 +96,7 @@ defpost postTwoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid) :-
     [twoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid)].
 
 //
-// Data server (DS)-- Presidio.
+// Data provider/server (DP)-- Presidio.
 //
 
 defguard access(?DataScid, ?U, ?NS, ?Project) :-
