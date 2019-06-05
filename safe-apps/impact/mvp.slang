@@ -18,7 +18,9 @@ defcon generateUserCompletionReceipt(?User, ?Project, ?FlowScid) :-
 }.
 
 //
-// NS: for required MVP root receipt.
+// NS: for required MVP root receipt.  The NS calls this once for each workflow required to access
+// the dataset.  One possibly confusing aspect: the receipt links for each call all end up in the same
+// certificate.
 //
 defcon linkReceiptForDataset(?User, ?Project, ?DataScid, ?FlowScid) :-
     ?ReceiptToken := label("receipt: (?User, ?Project) completes ?FlowScid"),
