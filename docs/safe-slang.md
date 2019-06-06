@@ -234,6 +234,8 @@ defcon endorseUser(?User) :-
 
 Note the use of helper functions `label()` to generate a label and `link()` to retrieve a linked logic set. 
 
+`label()` has two forms with one or two parameters: (label) and (identity, label). It produces a token in the form of <identity hash>:<hash of label>, where identity comes either from the invoker (the single parameter form) or from the first parameter. 
+
 ## Queries
 
 Guards (defguard) in Slang carry logical queries through which SAFE applications request to perform compliance check before approving an authorization.  These queries are written in standard Datalog and are evaluated against the proof context specified in a guard. The two exemplary queries below check the source IP address of a request, and the membership of a requesting principal, respectively.    
