@@ -115,7 +115,8 @@ import("safe-apps/impact/mvp-client.slang").
 ?Self := "strong-2". 
 ?DSO := postRawIdSet("strong-2"). 
 
-//Stuff we just have to know.
+//Stuff we just have to know. 
+// Note that MVP v.0 WP==DSO. 
 ?WF1 := 'EhSrk2CTCo5LMmsKkgiVny-mATsOqccTQFBo8IS2mqI=:6ec7211c-caaf-4e00-ad36-0cd413accc91'.
 ?WF2 := 'EhSrk2CTCo5LMmsKkgiVny-mATsOqccTQFBo8IS2mqI=:1b924687-a317-4bd7-a54f-a5a0151f49d3'.
 
@@ -137,6 +138,8 @@ import("safe-apps/impact/mvp-client.slang").
 ?NSV := postRawIdSet("strong-3"). 
 
 //Stuff we just have to know.
+// Note that these WF IDs will be baked into workflow templates.
+// Dataset ID is known to NS from dataset registration
 ?WF1 := 'EhSrk2CTCo5LMmsKkgiVny-mATsOqccTQFBo8IS2mqI=:6ec7211c-caaf-4e00-ad36-0cd413accc91'.
 ?WF2 := 'EhSrk2CTCo5LMmsKkgiVny-mATsOqccTQFBo8IS2mqI=:1b924687-a317-4bd7-a54f-a5a0151f49d3'.
 ?DataSet := 'garxNsw58U-LSalBsGkmFg7pjqer5A7-VVXIH5ySJ7M=:26dbc728-3c8d-4433-9c4b-2e065b644db5'.
@@ -158,6 +161,8 @@ import("safe-apps/impact/mvp-client.slang").
 ?ServerJVM := "localhost:7781".
 
 //Stuff we just have to know.
+// NSV comes from JWT passed by NS
+// Dataset ID comes from JWT passed by NS
 ?NSV := 'JNnJckkhcz8YF-t_IPoPj1O5dWioGBfY5-uML5KheKc='.
 ?DataSet := 'garxNsw58U-LSalBsGkmFg7pjqer5A7-VVXIH5ySJ7M=:26dbc728-3c8d-4433-9c4b-2e065b644db5'.
 
