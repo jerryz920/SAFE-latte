@@ -234,7 +234,7 @@ defcon endorseUser(?User) :-
 
 Note the use of helper functions `label()` to generate a label and `link()` to retrieve a linked logic set. 
 
-`label()` has two forms with one or two parameters: (label) and (identity, label). It produces a token in the form of <identity hash>:<hash of label>, where identity comes either from the invoker (the single parameter form) or from the first parameter. 
+`label()` has two forms with one or two parameters: (identifier) and (identity, identifier). It produces a token in the form of `<identity hash>:<hash of identifier>`, where identity comes either from the invoker (the single parameter form) or from the first parameter and identifier is a string. 
 
 ## Queries
 
