@@ -14,7 +14,7 @@ An ImPACT document discusses the structure and rationale of the MVP scenario in 
 
 ## Running the MVP scenario
 
-For ease of use, this variant of the scenario runs with a single SAFE trust script that combines the actions of all four actors (principals).  We describe a more realistic variant below (future).
+For ease of use, this variant of the scenario runs with a single SAFE trust script that combines the actions of all four actors (principals).  We describe a more realistic **split** variant below that separates the principals so their only interaction is through the shared K/V store, and some static initializer inputs.
 
 To run it you need a local SAFE install with a slang-shell issuing REST calls to a safe-server.  The safe-server is a client of a shared KV store (Riak) and is pointed at a local keypair directory with four keypairs.
 
