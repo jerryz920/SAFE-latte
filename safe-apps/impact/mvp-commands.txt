@@ -1,5 +1,16 @@
+
+//Run server on port 7777:
+sbt "project safe-server" "run -f ../safe-apps/impact/mvp.slang -r safeService  -kd  ~/safe-scratch/principalkeys"
+
+//Run slang-shell client:
+sbt "project safe-lang" "run"
+
+----------------------
+Slang-shell commands
+----------------------
+
 import("safe-apps/impact/mvp-client.slang").
-?ServerJVM := "localhost:7777".
+?ServerJVM := "localhost:7778".
 
 ?Self := "strong-1".
 ?WP := postRawIdSet("strong-1").
@@ -39,3 +50,10 @@ import("safe-apps/impact/mvp-client.slang").
 // Data Provider (Presidio): check access
 ?Self := $DP.
 access($DataSet, "someUser", $NSV, "someProject" )?
+
+
+**************************************************************************************************************
+SPLIT EXAMPLE
+
+See description in mvp.md.
+

@@ -8,7 +8,9 @@ SAFE is written in Scala and uses a (mostly) off-the shelf implementation of Saf
 
 ### Riak
 
-The best way to understand how Riak is installed is to inspect the Riak [Dockerfile](../dockerfiles/riak/Dockerfile). As of this writing Riak version used by SAFE is quite obsolete and it is expected a new back-end storage system will be developed to replace it.
+The best way to understand how Riak is installed is to inspect the
+Riak [Dockerfile](../dockerfiles/riak/Dockerfile).  Riak is a
+stand-in for a cooperative key-value store (e.g., a DHT) required by SAFE.
 
 ### SAFE
 
