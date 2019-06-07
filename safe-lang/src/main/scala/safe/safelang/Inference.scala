@@ -101,6 +101,7 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
     , StrLit("parseSet1")
     , StrLit("concat2")
     , StrLit("scid0")
+    , StrLit("scidToken1")
     //, StrLit("print1"), StrLit("println1")
     , StrLit("simplePost2")
     , StrLit("simpleGet1")
@@ -988,6 +989,15 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
 	}
         val result = Object(rootId = Id(principal.pid)).scid.value.name
 	Constant(StrLit(result), StrLit("nil"), StrLit("StrLit"), Encoding.AttrLiteral)
+      case (StrLit("scidToken"), 1) =>
+        val delimiterIndex = args(0).id.name.lastIndexOf(":")
+        if(delimiterIndex == -1)
+          throw UnSafeException(s"Invalid token: ${args(0).id.name}")
+        val pid = args(0).id.name.substring(0, delimiterIndex)
+        val label = args(0).id.name
+        val setId = Identity.computeSetToken(pid, label)
+	Constant(StrLit(setId), StrLit("nil"), StrLit("StrLit"), Encoding.AttrBase64) 
+
       // [QiangTODO]
       //case (StrLit("parseSet"), 1)  =>
       //  val setTerm: SetTerm = (Parser()).parseCertificate(args(0).id.name)

@@ -77,9 +77,9 @@ defpost postPerFlowRule(?WFScid) :-
 defcon twoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid) :-
    spec('example data owner authz rule with two approval workflows (e.g., research and infrastructure)'),
    ?RAWFpublisher := rootPrincipal(?RAWFscid),
-   ?RAWFtoken := label(?RAWFpublisher, ?RAWFscid),
+   ?RAWFtoken := scidToken(?RAWFscid),   
    ?IAWFpublisher := rootPrincipal(?IAWFscid),
-   ?IAWFtoken := label(?IAWFpublisher, ?IAWFscid),
+   ?IAWFtoken := scidToken(?IAWFscid),   
 {
    access($DataScid, ?U, ?NS, ?Project) :- 
       $RAWFpublisher:complete($RAWFscid, ?U, ?NS, ?Project),
@@ -101,7 +101,7 @@ defpost postTwoFlowDataOwnerPolicy(?DataScid, ?RAWFscid, ?IAWFscid) :-
 
 defguard access(?DataScid, ?U, ?NS, ?Project) :-
    ?DataOwner := rootPrincipal(?DataScid),
-   ?DataToken := label(?DataOwner, ?DataScid),
+   ?DataToken := scidToken(?DataScid),
    ?ReceiptRootToken := label(?NS, "receipt root: (?U, ?Project) for ?DataScid"),
 {
    link($DataToken).
