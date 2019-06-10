@@ -684,14 +684,14 @@ trait ParserImpl
 
   override def parse(source: String): Map[Index, OrderedSet[Statement]] = {
     //println(s"[slogParser parse] saysOperator: ${saysOperator}")
-    println("\n\n========================== PARSE SOURCE ============================")
+    //println("\n\n========================== PARSE SOURCE ============================")
     // Only display the first 100
     if(source.size > 100) {
-      println(s"${source.substring(0, 100)} \n\n...")
+//      println(s"${source.substring(0, 100)} \n\n...")
     } else {
-      println(source)
+//      println(source)
     }
-    println("====================================================================")
+//    println("====================================================================")
     //println(s"_statementCache=${_statementCache}")
     //scala.io.StdIn.readLine()
     val res: Map[Index, OrderedSet[Statement]] = parseAll(program, source) match {
@@ -853,17 +853,17 @@ trait ParserImpl
       if(inputSource) inputSource = false
     }  while(!sourcesToCompile.isEmpty)
 
-    println(s"\n$count scripts in total are assembled")
-    println(s"${count-1} linked scripts:") 
-    compiledSources.foreach(println(_))
+//    println(s"\n$count scripts in total are assembled")
+//    println(s"${count-1} linked scripts:") 
+//    compiledSources.foreach(println(_))
 
     val compileTime = (System.nanoTime - t0) / 1000000
-    println(s"\nTime used to compile all sources: $compileTime ms")
+//    println(s"\nTime used to compile all sources: $compileTime ms")
     //scala.io.StdIn.readLine()
 
     val monolithic: SafeProgram = linkPrograms(allPrograms)
     val compilePlusLinkTime = (System.nanoTime - t0) / 1000000
-    println(s"Time used to compile and assemble all code: $compilePlusLinkTime ms")
+    println(s"Time used to translate this source: $compilePlusLinkTime ms")
     //scala.io.StdIn.readLine()
 
     monolithic
