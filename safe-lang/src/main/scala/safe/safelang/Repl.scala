@@ -26,9 +26,20 @@ class Repl(
                        s"Safe Language v0.1: $date (To quit, press Ctrl+D or q.)"
 
   override def updatePromptSelf(): Unit = {
-    if(envContext.contains(StrLit("Self"))) {
-      val currentSelf = envContext(StrLit("Self")).asInstanceOf[Constant].id.name
-      stdPromptMsg = currentSelf + "@slang> "
+    val sls = StrLit("Self")
+    if(envContext.contains(sls)) { 
+      val currentSelf = envContext(sls)
+      //
+      // Chase 6/10/19: a little bit of Scala magic to find another variable whose
+      // value is the $Self principalID.  If so, use that variable name on the prompt
+      // (e.g., "Alice") instead of the raw principalID.
+      //
+      val s = envContext.find({case (k, v) => (v==currentSelf && k != sls)})
+         match {
+              case None => currentSelf.asInstanceOf[Constant].id.name
+              case Some((k, v)) => k.name
+         }
+      stdPromptMsg = s + "@slang> "
     } else {
       stdPromptMsg = "slang> "
     }

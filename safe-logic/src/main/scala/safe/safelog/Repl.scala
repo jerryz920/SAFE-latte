@@ -330,6 +330,7 @@ class Repl(
 
     reader.readLine() match {
       case null => _inputScanned.append("q.")
+      case "" => _inputScanned.append("noop.")
       case str  => _inputScanned.append(str)
     }
     //println(s"cmd: ${_inputScanned.toString}")
