@@ -175,24 +175,33 @@ The split MVP demo is the same as the simple MVP demo, EXCEPT for these differen
 
 * *Each slang-shell receives only the commands for its principal.*
 
-### The key distribution problem
+### Note on the key distribution problem and SAFE integration
 
-The ImPACT scenarios require that the principals distribute their keyhashes to one another out of band.  Some scids are also distributed out of band.  The deployable software infrastructure for ImPACT handles this out-of-band distribution.  Specifically:
+The ImPACT scenarios require that the principals distribute their keyhashes to one another out of band.  Some scids are also distributed out of band, as are the string names for users and projects (e.g., given by CILogon and CoManage).
 
-* Dataset Owner ($DSO) must know the scids of the workflows $WF1 and $WF2 that it requires for its policy.
+The deployable software infrastructure for ImPACT handles this out-of-band distribution.  Specifically:
 
-* Notary Service ($NS) must know the scid for each workflow it handles, and also the $DataSet scid that the user will request.
+* Dataset Owner ($DSO) must know the *workflow scids* $WF1 and $WF2 that it requires for its policy.  These can be obtained from an online catalog, or the $DSO may act as its own workflow publisher ($WP).
 
-* Presidio data server must know the $DataSet scid (from its filesystem) and the attesting $NS keyhash (obtained from a JWT).
+* Notary Service ($NSV) must know the *workflow scids* for each workflow that it handles.  Workflows are registered with the NSV.
 
-Distribution is easy in the unified example (using mvp.slang) because all of the principals share a slang-shell.  We just use slang-shell variables to share these values among the principals.
+* For MVP, Notary Service ($NSV) must know the *$DataSet* scid that the user will request and the workflows required to access it.  This requirement enables $NSV to generate *link receipts* (see above) so that Presidio can fetch required attestation receipts without knowing the $DSO's policy.   It also helps usability, because the same information permits NSVs to assist users in finding the required forms.  DSOs register datasets with NSVs, and users browse and select datasets. 
 
-But we need another way to do it for the split example.  The values are deterministic and repeatable in the example, but they depend on the principal keyhashes as given in the keypair
-directory. 
+* Presidio data server must know the *user name*, which it obtains via TLS client authentication (e.g., with a CILogon-issued certificate),  and the *$DataSet* scid, which it retrieves from its filesystem.
 
- The simplest solution is to save the variables in a file and import them into each of the slang-shells.  We assume that your slang-shells each have a copy of the file at the same relative pathname.  You can assure this by running all of the slang-shells in the same clone of the SAFE repository.  If they really run on different nodes, then each must have a copy of the file.
+* Presidio also must know the attesting *$NSV keyhash*  and the *project name* that the user acts under.  It is sufficient for the user to pass this information to Presidio in arguments or via an unsigned JWT.
+
+**Dissenting opinion** (Chase): As of this writing the MVP design calls for the Notary Service (NSV) to generate a signed JWT with the user name, project name, a TTL, and other information.  This JWT certifies to Presidio that the NSV has verified (via CILogon and CoManage) that the user is authorized to act under the project for the purpose of accessing data.   This signed JWT is insufficient because the design relies on SAFE to validate that the issuer is a valid Notary Service anyway.  It is unnecessary because the NSV also certifies the same user-project association via SAFE, and it can put a TTL on that certification as well.    But the scheme will work when combined with the other mechanisms in place.
 
 ### 1. Save the keyhashes and scids
+
+Distribution of keyhashes and other values is easy in the unified example (using `mvp.slang`) because all of the principals share a slang-shell: we just use slang-shell variables to share the various values among the principals.
+
+But we need another way to do it for the split example.  The values are not fixed: for example, the keyhashes and scids depend on the principal keypairs in the specified keypair directory. 
+
+The simplest solution is to save the variables in a file and import them into each of the slang-shells, as described below.  We assume that your slang-shells each have a copy of the file at the same relative pathname.  You can assure this by running all of the slang-shells in the same clone of the SAFE repository.  If they really run on different nodes, then each must have a copy of the file.
+
+
 
 Run a slang-shell in the usual way.  It must have access to your keypair directory in its file system.
 

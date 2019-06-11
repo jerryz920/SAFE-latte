@@ -281,7 +281,7 @@ class Repl(
           val (importedProgram, time) = util.time( importProgram( Repl.expandPathname(file) )  )
           addStatementsToRepl(importedProgram)  // Add statements to Repl cache
           logger.info(s"Time for import is $time seconds")
-          println("Imported in %f seconds".format(time))
+//          println("Imported in %f seconds".format(time))
         } catch {
           case ex: Exception =>
             println(s"Failed to parse ${filePathname.name}: ${ex}")
@@ -330,6 +330,7 @@ class Repl(
 
     reader.readLine() match {
       case null => _inputScanned.append("q.")
+      case "" => _inputScanned.append("noop.")
       case str  => _inputScanned.append(str)
     }
     //println(s"cmd: ${_inputScanned.toString}")

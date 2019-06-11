@@ -73,9 +73,9 @@ trait ParserImpl
   
   private def buildIndexForDef(defIndex: StrLit, stmtIndex: StrLit, terms: Seq[Term]): Tuple2[Index, OrderedSet[Statement]] = {
     //println("[slangParser]: terms: " + terms)
-    println("[slangParser]: build indices: " + defIndex.name + "  " + stmtIndex.name + "  " + terms.head)
+    //println("[slangParser]: build indices: " + defIndex.name + "  " + stmtIndex.name + "  " + terms.head)
     val stmts = Assertion(terms)
-    println("[slangParser] stmts  " + stmts)
+    println("[slangParser]  " + stmts)
     val resForDef = addStatement(defIndex, stmts)  // Inserted two statements with different indices
     val res = addStatement(stmtIndex, stmts)
     (stmtIndex, res)

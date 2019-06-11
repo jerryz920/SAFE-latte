@@ -80,7 +80,8 @@ case class Subcontext(
         if(stmtSet.contains(stmt)) {  
          // Duplicated stmt
           if( isSlangSubcontext() ) {
-            println("[" + Console.RED + "Duplicated Slang construct" + Console.RESET + s"]  ${index}   ->   $stmt     stmt hashcode: ${stmt.hashCode}")
+            // No reason to print this: it nags me when I repeat myself which I do.  Chase 6/10/19.
+            // println("[" + Console.RED + "Duplicated Slang construct" + Console.RESET + s"]  ${index}   ->   $stmt     stmt hashcode: ${stmt.hashCode}")
             //println("[" + Console.BLUE + "Existing statements" + Console.RESET + s"]   index: ${index}")
             //stmtSet.foreach(stmt => println(s"$stmt        hashcode: ${stmt.hashCode}"))
           } else {
