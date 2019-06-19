@@ -1,7 +1,10 @@
 
-#
+# SAFE Overview and 'hello world!' example
+
+This section is a primer to SAFE - it describes principles of operations, basic installation, basics of scripting, syntax and debugging.
 
 ## What is SAFE?
+
 SAFE is a platform for participants to issue certificates, link them to other certificates issued by other principals, and check validity of collections of certificates against various security policies.   In another aspect SAFE is a secure dynamic linking system for multi-principal logic programs.   The relationship between these two aspects is that SAFE encodes certificate content and policies in an expressive logic language, such that their union forms a logic program from which SAFE's standard logic engine can prove compliance.
 
 
@@ -12,54 +15,46 @@ SAFE checks compliance with security policies by evaluating collections of certi
 
 For example, a data server might pass a collection of certificates to the SAFE engine and ask it: *``Do the authenticated logic statements in these certificates allow me to prove that the subject qualifies for access to the requested data set according to my policy?''*  
 
+To enable users to form certificate collections, SAFE stores certificates in a shared key-value store (Riak).  SAFE provides functions to link certificates securely and to fetch and cache linked certificates automatically.   Each stored certificate has a unique certified index key, called a *token*.  Given the token, anyone can link or retrieve the certificate.
 
-To enable users to form certificate collections, SAFE stores certificates in a shared key-value store (Riak).  SAFE provides functions to link certificates securely and to fetch and cache linked certificates automatically.   Each stored certificate has a unique certified index key, called a *token*.  Given the token, anyone can link or retrieve the certificate. 
-
-We use the same logic language to label the certificates with string names and to construct  links among labeled logic sets.   If you know a certificate's string label and the principal that issued it, then you can ``synthesize'' its token.
-
+We use the same logic language to label the certificates with string names and to construct  links among labeled logic sets.   If you know a certificate's string label and the principal that issued it, then you can "synthesize" its token.
 
 Since SAFE defines a standard format for logical certificates, we need only to standardize the logic content and linking structures for each application.  We represent the logic standards using a logic-based scripting language---called *slang*---with embedded templates for the actual logic content, including links and labels.   We use slang to implement compact trust scripts that specify the content and also serve directly as the implementation.
 
 It's a powerful way to think about trust, and a powerful platform to build trust infrastructure.  But it is unfamiliar and it's a lot to digest.  The `links` scripts provide a simple example to illustrate some key concepts and features of SAFE and slang---and also some quirks and buried rakes.
 
-## Running the `links` slang application
+## Running the *links* slang application
 
-The `links` script runs within an HTTP server (safe-server) that serves a REST API defined within the script.   The server has an embedded logic engine, and acts as a client of the key-value store.  In a secure deployment, each principal runs its own instance of safe-server that acts on that principal's behalf.  The instance runs with the keypair of its controlling principal (owner), and accepts REST calls only from its owner.  The owner trusts the instance to sign certificates under its keypair, protect its private key, validate incoming certificates, evaluate the logic correctly, and apply local policy.
-
+The [`links` (SAFE/safe-apps/examples)](../safe-apps/examples) script runs within an HTTP server (safe-server) that serves a REST API defined within the script.   The server has an embedded logic engine, and acts as a client of the key-value store (Riak).  In a secure deployment, each principal runs its own instance of safe-server that acts on that principal's behalf.  The instance runs with the keypair of its controlling principal (owner), and accepts REST calls only from its owner.  The owner trusts the instance to sign certificates under its keypair, protect its private key, validate incoming certificates, evaluate the logic correctly, and apply local policy.
 
 To keep things simpler for debugging and demos, a single SAFE instance can act on behalf of multiple principals with different keypairs.  It does not mean the principals trust one another: the scenario runs the same way if they each have a private SAFE instance.  But it is easier to configure and manage.
 
-
-Either way, once we have a safe-server running, we need some way to issue REST commands to it.  You can use *curl* if you want!   Or you can write your own program to make the REST calls.  As an alternative, SAFE provides an interactive command shell called slang-shell.   It has functions to switch among multiple principals, issue script-specific REST calls to the safe-server, and store tokens and other values in named shell variables.
-
+Either way, once we have a safe-server running, we need some way to issue REST commands to it.  You can use *curl* if you want!   Or you can write your own program to make the REST calls.  As an alternative, SAFE provides an interactive *command shell* called `slang-shell`.   It has functions to switch among multiple principals, issue script-specific REST calls to the safe-server, and store tokens and other values in named shell variables.
 
 The slang-shell runs as its own process with slang scripts that define new commands.   These *client* slang scripts tend to be simple: they just issue REST calls against a single SAFE instance on behalf of the current principal.  In particular, they don't produce or consume any certificates, or even touch the key-value store.
 
+There are multiple ways of deploying SAFE servers and Slang shells. In the `links` demo, the slang-server and slang-shell run as scala processes on a single computer, alongside a Riak key-value store.  We can use the [standard docker setup](safe-docker.md), as in the [strong (STRONG) application demo](safe-strong-hello-world.md).  It runs Riak and safe-server within separate containers on the local computer.  The slang-shell shares the container with safe server, running in a separate instace of `sbt` (Scala - the language most of SAFE is written in).
 
-In this demo, the slang-server and slang-shell run as scala processes on a single computer, alongside a Riak key-value store.  We can use the [standard docker setup for ImPACT](https://github.com/RENCI-NRIG/impact-docker-images/tree/master/safe-server), as in the strong (STRONG) application demo.   It runs Riak and safe-server within separate containers on the local computer.  The slang-shell runs in the safe container.
-
-
-I used the Riak container, but I installed the SAFE repo and a Scala environment on my host laptop and ran the slang-shell and safe-server as separate sbt processes, with access to the keypairs stored in a local directory (I used ~/safe-scratch/principalkeys).  That requires a trivial amount of configuration: just poke safe-server/.../application.conf to point metastore at your Riak instance, and set a desired log level.  (The standard setup does that automatically.)
-
+However, for this 'hello world!' example Riak runs in a container, but safe-server and slang-shell run as separate processes *on local computer* using the SAFE repo and a Scala environment installed locally, with access to the keypairs stored in a local directory (for this example ~/safe-scratch/principalkeys).  That requires a trivial amount of configuration: just poke safe-server/.../application.conf to point metastore at your Riak instance, and set a desired log level.  (The standard setup does that automatically.)
 
 The standard setup uses python-dependent utilities in the safe repo to generate keypairs for four principals to use in the strong scenario.   We use the same keypairs with their strong names for the links demo scenario.
 
 ### Running the safe-server
 
-Once your Riak is up, launch your safe-server.  Run it to load the `links` slang script.  This is a different script from the strong example: you can just kill the safe-server and restart it with the links script.  From within the top-level directory of a safe repo clone:
+Once your [Riak container is up](safe-docker.md), launch your safe-server.  Run it to load the `links` slang script.  This is a different script from the strong example: you can just kill the safe-server and restart it with the links script.  From within the top-level directory of a SAFE repo clone:
 
 ```
-sbt "project safe-server" "run -f ../safe-apps/impact/links.slang -r safeService  -kd  ~/safe-scratch/principalkeys"
+(~/SAFE/)$ sbt "project safe-server" "run -f ../safe-apps/impact/links.slang -r safeService  -kd  ~/safe-scratch/principalkeys"
 ```
 
-This just says to launch a SAFE process in the safeService role with the the links script file and the specified key directory.  By default the server serves on `localhost:7777`.  I left it there.  The slang-shell finds it there automatically, but you can give it a command to talk to a different IP address or port.  
+This just says to launch a SAFE process in the safeService role with the the links script file and the specified key directory.  By default the server serves on `localhost:7777`.  The slang-shell finds it there automatically, but you can give it a command to talk to a different IP address or port.  
 
 ### Running the slang-shell
 
-Once the safe-server is up, launch your slang-shell in a different terminal.  From within the top-level directory of a safe repo clone:
+Once the safe-server is up, launch your slang-shell in a different terminal.  From within the top-level directory of a SAFE repo clone:
 
 ```
-sbt "project safe-lang" "run"
+(~/SAFE/)$ sbt "project safe-lang" "run"
 ```
 
 You get a slang-shell command prompt.  You now begin typing commands to slang-shell.  First, import the `links-client` script.
@@ -74,8 +69,7 @@ By default it finds the safe-server at localhost:7777, as in the standard setup.
 ?ServerJVM := "localhost:7777".
 ```
 
-##The `links` example scenario
-
+## The `links` example scenario
 
 From this point, we run the `links` scenario by typing commands to the slang-shell.  Most of the commands we use are implemented in `links-client.slang` and `links.slang`, but some are slang-shell builtins or standard safe commands implemented in `safe-client.slang` and `safe.slang`, which `links` imports.
 
@@ -86,7 +80,7 @@ The links application lets participants issue simple certificates, chain them to
 
 Each certificate in the links application has either zero links or one link: this application builds certificate chains, but not generalized DAGs.   We arbitrarily call a certificate with zero links an *anchor certificate*, and a certificate with one link a *link certificate*.  In addition, each principal has a self-signed certificate called a *principal certificate* that contains the principal's full public key.
 
-###1. Post the principal certificates
+### Post the principal certificates
 
 Each principal issues a SAFE `postRawIdSet` command to issue a self-signed certificate containing the issuer's public key: a *principal certificate*.   A principal certificate may also contain self-asserted facts about the identity in logic.  We call the logic set in a principal certificate an *IdSet*.
 
@@ -99,33 +93,29 @@ Each principal issues a SAFE `postRawIdSet` command to issue a self-signed certi
 ?C := postRawIdSet($Self).
 ```
 
-These commands use several slang-shell variables.  SAFE prefixes variable names with a `?`, and uses `$` to dereference a variable and substitute (interpolate) it with its value. 
+These commands use several slang-shell variables.  SAFE prefixes variable names with a `?`, and uses `$` to dereference a variable and substitute (interpolate) it with its value.
 
 The commands set the `?Self` variable to a name of the *current principal*.  Slang-shell commands always run with the identity of the current principal (*$Self*) and on its behalf.
 
-The principal names correspond to files in the keypair directory given in the `-kd` option to safe-server.  We can generate the keypairs with whatever names we want, but here we use the keypairs generated as in the `strong` scenario (standard setup). 
+The principal names correspond to files in the keypair directory given in the `-kd` option to safe-server.  We can generate the keypairs with whatever names we want, but here we use the keypairs generated as in the `strong` scenario (standard setup).
 
 Each `postRawIdSet` command posts a principal certificate in the store at a token that is the hash of the principal's public key (its *keyhash*).  The command returns the keyhash, which acts as the principal's *PrincipalID*.
 
 
-SAFE requires principal certificates as a convention to enable compact names with secure authentication.  When principals make statements about one another or link to one another's certificates, they use the PrincipalID (keyhash) as a name.  Anyone who learns about another principal (e.g., from a statement in another certificate) learns its keyhash, which serves directly as a token to retrieve the principal's certificate from the store, which contains its IdSet.  The IdSet has the principal's full public key, which authenticates the principal's signatures and certificates. 
+SAFE requires principal certificates as a convention to enable compact names with secure authentication.  When principals make statements about one another or link to one another's certificates, they use the PrincipalID (keyhash) as a name.  Anyone who learns about another principal (e.g., from a statement in another certificate) learns its keyhash, which serves directly as a token to retrieve the principal's certificate from the store, which contains its IdSet.  The IdSet has the principal's full public key, which authenticates the principal's signatures and certificates.
 
 
 These commands store each returned keyhash in a slang-shell variable for future use.  For this scenario we chose variables named A, B, and C for principals Alice, Bob, and Cindy.  We can also use these variables to name the principals, e.g., `?Self := A`.
 
+#### How to view issued SAFE certificates
 
-
-####How to view SAFE certificates
-
-It is easy to view the certificates in the store by issuing a `curl` request from another terminal directly to the Riak service point to GET from the safe bucket at the token.  It looks something like this:
+It is easy to view the certificates in the Riak store by issuing a `curl` request from another terminal directly to the Riak service point to GET from the safe bucket at the token.  It looks something like this:
 
 ```
 curl 'http://localhost:8098/types/safesets/buckets/safe/keys/BQ2CaH...tI0JjZTdo='
 ```
 
-
-
-###2. Issue anchor certificates
+### Issue anchor certificates
 
 Continuing with the scenario, each principal issues a named anchor certificate.  In slang-shell:
 
@@ -144,27 +134,27 @@ defcall dropAnchor(?Name) :-
      dropAnchor($ServerJVM, $ReqEnvs, $Name).
 }.
 ```
-   
+
 On the safe-server, dropAnchor lands in the `links.slang` script.  It posts a certificate created from a logic set constructor.  The certificate contains a single logical assertion that the name is present, and a label that is the same as the name.  Here is the slang code:
 
 ```
 defcon conAnchor(?Name) :-
 {
    nameEntry($Name, 0).
-   label($Name). 
+   label($Name).
 }.
-   
+
 defpost dropAnchor(?Name) :-
    [conAnchor(?Name)].
 ```
 
-Slang's syntax is what it is.   In a nutshell, each script element **def**ines an action: make a call (**defcall**), construct a logic set (**defcon**), post to the store (**defpost**).   Slang also has **defguard** to query a logic context assembled from certificates (see below).
+In a nutshell, each script element **def**ines an action: make a call (**defcall**), construct a logic set (**defcon**), post to the store (**defpost**).   Slang also has **defguard** to query a logic context assembled from certificates (see below). More information on Slang syntax can be found [here](safe-slang.md).
 
 
 The curly brackets `{}` in the **defcon** constructor open a logic set template, whose evaluation results in a logic set.  The lines in the template are statements in the trust logic language, and not in slang.  In this example, the first statement is a simple logic fact with a user-defined predicate (**nameEntry**).   The `nameEntry` predicate binds a name to a value, but for purposes of the links example the value is not important, so we use 0.  The second statement is a pseudo-fact with the builtin **label** predicate, which labels the set with a string.   Slang scripts may pass slang variables into a set template; within the template, always use the `$` escape to substitute (interpolate) them with their values.
 
 
-The square brackets `[]` in the **defpost** define a list, in this case a list of items to be posted.  This list has only one element: a logic set value returned from the defcon. The defpost issues a certificate encoding the logic set and signed under the issuer `$Self`, and posts it to the store.  It derives the token (index key) from the set's label and the issuer's principal ID.  The defpost returns the token to the client, which passes it back into slang-shell as the return value of the defcall.that 
+The square brackets `[]` in the **defpost** define a list, in this case a list of items to be posted.  This list has only one element: a logic set value returned from the defcon. The defpost issues a certificate encoding the logic set and signed under the issuer `$Self`, and posts it to the store.  It derives the token (index key) from the set's label and the issuer's principal ID.  The defpost returns the token to the client, which passes it back into slang-shell as the return value of the defcall.that
 
 
 Alice and Bob have now issued anchor certificates, each containing one logic statement: a fact asserting a name.  Each fact is spoken by the issuer of the containing certificate: Alice asserts name "a0", and Bob asserts name "b0".   The certificate tokens are in the slang-shell variables `?AT0` and `?BT0`.
@@ -172,7 +162,7 @@ Alice and Bob have now issued anchor certificates, each containing one logic sta
 
 Anyone who knows a certificate token can retrieve the certificate.  The certificate contains the PrincipalID who issued the certificate and spoke the logic statements it contains.   The issuer signed the certificate under its full public key, which anyone can retrieve given its PrincipalID: every certificate implicitly links to its issuer's IdSet.
 
-###3. Query a certificate
+### Query a certificate
 
 Given a certificate token, it is easy to issue a logical query against the certificate's contents.  The links application has a present command for this purpose.  In slang-shell:
 
@@ -207,7 +197,7 @@ present("b0", $A, $AT0)?
 present("b0", $A, $BT0)?
 ```
 
-###4. Build certificate chains with link certificates
+### Build certificate chains with link certificates
 
 The next step is to show how to link certificates together.  Alice invokes the dropLink command to issue a link certificate---a certificate with one link that (in this example) points to her anchor certificate.
 
@@ -223,7 +213,7 @@ defcon conLink(?Name, ?PrevToken) :-
 {
    nameEntry($Name, 0).
    link($PrevToken).
-   label($Name). 
+   label($Name).
 }.
 ```
 
@@ -239,7 +229,7 @@ There is no requirement that all the certificates in the chain have the same iss
 
 It is important to recognize that the link itself confers no authority: it only helps others to locate relevant certificates.  Guards evaluate certificates based solely on their authenticated logic content, which is spoken by their issuers and evaluated on that basis, regardless of how anyone links to them.  Thus there is no integrity concern with allowing untrusted principals to link to trusted certificates.  However, knowledge of the token permits anyone to read the certificate's content, which may raise privacy concerns.  If an attacker intercepts or otherwise obtains the tokens---or knows which public key you use and how you label your certificates---it can find them and read them.
 
-###5. Query certificate chains
+### Query certificate chains
 
 Anyone can query a certificate chain in the same way that it interrogates a certificate.  When a guard issues a query against a certificate, the logic context for the query includes the statements in all linked certificates, recursively (the transitive closure)---if they are valid and the linking structure is not "too large" (cycles are ignored).  So we can use present queries just like we did before.  In slang-shell:
 
@@ -259,7 +249,7 @@ present("b1", $B, $AT1)?
 
 As with the examples to query a certificate, it does not matter which principal issues the query, because this is a simple query about who said what, independent of any policy rules for the requester to reason about whether it believes any given assertion (see below).
 
-###6. Synthesizing tokens
+### Synthesizing tokens
 
 Anyone who knows the issuer and label of a posted certificate can determine its token, and anyone who knows a certificate's token can retrieve it from the store.  Although these properties of SAFE may raise privacy concerns (above), they are frequently useful.  For example, we can query a certificate chain without knowing the link.  In slang-shell:
 
@@ -285,15 +275,15 @@ defguard queryPresentByName(?Name, ?Owner, ?RootName, ?RootOwner) :-
 
 There are two points to note about this code:
 
-  *The label call appears in slang code outside of the set template.  It uses the slang variable names: in this case no $ escape is needed (or allowable) because the slang interpreter uses the variable values in the normal way outside of a set template.
+  *The label call appears in slang code outside of the set template.  It uses the slang variable names: in this case no $ escape is needed (or allowable) because the slang interpreter uses the variable values in the normal way outside of a set template.*
 
-...A slang procedural element is secretly just a logic rule under the hood---hence the `:-`, which is logic syntax for the *implies* operator.  The right-hand side of a logic rule consists of a list of goals separated by commas.  The  interpreter evaluates each goal in sequence unless and until it encounters a goal that returns nil.  The result of the invocation is the value returned by the last goal it evaluates.  For this defguard, the result of evaluating the last goal---the set template that defines the logic query context---is the logic query result.
+...A slang procedural element is secretly just a logic rule under the hood - hence the `:-`, which is logic syntax for the *implies* operator.  The right-hand side of a logic rule consists of a list of goals separated by commas.  The  interpreter evaluates each goal in sequence unless and until it encounters a goal that returns nil.  The result of the invocation is the value returned by the last goal it evaluates.  For this defguard, the result of evaluating the last goal---the set template that defines the logic query context---is the logic query result.
 
-  *The token value for the target certificate (or chain) is stored in a slang variable (?RootToken).  The set template incorporates the token value by interpolating the variable with a $ escape in the usual fashion.  Any slang variables that are not escaped in this way pass through the logic set, where they are understood as logic variables rather than slang variables.
+  *The token value for the target certificate (or chain) is stored in a slang variable (?RootToken).  The set template incorporates the token value by interpolating the variable with a $ escape in the usual fashion.  Any slang variables that are not escaped in this way pass through the logic set, where they are understood as logic variables rather than slang variables.*
 
 ...A logic set is declarative (datalog): it has no slang code and no procedural constructs at all beyond a few SAFE-specific builtins.  Thus there is no risk to a remote participant to evaluate a logic set: evaluation is a reasoning process that either succeeds in proving a query or yields false, in a bounded time, with no side effects.  Logic may contain variables, but only in restricted ways, and only in logic rules, following the restrictions known as safe ordinary datalog.  In this case, the resulting query context contains no logic rules, only the query and the simple name assertions (facts) extracted from the certificate chain.  The resulting logic contains no variables, only constants (e.g., PrincipalIDs, string names) interpolated from the values of the slang variables at logic generation time.
 
-###7. Adding a trust policy rule to reason from belief
+### Adding a trust policy rule to reason from belief
 
 We added an exemplary trust policy to demonstrate the use of logical policy rules.    The certificates in the links application assert names within a common name space.  The exemplary trust policy introduces governance of the name space.
 
@@ -322,7 +312,7 @@ This logic set constructor defines a standard for endorsement certificates.  It 
 Next, Alice issues a link certificate asserting that name "a2" is present, and linking to Cindy's endorsement of Alice.  In slang-shell:
 
 ```
-?Self:=$A. 
+?Self:=$A.
 ?AT2 := dropLink("a2", $CEAT).
 ```
 
@@ -405,7 +395,7 @@ But first, we illustrate that logical policies are transportable among principal
 To demonstrate mobile policy, the variant `queryNameTrustedByPrincipal` takes another PrincipalID (the believer) as an argument, and asks whether the believer believes the trustedName, according to the believer's known policy rules.
 
 ```
-?Self:=$A. 
+?Self:=$A.
 queryNameTrustedByPrincipal("a2", $B, $AT2, $BPT)?
 ```
 
@@ -421,7 +411,7 @@ The query applies the policy on behalf of the believer by using the says (`:`) o
 Mobile policy rules make it easy for participants to import policy conventions from a trusted policy authority.  For example, Alice can subscribe to Bob's governance rules.  To do that, Alice simply links to Bob's rules and issues her own policy rule stating that she accepts any name that is valid according to Bob's policy as a trusted name.
 
 ```
-?Self:=$A. 
+?Self:=$A.
 ?APT := delegatePolicyAuthority($B, $BPT).
 ```
 
@@ -448,62 +438,3 @@ queryTrustedName("a2", $AT2, $APT)?
 ```
 
 This query succeeds because the context includes Bob's policy logic and Alice's policy delegating authority for the `trustedName` predicate to Bob.  This example demonstrates that it is easy for participants in a distributed system to subscribe to a common set of governance rules defining the criteria to validate certificate collections.
-
-###Slang-shell basics
-
-####How to switch principals in slang-shell
-
-Slang-shell enables you to issue commands on behalf of different principals in a scenario.  To set the current principal, set the `?Self` variable to a particular keypair file name in the keypair directory.
-
-As an alternative, you can set `?Self` to a principal's keyhash, once the principal certificate is posted.  For example, suppose the variable `A` received Alice's keyhash when Alice posted her principal certificate, e.g., with `postRawIdSet`.  Then to switch to principal Alice:
-
-```
-?Self := $A.
-```
-
-####How to save and restore the environment
-
-You can get a list of environment variables and their values:
-
-```
-env.
-```
-
-You can save the slang-shell environment variables to a file and reload them later. 
-
-```
-saveEnvTo("env.txt").
-//later...
-import("env.txt").
-env.
-```
-
-####How to restart and continue where you left off
-
-**To restart slang-shell**.  It is a good practice to use commands that save all returned tokens in slang-shell variables, as in the examples.  If you follow that practice, then once you quit slang-shell after you save the environment with `saveEnvTo().`  Exit with ctrl-c or `quit.`  Run slang-shell again when you are ready. Use `import` to restore the environment in the new slang-shell instance.  Then just continue where you left off.
-
-**To restart safe-server**.  Just restart it!  The safe-server caches certificates, and it loses the cache when it restarts.   But the certificates persist in the store, so it can fetch them given their tokens.  And it has their tokens, because you save all tokens in the slang-shell and pass them to the commands as needed.
-
-
-**Changing the slang scripts**.  it is OK to change the slang scripts on the fly as long as the change does not affect the content of generated certificates.  Just remember that any existing certificates do not reflect the new content: they were generated with the old scripts.
-
-**Using multiple hosts**.  You can run the safe-server on a different host as long as all participating safe-servers share the same Riak K/V service.  
-
-####Principals may use separate SAFE instances.
-
-You can run these scenarios with a separate slang-shell and safe-server for each principal.  That is how SAFE should run in production.  The only wrinkle is that they often must pass tokens to one another.  Token-passing is easy in these examples because we run them in the same slang-shell with shared environment variables. 
-
-####It is safe to reissue old commands (no side effects).
-
-
-If you reissue a command that constructs and posts a certificate, it generates a new certificate that overwrites the old one.  Any other certificates that linked to the old version now link to the new version. If we use the same arguments, the script generates an identical certificate, so nothing changes (scripts are deterministic). So we can freely reissue these commands. 
-
-But what if you use different arguments?  Depending on the scripts, issuing a variant of an earlier command with different arguments might or might not overwrite the old certificate, and if it does, the new version might or might not be different from the old version.  It is a good practice to incorporate parameter values into the label to prevent unexpected side effects.
-
-
-
-
-
-
-
-

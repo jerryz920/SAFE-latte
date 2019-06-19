@@ -1,6 +1,6 @@
 # SAFE Documentation
 
-## Overview
+## Introduction
 
 Secure Access For Everyone (SAFE), is an integrated system for managing trust using a logic-based declarative language. Logical trust systems authorize each request by constructing a proof from a context — a set of authenticated logic statements representing credentials and policies issued by various principals in a networked system.
 
@@ -39,7 +39,6 @@ and modify logic sets, link them to form unions, post them to remote shared cert
     signature('ucWZE8A…ofS4294brFBk0TpvKw'),
     signatureAlgorithm('SHA256withRSA’)).
 
-* Fields and conventions
 ```
 
 More information about SAFE:
@@ -49,12 +48,14 @@ More information about SAFE:
 
 ## Additional Documentation
 
+- [SAFE Overview and 'hello world!' example](docs/safe-overview.md)
 - SAFE Implementation
-  - [SAFE implementation overview](docs/safe-implementation.md)
+  - [SAFE implementation](docs/safe-implementation.md)
   - [Building SAFE](docs/safe-build.md)
   - [Containerized SAFE](docs/safe-docker.md) (SAFE in Docker and Vagrant)
 - SAFE Language (Slang)
   - [SAFE Language syntax](docs/safe-slang.md)
+  - [Slang shell basics](docs/slang-shell-basics.md)
   - [SAFE primer using Strong policy library](docs/safe-strong-hello-world.md)
   - [SAFE miscellaneous features](docs/safe-misc.md)
   - [SAFE LDAP bridge for gathering group membership assertions from CoManage](docs/safe-comanage.md)
