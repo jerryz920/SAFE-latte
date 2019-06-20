@@ -11,4 +11,4 @@ s.update(r.exportKey(format='DER'))
 
 encoded = base64.urlsafe_b64encode(s.digest())
 
-print(encoded)
+print(encoded.decode('utf-8'))
