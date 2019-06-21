@@ -1,4 +1,4 @@
-from ubuntu:18.04
+from ubuntu:bionic
 
 RUN apt-get update && apt-get install -y build-essential
 RUN apt-get install -y gdb
@@ -25,3 +25,4 @@ EXPOSE 8098 8087
 
 ENTRYPOINT ["/bin/bash", "/root/start.sh"]
 #ENTRYPOINT ["/bin/sh", "-c"]
+
