@@ -112,8 +112,8 @@ This example has two workflows.  The WP posts completion rules for each of them.
 
 ```
 ?Self := $WP.
-postPerFlowRule($WF1).
-postPerFlowRule($WF2).
+?P1 := postPerFlowRule($WF1).
+?P2 := postPerFlowRule($WF2).
 ```
 ### 5. DataSet Owner: post access policy for dataset
 
@@ -121,7 +121,7 @@ The DSO posts an access policy for each dataset.   In this example the DSO polic
 
 ```
 ?Self := $DSO.
-postTwoFlowDataOwnerPolicy($DataSet, $WF1, $WF2).
+?P3 := postTwoFlowDataOwnerPolicy($DataSet, $WF1, $WF2).
 ```
 
 ### 6. Notary Service: post completion receipts for both workflows
@@ -134,18 +134,18 @@ The NS issues an attestation (a completion receipt) for each required element, a
 
 ```
 ?Self := $NSV.
-postCommonCompletionReceipt("someProject", $WF1).
-postUserCompletionReceipt("someUser", "someProject", $WF1).
+?P4 := postCommonCompletionReceipt("someProject", $WF1).
+?P5 := postUserCompletionReceipt("someUser", "someProject", $WF1).
 
-postCommonCompletionReceipt("someProject", $WF2).
-postUserCompletionReceipt("someUser", "someProject", $WF2).
+?P6 := postCommonCompletionReceipt("someProject", $WF2).
+?P7 := postUserCompletionReceipt("someUser", "someProject", $WF2).
 ```
 
 In the MVP, the NS also knows the dataset that the user intends to request, and the workflows required to access the dataset.   Also, in the MVP the same NS attests all required workflows for each given dataset.  These restrictions in the MVP enable the NS to link the attestations for all required workflows into a *link receipt* for the dataset, user, and project.  A sequence of calls can add multiple workflow completions to the same link receipt.
 
 ```
-postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF1).
-postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF2).
+?P8 := postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF1).
+?P9 := postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF2).
 ```
 
 ### 7. Data Provider (Presidio): check access
@@ -185,7 +185,7 @@ The deployable software infrastructure for ImPACT handles this out-of-band distr
 
 * Notary Service ($NSV) must know the *workflow scids* for each workflow that it handles.  Workflows are registered with the NSV.
 
-* For MVP, Notary Service ($NSV) must know the *$DataSet* scid that the user will request and the workflows required to access it.  This requirement enables $NSV to generate *link receipts* (see above) so that Presidio can fetch required attestation receipts without knowing the $DSO's policy.   It also helps usability, because the same information permits NSVs to assist users in finding the required forms.  DSOs register datasets with NSVs, and users browse and select datasets. 
+* For MVP, Notary Service ($NSV) must know the *$DataSet* scid that the user will request and the workflows required to access it.  This requirement enables $NSV to generate *link receipts* (see above) so that Presidio can fetch required attestation receipts without knowing the $DSO's policy.   It also helps usability, because the same information permits NSVs to assist users in finding the required forms.  DSOs register datasets with NSVs, and users browse and select datasets.
 
 * Presidio data server must know the *user name*, which it obtains via TLS client authentication (e.g., with a CILogon-issued certificate),  and the *$DataSet* scid, which it retrieves from its filesystem.
 
@@ -197,7 +197,7 @@ The deployable software infrastructure for ImPACT handles this out-of-band distr
 
 Distribution of keyhashes and other values is easy in the unified example (using `mvp.slang`) because all of the principals share a slang-shell: we just use slang-shell variables to share the various values among the principals.
 
-But we need another way to do it for the split example.  The values are not fixed: for example, the keyhashes and scids depend on the principal keypairs in the specified keypair directory. 
+But we need another way to do it for the split example.  The values are not fixed: for example, the keyhashes and scids depend on the principal keypairs in the specified keypair directory.
 
 The simplest solution is to save the variables in a file and import them into each of the slang-shells, as described below.  We assume that your slang-shells each have a copy of the file at the same relative pathname.  You can assure this by running all of the slang-shells in the same clone of the SAFE repository.  If they really run on different nodes, then each must have a copy of the file.
 
@@ -234,7 +234,7 @@ You may then quit this slang-shell: we won't use it again.
 
 ### 2. Run and prime the safe-servers
 
-Run four safe-servers, from four separate shells (terminal windows).  The servers run four different trust scripts and serve on four different ports.  Here are exemplary commands.  Pick whatever HTTP ports you want, but make sure they match the later steps. 
+Run four safe-servers, from four separate shells (terminal windows).  The servers run four different trust scripts and serve on four different ports.  Here are exemplary commands.  Pick whatever HTTP ports you want, but make sure they match the later steps.
 
 ```
 cd ~/safe
@@ -265,12 +265,12 @@ The remaining steps show the slang-shell command sets for each of the four princ
 ### 4. Workflow Publisher (WP)
 
 ```
-?Self := $WP. 
+?Self := $WP.
 ?ServerJVM := "localhost:7778".
 
-postRawIdSet("strong-1"). 
-postPerFlowRule($WF1).
-postPerFlowRule($WF2).
+?P1 := postRawIdSet("strong-1").
+?P2 := postPerFlowRule($WF1).
+?P3 := postPerFlowRule($WF2).
 ```
 
 ### 5. Dataset Owner (DSO)
@@ -279,8 +279,8 @@ postPerFlowRule($WF2).
 ?Self := $DSO.
 ?ServerJVM := "localhost:7779".
 
-postRawIdSet("strong-2"). 
-postTwoFlowDataOwnerPolicy($DataSet, $WF1, $WF2).
+?P4 := postRawIdSet("strong-2").
+?P5 := postTwoFlowDataOwnerPolicy($DataSet, $WF1, $WF2).
 ```
 
 ### 6. Notary Service (NSV)
@@ -289,13 +289,13 @@ postTwoFlowDataOwnerPolicy($DataSet, $WF1, $WF2).
 ?Self := $NSV.
 ?ServerJVM := "localhost:7780".
 
-postRawIdSet("strong-3"). 
-postCommonCompletionReceipt("someProject", $WF1).
-postUserCompletionReceipt("someUser", "someProject", $WF1).
-postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF1).
-postCommonCompletionReceipt("someProject", $WF2).
-postUserCompletionReceipt("someUser", "someProject", $WF2).
-postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF2).
+?P6 := postRawIdSet("strong-3").
+?P7 := postCommonCompletionReceipt("someProject", $WF1).
+?P8 := postUserCompletionReceipt("someUser", "someProject", $WF1).
+?P9 := postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF1).
+?P10 := postCommonCompletionReceipt("someProject", $WF2).
+?P11 := postUserCompletionReceipt("someUser", "someProject", $WF2).
+?P12 := postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF2).
 ```
 
 ### 7. Data Provider/Server (DP: Presidio)
@@ -309,5 +309,3 @@ access($DataSet, "someUser", $NSV, "someProject" )?
 
 This access request query returns as **satisfied**.  If you change the user name or project name then you should see
 that access is denied (**unsatisfied**).
-
-
