@@ -28,7 +28,7 @@ Typically the invocation via slang-shell may look like this:
 slang> import("~/my-slang-client-script.slang").
 slang> ?KD := "~/principalkeys".
 slang> ?Principal := getIdFromPub("$KD/strong-1.pub").
-slang> ?Self := $Principal
+slang> ?Self := $Principal.
 slang> ?ServerJVM := "localhost:7777".
 slang> ?P1 := postRawIdSet("strong-1").
 ```
