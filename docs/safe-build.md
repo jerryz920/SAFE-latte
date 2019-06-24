@@ -20,9 +20,9 @@ Install bundled prerequisites:
 ```
 apt-get install -y gdb default-jdk python git curl make htop wget libssl1.0.0 libpam0g-dev libssl-dev python-crypto
 ```
-Install SBT version 1.2.3
+Install SBT version 1.2.8
 ```
-SBT_VERSION=1.2.3
+SBT_VERSION=1.2.8
 wget https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz && cd ~/ && tar -zxvf sbt-${SBT_VERSION}.tgz
 export PATH=/wherever/sbt/bin:$PATH
 ```
