@@ -56,6 +56,7 @@ More information about SAFE:
 - SAFE Language (Slang)
   - [SAFE Language syntax](docs/safe-slang.md)
   - [Slang shell basics](docs/slang-shell-basics.md)
+  - [Interacting with SAFE server using REST](docs/safe-rest.md)
   - [SAFE primer using Strong policy library](docs/safe-strong-hello-world.md)
   - [SAFE miscellaneous features](docs/safe-misc.md)
   - [SAFE LDAP bridge for gathering group membership assertions from CoManage](docs/safe-comanage.md)
