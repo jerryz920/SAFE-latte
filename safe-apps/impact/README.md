@@ -112,8 +112,8 @@ This example has two workflows.  The WP posts completion rules for each of them.
 
 ```
 ?Self := $WP.
-?P1 := postPerFlowRule($WF1).
-?P2 := postPerFlowRule($WF2).
+postPerFlowRule($WF1)?
+postPerFlowRule($WF2)?
 ```
 ### 5. DataSet Owner: post access policy for dataset
 
@@ -121,7 +121,7 @@ The DSO posts an access policy for each dataset.   In this example the DSO polic
 
 ```
 ?Self := $DSO.
-?P3 := postTwoFlowDataOwnerPolicy($DataSet, $WF1, $WF2).
+postTwoFlowDataOwnerPolicy($DataSet, $WF1, $WF2)?
 ```
 
 ### 6. Notary Service: post completion receipts for both workflows
@@ -134,18 +134,18 @@ The NS issues an attestation (a completion receipt) for each required element, a
 
 ```
 ?Self := $NSV.
-?P4 := postCommonCompletionReceipt("someProject", $WF1).
-?P5 := postUserCompletionReceipt("someUser", "someProject", $WF1).
+postCommonCompletionReceipt("someProject", $WF1)?
+postUserCompletionReceipt("someUser", "someProject", $WF1)?
 
-?P6 := postCommonCompletionReceipt("someProject", $WF2).
-?P7 := postUserCompletionReceipt("someUser", "someProject", $WF2).
+postCommonCompletionReceipt("someProject", $WF2)?
+postUserCompletionReceipt("someUser", "someProject", $WF2)?
 ```
 
 In the MVP, the NS also knows the dataset that the user intends to request, and the workflows required to access the dataset.   Also, in the MVP the same NS attests all required workflows for each given dataset.  These restrictions in the MVP enable the NS to link the attestations for all required workflows into a *link receipt* for the dataset, user, and project.  A sequence of calls can add multiple workflow completions to the same link receipt.
 
 ```
-?P8 := postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF1).
-?P9 := postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF2).
+postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF1)?
+postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF2)?
 ```
 
 ### 7. Data Provider (Presidio): check access
@@ -268,9 +268,9 @@ The remaining steps show the slang-shell command sets for each of the four princ
 ?Self := $WP.
 ?ServerJVM := "localhost:7778".
 
-?P1 := postRawIdSet("strong-1").
-?P2 := postPerFlowRule($WF1).
-?P3 := postPerFlowRule($WF2).
+postRawIdSet("strong-1")?
+postPerFlowRule($WF1)?
+postPerFlowRule($WF2)?
 ```
 
 ### 5. Dataset Owner (DSO)
@@ -279,8 +279,8 @@ The remaining steps show the slang-shell command sets for each of the four princ
 ?Self := $DSO.
 ?ServerJVM := "localhost:7779".
 
-?P4 := postRawIdSet("strong-2").
-?P5 := postTwoFlowDataOwnerPolicy($DataSet, $WF1, $WF2).
+postRawIdSet("strong-2")?
+postTwoFlowDataOwnerPolicy($DataSet, $WF1, $WF2)?
 ```
 
 ### 6. Notary Service (NSV)
@@ -289,13 +289,13 @@ The remaining steps show the slang-shell command sets for each of the four princ
 ?Self := $NSV.
 ?ServerJVM := "localhost:7780".
 
-?P6 := postRawIdSet("strong-3").
-?P7 := postCommonCompletionReceipt("someProject", $WF1).
-?P8 := postUserCompletionReceipt("someUser", "someProject", $WF1).
-?P9 := postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF1).
-?P10 := postCommonCompletionReceipt("someProject", $WF2).
-?P11 := postUserCompletionReceipt("someUser", "someProject", $WF2).
-?P12 := postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF2).
+postRawIdSet("strong-3")?
+postCommonCompletionReceipt("someProject", $WF1)?
+postUserCompletionReceipt("someUser", "someProject", $WF1)?
+postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF1)?
+postCommonCompletionReceipt("someProject", $WF2)?
+postUserCompletionReceipt("someUser", "someProject", $WF2)?
+postLinkReceiptForDataset("someUser", "someProject", $DataSet, $WF2)?
 ```
 
 ### 7. Data Provider/Server (DP: Presidio)
