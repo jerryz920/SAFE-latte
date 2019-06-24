@@ -254,6 +254,20 @@ haveAccessToDir("path/to/dir")? =@= allow
 denyAccessToFile("path/to/dir/f0")? =@= deny
 ```
 
+## Queries vs Statements/facts
+
+A statement or fact ends with a period `.`. A query ends with `?`. Another way to post a query is via assignment:
+```
+?P1 := safePredicate(parameter1, parameter2). 
+```
+In a slang-shell these need to be treated with caution as e.g.:
+```
+slang> ?Self := principal.
+slang> ?ServerJVM := "localhost:7777".
+slang> postRawIdSet("principal").
+```
+the `postRawIdSet()` is treated as a fact and does not actually cause the predicate `postRawIdSet` on the corresponding safe-server to be invoked. To cause it to perform the predicate invocation you must use one of the query forms: `?P1 := postRawIdSet("principal").` or `postRawIdSet("principal")?`. 
+
 ## More Examples
 
 Working examples of SAFE policies can be found in [safe-apps/](../safe-apps) directory.
