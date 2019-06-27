@@ -310,7 +310,7 @@ that access is denied (**unsatisfied**).
 
 ## Separating the principals: Split MVP demo with WP+DSO as a single principal
 
-Following the description above, pdate the initialization step and combine steps 4 and 5 together as follows. Note that one fewer key is used - WP key is used for WP/DSO principal
+Following the description above, update the initialization step and combine steps 4 and 5 together as follows. Note that one fewer key is used - WP key is used for WP/DSO principal
 
 ### Updated initialization
 
