@@ -201,8 +201,6 @@ But we need another way to do it for the split example.  The values are not fixe
 
 The simplest solution is to save the variables in a file and import them into each of the slang-shells, as described below.  We assume that your slang-shells each have a copy of the file at the same relative pathname.  You can assure this by running all of the slang-shells in the same clone of the SAFE repository.  If they really run on different nodes, then each must have a copy of the file.
 
-
-
 Run a slang-shell in the usual way.  It must have access to your keypair directory in its file system.
 
 ```
@@ -309,3 +307,43 @@ access($DataSet, "someUser", $NSV, "someProject" )?
 
 This access request query returns as **satisfied**.  If you change the user name or project name then you should see
 that access is denied (**unsatisfied**).
+
+## Separating the principals: Split MVP demo with WP+DSO as a single principal
+
+Following the description above, pdate the initialization step and combine steps 4 and 5 together as follows. Note that one fewer key is used - WP key is used for WP/DSO principal
+
+### Updated initialization
+
+Suppose again that the pathname of the keypair directory is "~/safe-scratch/principalkeys".  Then feed these commands to your slang-shell:
+
+```
+?KD := "~/safe-scratch/principalkeys".
+
+?WP := getIdFromPub("$KD/strong-1.pub").
+?NSV := getIdFromPub("$KD/strong-3.pub").
+?DP := getIdFromPub("$KD/strong-4.pub").
+
+?UUID1 := "6ec7211c-caaf-4e00-ad36-0cd413accc91".
+?UUID2 := "1b924687-a317-4bd7-a54f-a5a0151f49d3".
+?UUID3 := "26dbc728-3c8d-4433-9c4b-2e065b644db5".
+
+?WF1 := "$WP:$UUID1".
+?WF2 := "$WP:$UUID2".
+?DataSet := "$WP:$UUID3".
+
+saveEnvTo("myenv.txt").
+```
+
+
+### 4+5. Workflow Publisher/Dataset Owner (WP/DSO)
+
+```
+?Self := $WP.
+?ServerJVM := "localhost:7778".
+
+postRawIdSet("strong-1")?
+postPerFlowRule($WF1)?
+postPerFlowRule($WF2)?
+
+postTwoFlowDataOwnerPolicy($DataSet, $WF1, $WF2)?
+```
