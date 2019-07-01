@@ -8,7 +8,8 @@ object BuildSettings {
   object V {
     val akka                  = "2.3.9"
     val build                 = "0.1-SNAPSHOT"
-    val cryptoBC              = "1.51"
+    val cryptoBC              = "1.62"
+    val guava                 = "28.0-jre"
     val httpNing              = "1.8.7"
     val httpDispatch          = "0.11.1"
     val scalac                = "2.11.7"
@@ -72,7 +73,7 @@ object Dependencies {
   // support operations on IP address
   val net = Seq(
       "commons-net"        % "commons-net"       % "3.4"
-    , "com.google.guava"   % "guava"             % "19.0"
+    , "com.google.guava"   % "guava"             % V.guava
   )
 
   val async = Seq(
@@ -82,14 +83,14 @@ object Dependencies {
   //====================== Bouncy castle libraries=============================//
   val crypto = Seq(
     // The Bouncy Castle Java S/MIME APIs for handling S/MIME protocols. This jar
-    // contains S/MIME APIs for JDK 1.5 to JDK 1.7. The APIs can be used in
+    // contains S/MIME APIs for JDK 1.5 to JDK 1.8. The APIs can be used in
     // conjunction with a JCE/JCA provider such as the one provided with the Bouncy
     // Castle Cryptography APIs. The JavaMail API and the Java activation framework
     // will also be needed.
       "org.bouncycastle"  % "bcmail-jdk15on"  % V.cryptoBC
 
     // The Bouncy Castle Java API for handling the OpenPGP protocol. This jar contains 
-    // the OpenPGP API for JDK 1.5 to JDK 1.7. The APIs can be used in conjunction with 
+    // the OpenPGP API for JDK 1.5 to JDK 1.8. The APIs can be used in conjunction with 
     // a JCE/JCA provider such as the one provided with the Bouncy Castle Cryptography APIs.
     , "org.bouncycastle"  % "bcpg-jdk15on"   % V.cryptoBC
 
@@ -101,7 +102,7 @@ object Dependencies {
 
     // The Bouncy Castle Crypto package is a Java implementation of cryptographic
     // algorithms. This jar contains JCE provider and lightweight API for the
-    // Bouncy Castle Cryptography APIs for JDK 1.5 to JDK 1.7.
+    // Bouncy Castle Cryptography APIs for JDK 1.5 to JDK 1.8.
     , "org.bouncycastle"  % "bcprov-jdk15on"   % V.cryptoBC
   )
 
@@ -109,7 +110,7 @@ object Dependencies {
     // MapDB provides concurrent Maps, Sets and Queues backed by disk storage or off-heap memory.
      //"org.mapdb"                % "mapdb"                      % "1.0.6"
       "io.spray"          % s"spray-caching_${V.libScala}"     % V.spray
-    , "com.google.guava"  % "guava"                            % "19.0"
+    , "com.google.guava"  % "guava"                            % V.guava
 
   )
 
