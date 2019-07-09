@@ -16,18 +16,34 @@ import model.Principal
 import safe.safelog.{SetId, StrLit}
 import safe.safelang.model.Identity
 
+/*
+ * KeyPairManager is stateless but modifies maps passed as its arguments.  Yikes!
+ * Inference* and SafelangManager extend it: SafelangManager keeps its maps internally,
+ * but Inference* doesn't really manage keypairs at all.  Better to use composition here: KeyPairManager
+ * should be stateful, encapsulated, and always present at the lowest level.
+ */
 
 trait KeyPairManager extends LazyLogging {
 
+  // Chase 6/28/19: adding state for internal use
+  // Really these should be immutable after first load, with a mutable on the side for later additions.
+  // Otherwise the locking in here is inadequate.
+  private val nameToPid = MutableMap[String, String]()
+  private val pidToPrincipal = MutableMap[String, Principal]()
+
   /** 
-   * Helpers for key management in mulit-principal programing
+   * Helpers for operating on directories of key files.
    */
   def filepathsOfDir(dirStr: String): Seq[String] = {
     val dir = new File(dirStr)
-    if(dir.exists && dir.isDirectory) {
-      dir.listFiles.filter(_.isFile).toSeq.map(_.toString).filter(FilenameUtils.getExtension(_)=="key")
-    } else {
+    if (!dir.exists) {
+      logger.error(s"KeyPair directory: path $dirStr does not exist")
       Seq[String]()
+    } else if (!dir.isDirectory) {
+      logger.error(s"KeyPair directory: path $dirStr is not a directory")
+      Seq[String]()
+    } else {
+      dir.listFiles.filter(_.isFile).toSeq.map(_.toString).filter(FilenameUtils.getExtension(_) == "key")
     }
   }
 
@@ -94,6 +110,34 @@ trait KeyPairManager extends LazyLogging {
     println(s"[KeyPairManager] Loading keys from ${dir}")
     loadKeyPairs(filepaths, nameToID, serverPrincipalSet)
     serverPrincipalSet
+  }
+
+  /*
+   * Chase 6/28/19.  New alternate API, to be incrementally deployed and ultimately replace all the old loadKeyPairs uses.
+   * Also to support better/cleaner indexing for principal switches, e.g., in Repl.
+   */
+
+  def loadPrincipals(dir:String): Unit = {
+    logger.info(s"[KeyPairManager] Loading principal keys from ${dir}")
+    val filepaths = filepathsOfDir(dir)
+    loadKeyPairs(filepaths, nameToPid, pidToPrincipal)
+    /* If something goes wrong we get a logged error but empty maps. */
+  }
+
+  def getPrincipal(pspec: String): Option[Principal] = {
+    val optP  = pidToPrincipal.get(pspec)
+    if (optP.isDefined)
+      optP
+    else {
+      val optPid = nameToPid.get(pspec)
+      optPid match {
+        case None =>
+          logger.info(s"[KeyPairManager] getPrincipal: no match for $pspec")
+        case Some(pid: String) =>
+          logger.info(s"[KeyPairManager] getPrincipal: found pid for $pspec")
+      }
+      optPid.map(pidToPrincipal)
+    }
   }
  
   /**

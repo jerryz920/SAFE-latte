@@ -140,7 +140,6 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
     , StrLit("splitHead3")
   )
 
-
   // =============== Solver ==================== //
   //@annotation.tailrec // TODO: make this tailrec
   override def solveAQuery(
@@ -202,11 +201,12 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
 	  case 2 => Principal(algorithm = args(0).id.name, keyLength = args(1).id.name.toInt)
 	}
 	envContext.put(envVar.simpleName, principal)
-        
+
 	if(envVar.id == StrLit("Selfie")) {
 	  envContext.put(StrLit("Self"), Constant(StrLit(s"${principal.pid}"), StrLit("nil"), StrLit("StrLit"), Encoding.AttrBase64))
 	  envContext.put(StrLit("SelfKey"), Constant(StrLit(s"${principal.fullPublicKey}"), StrLit("nil"), StrLit("StrLit"), Encoding.AttrBase64))
 	}
+        // JC: This result is or is not the same as the ?Self put just above?
 	val result = Constant(StrLit(principal.pid), StrLit("nil"), StrLit("StrLit"), Encoding.AttrBase64)
         //println(s"envVar: ${envVar.simpleName}, value: $result")
 	Seq(((x: Term) => x match {
@@ -254,11 +254,7 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
         throw UnSafeException(s"No speaker since Self not defined ${envContext.keySet}")
       }
 
-      //val principal: Principal = envContext.get(StrLit("Selfie")) match {
-      //  case Some(p: Principal) => p
-      //  case _                  => throw UnSafeException(s"cannot sign since principal (Selfie) not defined ${envContext.keySet}")
-      //}
-
+      // JC: why does this require Selfie?  If we have Self aren't we done?
       val principal: Principal = envContext.get(StrLit("Selfie")) match {
         case Some(p: Principal) => p
         case _                  => 
@@ -356,7 +352,7 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
       //case x => return(Seq(Tuple2((x: Term) => x, goals.tail)))
 
       case Structure(StrLit("defcall"), defhead +: setTerm +: Nil, _, _, _) => setTerm match {
-        case s: SetTerm => //println("[slangInference] solve a defguard term " + setTerm); 
+        case s: SetTerm => //println("[slangInference] solve a defcall term " + setTerm); 
           solveSetTerm(StrLit("defcall"), s, goals, defhead)
         case _          => throw UnSafeException(s"SetTerm expected but something else found: $setTerm")
       }
@@ -529,6 +525,51 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
       case other                                         => solveGoalTerm(other, goals, depth)  // A goal of a contant also exits from here
     }
     //}
+
+    /*
+     * Chase 6/28: this is nothing, never used.  Just a copy of bindEnvVar that is readable, to be deleted.
+     */
+    def bindEnvVarClarity(terms: Seq[Term])(implicit envContext: MutableMap[StrLit, EnvValue]): Seq[Term] = {
+      val evaledTerms = terms match {
+        case Structure(StrLit("_seq"), subTerms, _, _, _) +: rest => subTerms match {
+          case Structure(StrLit("_seq"), moreSubTerms, _, _, _) +: tail =>
+            Structure(
+              StrLit("_seq"), substTerm(subTerms.head, recurse(Seq(subTerms.head)).toIndexedSeq) ++: bindEnvVar(subTerms.tail)
+            ) +: bindEnvVar(rest)
+          case _ =>
+            Structure(StrLit("_seq"), bindEnvVar(subTerms)) +: bindEnvVar(rest)
+        }
+        case Structure(StrLit("nil"), _, _, _, _) +: rest => Structure(StrLit("nil"), Nil) +: bindEnvVar(rest)
+        case (s@Structure(StrLit("_ipv4"), _, _, _, _)) +: rest => s +: bindEnvVar(rest)
+        // add an case for builtins
+        case Structure(idLit, tms, attrName, tpe, encode) +: rest =>
+          substTerm(terms.head, recurse(Seq(terms.head)).toIndexedSeq) ++: bindEnvVar(rest)
+        case Constant(_, _, _, _) +: rest =>
+          Seq(terms.head) ++: bindEnvVar(rest)
+        case (v@Variable(varId, _, _, _)) +: rest =>
+          val envVar = v.simpleName
+
+          val res = envContext.get(envVar) match {
+            case Some(value: Constant) => value +: bindEnvVar(rest)
+            case other if (
+              envVar == StrLit("Self")
+                | envVar == StrLit("SelfKey")
+              ) => v +: bindEnvVar(rest) // Self can be bound lately at post time
+            case other =>
+              SafelogException.printLabel('warn)
+              println(s"Undefined variable: ${varId.name}")
+              Constant(StrLit("")) +: bindEnvVar(rest)
+          }
+          res
+        case s@SetTerm(_, _, _, _: SlogSetTemplate, _, _, _) +: rest => s ++: bindEnvVar(rest) // TODO: check?
+        case SlogResult(_, _, _, _, _) +: rest => terms // added by Qiang
+        case x +: rest =>
+          substTerm(x, recurse(Seq(x)).toIndexedSeq) ++: bindEnvVar(rest) // FunTerm or Variable
+        case Nil => Nil
+      }
+      evaledTerms
+    }
+
 
     /** bind variables to constants if found in envContext; apply the same for lists */
     //@annotation.tailrec
@@ -1121,9 +1162,19 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
         res
       }
     }
-    //println("[slangInference] solveAQuery     query.terms: " + query.terms)
+
+    /*
+     * This is the body of solveAQuery after 1K lines of internal methods.
+     */
+    logger.info("[solveAQuery]     query.terms: " + query.terms)
+
+    harmonizeSelf(envContext)
+
     val result = recurse(query.terms)
     result.toSeq
+  }
+
+  def harmonizeSelf(ecxt: MutableMap[StrLit, EnvValue]): Unit = {
   }
 
   // NOTE: The only difference between solve and solveSlang is the proofContext.put() is taken to init for solveSlang
@@ -1137,7 +1188,7 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
       return Seq(Seq(Result(Constant("slogPong") +: Nil)))
     } 
     ====== DEBUG End==== **/
-   
+
     //logger.info(s"Starting inference")
     val t0 = System.nanoTime()
     val subcontexts = Seq(contextCache.get(Token("_object")).get)  // _object has been populated
@@ -1146,7 +1197,6 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
 
     val res = for {
       query <- queries
-      //_ = println(s"[solveSlang] slang query: ${query}")
       t00 = System.nanoTime()
       //_   =  proofContext.put(StrLit("_object"), ProofSubContext(id = StrLit("_object"), statements = program))  // Qiang: already did this in Safelang.scala before solveSlang()
       //_ = println("[slangInference solveSlang] proofContext.keySet  " + proofContext.keySet)
@@ -1185,6 +1235,10 @@ trait InferenceImpl extends safe.safelog.InferenceImpl with KeyPairManager with 
 
 }
 
+//
+// Nobody uses this.  Rather, safe-server and slang-shell both come in via SafelangService,
+// which is similar but also includes parser support.
+//
 class Inference(val slangCallClient: SlangRemoteCallClient, val safeSetsClient: SafeSetsClient, 
     val setCache: SetCache, val contextCache: ContextCache, val safelangId: Int) extends InferenceService 
     with SlangRemoteCallService with SafeSetsService with InferenceImpl

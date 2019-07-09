@@ -169,6 +169,7 @@ object Identity {
 
   /** Compute set token based on principal Id and label
    * If no principal is defined, pid is an empty string
+    * config.selfCertifyingSetToken=true disables the final hashing into a SHA-256 token
    */
   def computeSetToken(pid: String, label: String): String = {
     val labelHash= if(label.isEmpty) "" else encode(hash(label.getBytes(StringEncoding), "MD5"), "base64URLSafe") 

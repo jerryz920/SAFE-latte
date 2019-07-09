@@ -20,6 +20,7 @@ class SprayStorageClient(system: ActorSystem)
     extends StorageClient with StorageAsyncClient {
 
   implicit val s = system
+
   import system.dispatcher
   import HttpMultipartContentHelper._
 
@@ -28,8 +29,8 @@ class SprayStorageClient(system: ActorSystem)
   /** Accept riak siblings in the response */
   val multPipeline: HttpRequest => Future[HttpResponse] = (
     addHeader("Accept", "multipart/mixed")
-    ~> sendReceive
-  )
+      ~> sendReceive
+    )
 
   def fetchCertAsync(certaddr: CertAddr): Future[HttpResponse] = {
     pipeline(Get(certaddr.getUrl()))
@@ -43,11 +44,11 @@ class SprayStorageClient(system: ActorSystem)
   def postCertAsync(certaddr: CertAddr, content: String): Future[HttpResponse] = {
     //pipeline(Post(certaddr.getUrl(), content))
     pipeline(Put(certaddr.getUrl(), content))
-  } 
+  }
 
   def deleteCertAsync(certaddr: CertAddr): Future[HttpResponse] = {
     pipeline(Delete(certaddr.getUrl()))
-  } 
+  }
 
   /** Extract raw cert as string from HttpResponse */
   private def certFromFetchResponse(fetchResponse: HttpResponse): Option[String] = {
@@ -56,7 +57,7 @@ class SprayStorageClient(system: ActorSystem)
         Some(fetchResponse.entity.asString)
       case 300 => // Multiple choices
         Some(fetchResponse.entity.asString)
-      case statusCode @ (301 | 302 | 303 | 307) => // redirect
+      case statusCode@(301 | 302 | 303 | 307) => // redirect
         logger.info(s"WARN fetch cert async failed: redirect detected ($statusCode)")
         None
       case statusCode => // other errors
@@ -71,51 +72,63 @@ class SprayStorageClient(system: ActorSystem)
     val future: Future[HttpResponse] = fetchCertAsync(certaddr)
     val fetchResponse: HttpResponse = Await.result(future, timeout.duration)
     var fetchedStr: Option[String] = certFromFetchResponse(fetchResponse)
-    if(fetchedStr.isDefined && isMultipleSiblings(fetchedStr.get)) {
-    // Fetch again and accept multipart/mixed
+    if (fetchedStr.isDefined && isMultipleSiblings(fetchedStr.get)) {
+      // Fetch again and accept multipart/mixed
       val f: Future[HttpResponse] = fetchCertMultAsync(certaddr)
       val fresp: HttpResponse = Await.result(f, timeout.duration)
       fetchedStr = certFromFetchResponse(fresp)
     }
-    val t = (System.nanoTime -s) / 1000
-    val length = if(fetchedStr.isDefined) fetchedStr.get.length else 0
+    val t = (System.nanoTime - s) / 1000
+    val length = if (fetchedStr.isDefined) fetchedStr.get.length else 0
     slangPerfCollector.addSetFetchTime(t.toString, s"$certaddr $length")
     fetchedStr
   }
 
   /** post synchronously */
   def postCert(certaddr: CertAddr, content: String): String = {
-    logger.info(s"Post cert ${CertAddr}:\n  $content")
+    try {
+      logger.info(s"Post cert ${certaddr}")
+    } catch {
+      // This happens if application.conf fails to configure a URL for what is now called metastore: fixfix.
+      case e: Exception => logger.error(s"Invalid certaddr: did you configure your store?  toString failed: $e")
+    }
     val s = System.nanoTime
     val future: Future[HttpResponse] = postCertAsync(certaddr, content)
     val postResponse: HttpResponse = Await.result(future, timeout.duration)
-    val t = (System.nanoTime -s) / 1000
+    val t = (System.nanoTime - s) / 1000
     val length = content.length
     slangPerfCollector.addSetPostTime(t.toString, s"$certaddr $length") // collect set post time
 
     //Thread.sleep(1000)
     postResponse.status.intValue match {
-      case c @ (204 | 200) =>
+      case c@(204 | 200) =>
         logger.info(s"cert (${certaddr}) is posted (code: $c)")
-        //checkPosted(certaddr, content) /* checking */
+      //checkPosted(certaddr, content) /* checking */
       case statuscode =>
-        logger.info(s"postCert on ${certaddr} failed (code: ${statuscode}): ${content}")
-        throw UnSafeException(s"postCert on ${certaddr} failed (code: ${statuscode}): ${content}")
+        logger.error(s"postCert on ${certaddr} failed (HTTP status code: ${statuscode})")
+        //      throw UnSafeException(s"postCert on ${certaddr} failed (code: ${statuscode}): ${content}")
+        throw UnSafeException(s"postCert on ${certaddr} failed (HTTP status code: ${statuscode})")
     }
     certaddr.toString
   }
 
   def deleteCert(certaddr: CertAddr): String = {
-    logger.info(s"Delete cert ${CertAddr}")
+    try {
+      logger.info(s"Delete cert ${certaddr}")
+    } catch {
+      // This happens if application.conf fails to configure a URL for what is now called metastore: fixfix.
+      case e: Exception => logger.error(s"Invalid certaddr: did you configure your store?  toString failed: $e")
+    }
     val future: Future[HttpResponse] = deleteCertAsync(certaddr)
     val deleteResponse: HttpResponse = Await.result(future, timeout.duration)
     deleteResponse.status.intValue match {
-      case c @ (204 | 200) =>
+      case c@(204 | 200) =>
       case statuscode =>
         throw UnSafeException(s"deleteCert on ${certaddr} failed (code: ${statuscode})")
     }
     certaddr.toString
   }
+
 
   // Post async with callback 
   //private def postCertAsyncCallback(certaddr: CertAddr, content: String): String = {

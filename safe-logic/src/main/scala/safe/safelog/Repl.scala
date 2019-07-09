@@ -143,7 +143,7 @@ class Repl(
   }
 
   private def evalReplCmd(cmd: Term): Boolean = {
-    var isReplBuiltin = true
+    var executed = true
 
     cmd match {
       case Structure(StrLit("_is"), (v @ Variable(StrLit(vname), _, _, _)) +: rightterm +: Nil, _, _, _) =>
@@ -191,21 +191,32 @@ class Repl(
         val p = Repl.expandPathname(file)
         val source = scala.io.Source.fromFile(p)
         val _inputScanned = source.getLines.mkString("\n")
-          _inputScanned.toString match {
-            case str => parseCmdLine(str) match {
-              case (Some(stmts), 'success) =>  // program includes all statement
-                val program = addStatementsToRepl(stmts)     // add to _replStatements
-                // println(s"[Repl.evalReplCmd.runShellCmds] scanned stmts: $stmts")
-                processShellCommands(stmts.toMap, true)
-              case (None, 'continuation) =>
-                println("Unexpected end of command list")
-              case x @ _ => // no messages other than parsing error messages
-                            // ignores quit.
+        _inputScanned.toString match {
+          case str => parseCmdLine(str) match {
+            case (Some(stmts), 'success) => // program includes all statement
+              val program = addStatementsToRepl(stmts) // add to _replStatements
+              // println(s"[Repl.evalReplCmd.runShellCmds] scanned stmts: $stmts")
+              processShellCommands(stmts.toMap, true)
+            case (None, 'continuation) =>
+              println("Unexpected end of command list")
+            case x@_ => // no messages other than parsing error messages
+            // ignores quit.
+          }
+        }
+
+      case Constant(StrLit("env"), _, _, _) | Structure(StrLit("env"), Nil, _, _, _) =>
+ //       envContext.foreach{ case (k, v)  => println(s"${k.name}=$v")}
+          for ((k,v) <- envContext) k match {
+            case StrLit("Selfie") | StrLit("SelfKey") =>
+              println(s"${k.name} -> ...")
+            case _ => v match {
+              case Constant(id, _, _, _) => println(s"${k.name}=${id.name}")
+              case _ => println(s"${k.name} -> $v")
             }
           }
 
-      case Constant(StrLit("env"), _, _, _) | Structure(StrLit("env"), Nil, _, _, _) =>
-        envContext.foreach{ case (k, v) if v.isInstanceOf[Constant] => println(s"${k.name}=${v.asInstanceOf[Constant].id.name}") }
+ //   This old code  for env seems like it should work but seems to bail if it encounters a non-Constant v.
+ //   envContext.foreach{ case (k, v) if v.isInstanceOf[Constant] => println(s"${k.name}=${v.asInstanceOf[Constant].id.name}") }
 
       case Constant(StrLit("pwd"), _, _, _) | Structure(StrLit("pwd"), Nil, _, _, _) =>
         val workingDir: Path = Paths.get(".")
@@ -306,10 +317,10 @@ class Repl(
       case Structure(StrLit("trace"), Seq(Constant(StrLit("off"), _, _, _)), _, _, _) => printLabel('info); println("trace is off ...")
         //env._trace = false
 
-      case _ => isReplBuiltin = false
+      case _ => executed = false
     }
 
-    if(isReplBuiltin) { // already executed; remove the cmd
+    if(executed) { // already executed; remove the cmd
       _replStatements.remove(cmd.primaryIndex)
       true
     } else {
@@ -325,48 +336,60 @@ class Repl(
 
     var end = false
     var uncompletedLine = false
+    var scanit = true
 
-    if(interactiveMode) reader.setPrompt(promptMsg)
+    if (interactiveMode) reader.setPrompt(promptMsg)
 
     reader.readLine() match {
+      case "" => scanit = false
       case null => _inputScanned.append("q.")
-      case "" => _inputScanned.append("noop.")
-      case str  => _inputScanned.append(str)
+      case str => _inputScanned.append(str)
     }
-    //println(s"cmd: ${_inputScanned.toString}")
 
-    _inputScanned.toString match {
+    if (scanit) _inputScanned.toString match {
       case str => parseCmdLine(str) match {
-	case (Some(stmts), 'success) =>  // program includes all statement
-          val program = addStatementsToRepl(stmts)     // add to _replStatements
+        case (Some(stmts), 'success) =>
+          val program = addStatementsToRepl(stmts) // add to _replStatements
           processShellCommands(stmts.toMap, interactiveMode)
         case (None, 'quit) =>
           end = true
-          if(interactiveMode) flushHistory(reader)
-	case (None, 'comment) =>  // a line starting with a comment
-	case (None, 'paste) =>
+          if (interactiveMode) flushHistory(reader)
+        case (None, 'comment) => // a line starting with a comment
+        case (None, 'paste) =>
           stdPromptMsg = " | "
           uncompletedLine = true
-	case (None, 'continuation) => // empty line or incomplete statement
+        case (None, 'continuation) => // empty line or incomplete statement
           stdPromptMsg = " | "
           uncompletedLine = true
-	case (Some(stmt), 'builtIn) =>  // is it a builtIn? // TODO:
-	  // call the appropriate builtIn function
-	  // builtInHandler()
-	  //_assertionsInMemory -= stmt
+        case (Some(stmt), 'builtIn) => // is it a builtIn? // TODO:
+        // call the appropriate builtIn function
+        // builtInHandler()
+        //_assertionsInMemory -= stmt
         case (_, 'failure) =>
         case (_, 'error) =>
       }
-      if(!uncompletedLine) {
-        _inputScanned.clear()
-      }
-      if(!end) {
-        if(interactiveMode) readEval(reader, stdPromptMsg, true) else readEval(reader)
-      } else {
-        Nil
-      }
+    }
+    if (!uncompletedLine) {
+      _inputScanned.clear()
+    }
+    if (!end) {
+      if (interactiveMode) readEval(reader, stdPromptMsg, true) else readEval(reader)
+    } else {
+      Nil
     }
   }
+
+
+
+  // Chase 6/24/19: add processFact: called from processShellCommands, overridden for slang Repl.
+  // The purpose is to process "facts" eagerly when using slang-shell, rather than storing them up.
+  // Here we infer from code in processShellCmds that an "Assertion" has exactly one "Term" and that this "Term"
+  // may be a "Structure" such as a :=.
+  def processFact(cmd: Term): Boolean = {
+//    logger.info("unabsorbed fact")
+   false
+  }
+
 
 
   def processShellCommands(commands: Map[Index, OrderedSet[Statement]], interactiveMode: Boolean = false): Unit = {
@@ -385,11 +408,16 @@ class Repl(
     try{
       commands.values().flatten.map {
          case assertion @ Assertion(stmt) =>
+ /*
+           Chase: 6/24/19.  Cleanup to always call evalReplCmd for assertions, even in non-interactive mode.
+           Also: allow override for handling of unabsorbed "facts".
+           This if statement replaces:
            if(interactiveMode && !evalReplCmd(stmt.head)) {
-             //println(s"readEval: done with ${stmt.head};  interactiveMode=${interactiveMode}")
-             //scala.io.StdIn.readLine()
              _assertionsInMemory += assertion }
            if(!interactiveMode) _assertionsInMemory += assertion
+  */
+           if(!evalReplCmd(stmt.head) && (assertion.isFact() && !processFact(stmt.head)))
+             _assertionsInMemory += assertion
            if(assertion.terms.head.id.name == "clear") throw new UnSafeException("clear")
          case query @ Query(stmt) =>
            _replStatements.remove(StrLit("_query"))

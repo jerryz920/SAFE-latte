@@ -202,7 +202,7 @@ class SafeSetsClient(val system: ActorSystem) extends LazyLogging {
               }
       val allCertificates = certificateSeq.mkString("\n")
    
-      logger.info(s"Token $token:\n$allCertificates")
+ //     logger.info(s"Token $token:\n$allCertificates")
 
       val certaddr: CertAddr = getCertAddrFromSelfCertifyingToken(token)
       //println(s"Token $token:\n$allCertificates")
