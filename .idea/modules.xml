@@ -2,8 +2,15 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/safe_3144.iml" filepath="$PROJECT_DIR$/.idea/modules/safe_3144.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/safe_3144-build.iml" filepath="$PROJECT_DIR$/.idea/modules/safe_3144-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/safe.iml" filepath="$PROJECT_DIR$/.idea/modules/safe.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/safe-build.iml" filepath="$PROJECT_DIR$/.idea/modules/safe-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/safe-cache.iml" filepath="$PROJECT_DIR$/.idea/modules/safe-cache.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/safe-lang.iml" filepath="$PROJECT_DIR$/.idea/modules/safe-lang.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/safe-logic.iml" filepath="$PROJECT_DIR$/.idea/modules/safe-logic.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/safe-programming.iml" filepath="$PROJECT_DIR$/.idea/modules/safe-programming.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/safe-runtime.iml" filepath="$PROJECT_DIR$/.idea/modules/safe-runtime.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/safe-server.iml" filepath="$PROJECT_DIR$/.idea/modules/safe-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/safe-styla.iml" filepath="$PROJECT_DIR$/.idea/modules/safe-styla.iml" />
     </modules>
   </component>
 </project>
