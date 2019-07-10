@@ -205,6 +205,7 @@ class SafelangManager(keypairDir: String) extends KeyPairManager with LazyLoggin
    * We use a server principal pool to store all the keys of the principals that a server 
    * can behave on behalf of. A server principal is indexed by the hash of its public key. 
    * An incoming request can specify the server principal with the principal's index.
+   * These should be hidden down inside a KeyPairManager down inside Inference*.
    */
   private val principalNameToID: MutableMap[String, String] = MutableMap[String, String]()
   private val serverPrincipals: MutableMap[String, Principal] = loadKeyPairs(keypairDir, principalNameToID) 
@@ -286,6 +287,7 @@ class SafelangManager(keypairDir: String) extends KeyPairManager with LazyLoggin
   private def setSelfEnvs(envContext: MutableMap[StrLit, EnvValue], p: String): Unit = {
     if(p != "_default") {
       insertEnvKV(envContext, "Self", s"${p}")
+      removeEnvKey(envContext, "SelfKey")   // Chase added 6/25: don't we need this for safety?
     }
   }
 
@@ -296,7 +298,7 @@ class SafelangManager(keypairDir: String) extends KeyPairManager with LazyLoggin
   }
 
   /**
-   * Reset self envs according to the self principle specified in the slang code (default self)
+   * Reset self envs according to the self principal specified in the slang code (default self)
    * Clear self envs if no valid default self is specified in the slang code 
    */
   private def resetOrClearSelf(envContext: MutableMap[StrLit, EnvValue]): Unit = {
@@ -308,6 +310,7 @@ class SafelangManager(keypairDir: String) extends KeyPairManager with LazyLoggin
   }
 
   /** Set up requested environment variables */
+  // This is noxiously stateful.  Pushes elements of requestedEnv into envContext.
   private def setRequestEnvs(envContext: MutableMap[StrLit, EnvValue], requestedEnv: Map[String, Option[String]]): Unit = {
     val envs = Seq("Subject", "Speaker", "Object", "BearerRef")
     envs.foreach{ name: String =>
