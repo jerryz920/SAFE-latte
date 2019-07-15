@@ -4,8 +4,8 @@ import("../safe.slang").
 defguard subseq(?L,?R) :-
   ?Rules := therules(),
 {
-  link(?Rules).
-  subseq(?L,?R)?
+  link($Rules).
+  subseq($L,$R)?
 }.
 
 defguard propsPresent(?L,?R) :-
