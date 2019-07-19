@@ -1,6 +1,6 @@
 % Designed to operate on sorted lists.
 % Set libraryOn in application conf when launching styla shell.
-% TODO: dealing with non-numerical key values.
+% It deals with non-numerical key values.
 
 % Is L a subsequence of R.
 subseq([X|L], [X|R]) :-
@@ -49,3 +49,4 @@ anyPropPresent([S|L], R) :-
 
 % Queries
 % anyPropPresent([1, 2], [[2, "bob"], [3, "cindy"]]).
+% anyPropPresent(["policy_dir", "port"], [["master_addr", "152.3.136.112"], ["port", 10009], ["protocol", "http"]]).
