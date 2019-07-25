@@ -28,20 +28,29 @@ defcon therules() :-
 // Is L a subsequence of R.
 subseq([X|L], [X|R]) :-
    subseq(L, R).
-subseq(L, [_|R]) :-
-   subseq(L, R).
-subseq([], []).
+subseq([H|L], [S|R]) :-
+   S < H,
+   subseq([H|L], R).
+subseq([], R).
 
 // Does each property K in L have one corresponding [K,V] pair in R.
-propsPresent([], []).
-propsPresent([K|L], [[?K,_]|R]):-      
+propsPresent([], R).
+propsPresent([K|L], [[K,_]|R]):-
   propsPresent(L, R).
-propsPresent(L, [_|R]):-
+propsPresent(L, [[S,_]|R]):-
+  [H|_] = L,
+  S < H,
   propsPresent(L, R).
 
 // Does any property K in L have a corresponding [K,V] pair in R.
 anyPropPresent([K|_],[[K,_]|_]).
-anyPropPresent([_|L],R) :-
+anyPropPresent(L, [[S,_]|R]) :-
+  [H|_] = L,
+  S < H,
+  anyPropPresent(L,R).
+anyPropPresent([S|L], R) :-
+  [[H,_]|_] = R,
+  S < H,
   anyPropPresent(L,R).
 
   label("therules").

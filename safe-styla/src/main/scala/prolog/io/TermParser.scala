@@ -257,6 +257,18 @@ class TermParser(val vars: LinkedHashMap[String, Var])
     termList
   }
 
+  def parseList(text: String): Term = {
+    val _list = parseAll(listTerm, text) match {
+      case Success(l, _) => l
+      case other => {
+        IO.warnmes("syntax error: " + other)
+        Const.nil
+      }
+    }
+    // println(s"_list=${_list}    _list.getClass=${_list.getClass}")
+    _list
+  }
+
   def parseProg(text: String): List[List[Term]] = {
     //println(s"[TermParser  parseProg] parsing $text")
     val clauseList = parseAll(prog, text) match {
@@ -299,6 +311,8 @@ class TermParser(val vars: LinkedHashMap[String, Var])
 object TermParser {
 
   type VMAP = LinkedHashMap[Var, String]
+
+  val parser = new TermParser()
 
   val builtinMap = new HashMap[String, Const]()  // Avoid re-loading builtin predicates
   builtinMap.put("true", true_())

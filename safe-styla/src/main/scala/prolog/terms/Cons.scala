@@ -70,7 +70,10 @@ object Cons {
         s.append(",")
       else {
         more = false
-        if (x != Const.nil) {
+        // if (x != Const.nil) {
+        // println(s"\n Last element in a list:   x=$x    x.getClass=${x.getClass}     list:${c}")
+        if(!Const.isNil(x)) {
+          // println(s"\n Not Nil:   x=$x    x.getClass=${x.getClass}     list=${c}")
           s.append("|")
           val tx = elementToString(f, x, vmap) 
           s.append(tx)
@@ -94,7 +97,8 @@ object Cons {
         s.append(",")
       else {
         more = false
-        if (x != Const.nil) {
+        // if (x != Const.nil) {
+        if (!Const.isNil(x)) {
           s.append("|")
           s.append(f(x))
         }

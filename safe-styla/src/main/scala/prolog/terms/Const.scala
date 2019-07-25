@@ -27,5 +27,8 @@ object Const {
       val the = new Fun("the", Array[Term](X))
       the.copy.asInstanceOf[Const]
     }
+  final def isNil(c: Term): Boolean = 
+    c.isInstanceOf[Const] &&
+    c.asInstanceOf[Const].sym.equals(nil.sym)
 }
 

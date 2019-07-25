@@ -1,6 +1,6 @@
 % Designed to operate on sorted lists.
 % Set libraryOn in application conf when launching styla shell.
-% It deals with non-numerical key values.
+% It deals with string key values.
 
 % Is L a subsequence of R.
 subseq([X|L], [X|R]) :-

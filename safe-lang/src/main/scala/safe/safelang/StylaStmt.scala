@@ -86,9 +86,10 @@ class StyStmt(val styterms: List[StyTerm], val vmap: LinkedHashMap[String, StyVa
             case "true" => newstmt.setStyVar(variable.name, new StyTrue())
             case "fail" => newstmt.setStyVar(variable.name, new StyFail()) 
             case s if s(0)=='[' && s.last==']' =>   // list
-              val l = s.substring(1, s.length - 1)
-              val elements = l.split(",").toList
-              val styvalue = prolog.io.TermParser.list2cons(elements.map(s => new StyConstant(s.trim)))
+              // val l = s.substring(1, s.length - 1)
+              // val elements = l.split(",").toList
+              // val styvalue = prolog.io.TermParser.list2cons(elements.map(s => new StyConstant(s.trim)))
+              val styvalue = prolog.io.TermParser.parser.parseList(s)
               //println(s"styvalue=${styvalue}  styvalue.getClass=${styvalue.getClass}")
               newstmt.setStyVar(variable.name, styvalue)
             case numPattern(_*) =>  newstmt.setStyVar(variable.name, new StyReal(v.name))
