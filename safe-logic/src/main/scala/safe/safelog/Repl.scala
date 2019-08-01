@@ -215,7 +215,7 @@ class Repl(
             }
           }
 
- //   This old code  for env seems like it should work but seems to bail if it encounters a non-Constant v.
+ //   This old code for env bails if it encounters a non-Constant v: no catch-all case.
  //   envContext.foreach{ case (k, v) if v.isInstanceOf[Constant] => println(s"${k.name}=${v.asInstanceOf[Constant].id.name}") }
 
       case Constant(StrLit("pwd"), _, _, _) | Structure(StrLit("pwd"), Nil, _, _, _) =>

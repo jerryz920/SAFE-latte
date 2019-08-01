@@ -72,20 +72,20 @@ class SlogSet (
     }
    
     if(!spkr.isEmpty) { 
-      logger.info(s"statements (without speaker) = ${statements}")
-      logger.info(s"spkr = ${spkr}")
+      logger.trace(s"statements (without speaker) = ${statements}")
+      logger.trace(s"spkr = ${spkr}")
       statements = statements.keySet.map {
         case idx: Index =>
           val resultStatements: OrderedSet[Statement] = 
                statements.get(idx).getOrElse(OrderedSet.empty).map(stmt => stmt.addSpeaker(spkr))
           idx -> resultStatements
       }.toMap
-      logger.info(s"statements (with speaker) = ${statements}")
+      logger.trace(s"statements (with speaker) = ${statements}")
 
-      logger.info(s"queries (without speaker) = ${queries}")
-      logger.info(s"spkr = ${spkr}")
+      logger.trace(s"queries (without speaker) = ${queries}")
+      logger.trace(s"spkr = ${spkr}")
       queries = queries.map(stmt => stmt.addSpeaker(spkr))
-      logger.info(s"queries (with speaker) = ${queries}")
+      logger.trace(s"queries (with speaker) = ${queries}")
     }
   } 
 
