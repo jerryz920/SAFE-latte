@@ -4,14 +4,8 @@
 //////////////////////////////////////////////////////
 // Envs from Latte default
 defenv IaaS() :- "152.3.145.38:444".
-defenv IaaSGid() :- "0".
-defenv BuilderSource() :- "https://github.com/jerryz920/boot2docker.git".
-defenv PropertySource() :- "source".
-defenv PropertyBuilder() :- "builder".
 defenv PropertyAttester() :- "attester".
-defenv PropertyNossh() :- "nossh".
-defenv PropertyDns() :- "dns".
-defenv PropertyVpcId() :- "vpcid".
+defenv PropertyVpcId() :- "vpc-id".
 
 //////////////////////////////////////////////////////
 // Rulesets
@@ -22,8 +16,6 @@ defcon consTrustWallet() :-
   {
     label("trustWallet").
     trustedCloudProvider($IaaS).
-    trustedCloudProvider($IaaSGid).
-    builderSource($BuilderSource).
   }.
 
 definit consTrustWallet().
@@ -32,107 +24,23 @@ defcon consLibraryRules() :-
   {
     label("libraryRules").
 
-    hasConfig(Instance, ConfName, ConfValue) :-
-      H : config(Instance, ConfName, ConfValue),
-      attester(H).
-
     launches(Instance, Image) :-
       H : runs(Instance, Image),
       attester(H).
 
     attester(Instance) :-
-      hasProperty(Instance, $PropertyAttester, 1).
-
-    attester(Instance) :-
       trustedCloudProvider(Instance).
-
-    builder(Instance) :-
-      launches(Instance, Image),
-      builderImage(Image).
-
-    builder(Instance) :-
-      launches(Instance, Image),
-      buildsFrom(Image, Source),
-      builderSource(Source).
-
-    buildsFrom(Image, Source) :-
-      B : endorse(Image, $PropertySource, Source),
-      builder(B).
 
     hasProperty(Obj, Property, Value) :-
       H: endorse(Obj, Property, Value),
       trustedEndorserOn(Property, H).
 
-    hasProperty(Image, Property, Value) :-
-      buildsFrom(Image, Source),
-      hasProperty(Source, Property, Value).
-
     hasProperty(Instance, Property, Value) :-
       launches(Instance, Image),
       hasProperty(Image, Property, Value).
-
-    memberCheck(Instance, Cluster, Master) :-
-      Master : member(Cluster, Instance),
-      Instance : join(Cluster, Master).
-
-    memberCheck(Instance, Cluster, Master) :-
-      Master : member(Cluster, Instance),
-      trustedCloudProvider(Master).
   }.
 
 definit consLibraryRules().
-
-
-
-// Rulesets of external endorsements: attesterSet
-defcon consK8sSparkGuardRuleSet() :-
-  {
-    label("K8sSparkGuardRuleSet").
-
-    k8sVM(Instance) :-
-      launches(Instance, Image),
-      k8sImg(Image).
-
-    authPodToUser(Pod, User) :-
-      hasConfig(Pod, "latte.user", User).
-
-    authPodToUser(Pod, User) :-
-      hasConfig(Pod, "latte.creator", Creator),
-      authPodToUser(Creator, User).
-  }.
-
-definit consK8sSparkGuardRuleSet().
-// Rulesets of external endorsements: KeystoneGuardRuleSet
-
-
-//////////////////////////////////////////////////////
-// Interfaces for attestations
-//////////////////////////////////////////////////////
-
-defcon consInstance(?Instance,?Image) :-
-  ?HostSet := label($BearerRef, "instance/$Self"),
-  ?SelfSet := label($Self, "instance/$Self"),
-  {
-    link($HostSet).
-    link($SelfSet).
-    runs($Instance, $Image).
-    label("instance/$Instance").
-  }.
-
-defcon dtorInstance(?Instance,?Image) :-
-  ?HostSet := label($BearerRef, "instance/$Self"),
-  ?SelfSet := label($Self, "instance/$Self"),
-  {
-    link($HostSet).
-    link($SelfSet).
-    runs($Instance, $Image)~
-    label("instance/$Instance").
-    invalid(1).
-  }.
-
-defpost postInstance(?Instance,?Image) :- [ consInstance(?Instance,?Image) ].
-defpost delInstance(?Instance,?Image) :- [ dtorInstance(?Instance,?Image) ].
-
 
 defcon consVMInstance(?Instance,?Image,?Vpc) :-
   ?VpcSet := label("vpc/?Vpc"),
@@ -162,217 +70,6 @@ defcon dtorVMInstance(?Instance,?Image,?Vpc) :-
 defpost postVMInstance(?Instance,?Image,?Vpc) :- [ consVMInstance(?Instance,?Image,?Vpc) ].
 defpost delVMInstance(?Instance,?Image,?Vpc) :- [ dtorVMInstance(?Instance,?Image,?Vpc) ].
 
-
-defcon consVpcConfig1(?Vpc,?Config1,?Value1) :-
-  {
-    config($Vpc, $Config1, $Value1).
-    label("vpc/$Vpc").
-  }.
-
-defcon dtorVpcConfig1(?Vpc,?Config1,?Value1) :-
-  {
-    config($Vpc, $Config1, $Value1)~
-    label("vpc/$Vpc").
-    invalid(1).
-  }.
-
-defpost postVpcConfig1(?Vpc,?Config1,?Value1) :- [ consVpcConfig1(?Vpc,?Config1,?Value1) ].
-defpost delVpcConfig1(?Vpc,?Config1,?Value1) :- [ dtorVpcConfig1(?Vpc,?Config1,?Value1) ].
-
-
-defcon consVpcConfig2(?Vpc,?Config1,?Value1,?Config2,?Value2) :-
-  {
-    config($Vpc, $Config1, $Value1).
-    config($Vpc, $Config2, $Value2).
-    label("vpc/$Vpc").
-  }.
-
-defcon dtorVpcConfig2(?Vpc,?Config1,?Value1,?Config2,?Value2) :-
-  {
-    config($Vpc, $Config1, $Value1)~
-    config($Vpc, $Config2, $Value2)~
-    label("vpc/$Vpc").
-    invalid(1).
-  }.
-
-defpost postVpcConfig2(?Vpc,?Config1,?Value1,?Config2,?Value2) :- [ consVpcConfig2(?Vpc,?Config1,?Value1,?Config2,?Value2) ].
-defpost delVpcConfig2(?Vpc,?Config1,?Value1,?Config2,?Value2) :- [ dtorVpcConfig2(?Vpc,?Config1,?Value1,?Config2,?Value2) ].
-
-
-defcon consVpcConfig3(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) :-
-  {
-    config($Vpc, $Config1, $Value1).
-    config($Vpc, $Config2, $Value2).
-    config($Vpc, $Config3, $Value3).
-    label("vpc/$Vpc").
-  }.
-
-defcon dtorVpcConfig3(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) :-
-  {
-    config($Vpc, $Config1, $Value1)~
-    config($Vpc, $Config2, $Value2)~
-    config($Vpc, $Config3, $Value3)~
-    label("vpc/$Vpc").
-    invalid(1).
-  }.
-
-defpost postVpcConfig3(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) :- [ consVpcConfig3(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) ].
-defpost delVpcConfig3(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) :- [ dtorVpcConfig3(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) ].
-
-
-defcon consVpcConfig4(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) :-
-  {
-    config($Vpc, $Config1, $Value1).
-    config($Vpc, $Config2, $Value2).
-    config($Vpc, $Config3, $Value3).
-    config($Vpc, $Config4, $Value4).
-    label("vpc/$Vpc").
-  }.
-
-defcon dtorVpcConfig4(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) :-
-  {
-    config($Vpc, $Config1, $Value1)~
-    config($Vpc, $Config2, $Value2)~
-    config($Vpc, $Config3, $Value3)~
-    config($Vpc, $Config4, $Value4)~
-    label("vpc/$Vpc").
-    invalid(1).
-  }.
-
-defpost postVpcConfig4(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) :- [ consVpcConfig4(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) ].
-defpost delVpcConfig4(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) :- [ dtorVpcConfig4(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) ].
-
-
-defcon consVpcConfig5(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) :-
-  {
-    config($Vpc, $Config1, $Value1).
-    config($Vpc, $Config2, $Value2).
-    config($Vpc, $Config3, $Value3).
-    config($Vpc, $Config4, $Value4).
-    config($Vpc, $Config5, $Value5).
-    label("vpc/$Vpc").
-  }.
-
-defcon dtorVpcConfig5(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) :-
-  {
-    config($Vpc, $Config1, $Value1)~
-    config($Vpc, $Config2, $Value2)~
-    config($Vpc, $Config3, $Value3)~
-    config($Vpc, $Config4, $Value4)~
-    config($Vpc, $Config5, $Value5)~
-    label("vpc/$Vpc").
-    invalid(1).
-  }.
-
-defpost postVpcConfig5(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) :- [ consVpcConfig5(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) ].
-defpost delVpcConfig5(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) :- [ dtorVpcConfig5(?Vpc,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) ].
-
-
-defcon consInstanceConfig1(?Instance,?Config1,?Value1) :-
-  {
-    config($Instance, $Config1, $Value1).
-    label("instance/$Instance").
-  }.
-
-defcon dtorInstanceConfig1(?Instance,?Config1,?Value1) :-
-  {
-    config($Instance, $Config1, $Value1)~
-    label("instance/$Instance").
-    invalid(1).
-  }.
-
-defpost postInstanceConfig1(?Instance,?Config1,?Value1) :- [ consInstanceConfig1(?Instance,?Config1,?Value1) ].
-defpost delInstanceConfig1(?Instance,?Config1,?Value1) :- [ dtorInstanceConfig1(?Instance,?Config1,?Value1) ].
-
-
-defcon consInstanceConfig2(?Instance,?Config1,?Value1,?Config2,?Value2) :-
-  {
-    config($Instance, $Config1, $Value1).
-    config($Instance, $Config2, $Value2).
-    label("instance/$Instance").
-  }.
-
-defcon dtorInstanceConfig2(?Instance,?Config1,?Value1,?Config2,?Value2) :-
-  {
-    config($Instance, $Config1, $Value1)~
-    config($Instance, $Config2, $Value2)~
-    label("instance/$Instance").
-    invalid(1).
-  }.
-
-defpost postInstanceConfig2(?Instance,?Config1,?Value1,?Config2,?Value2) :- [ consInstanceConfig2(?Instance,?Config1,?Value1,?Config2,?Value2) ].
-defpost delInstanceConfig2(?Instance,?Config1,?Value1,?Config2,?Value2) :- [ dtorInstanceConfig2(?Instance,?Config1,?Value1,?Config2,?Value2) ].
-
-
-defcon consInstanceConfig3(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) :-
-  {
-    config($Instance, $Config1, $Value1).
-    config($Instance, $Config2, $Value2).
-    config($Instance, $Config3, $Value3).
-    label("instance/$Instance").
-  }.
-
-defcon dtorInstanceConfig3(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) :-
-  {
-    config($Instance, $Config1, $Value1)~
-    config($Instance, $Config2, $Value2)~
-    config($Instance, $Config3, $Value3)~
-    label("instance/$Instance").
-    invalid(1).
-  }.
-
-defpost postInstanceConfig3(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) :- [ consInstanceConfig3(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) ].
-defpost delInstanceConfig3(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) :- [ dtorInstanceConfig3(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3) ].
-
-
-defcon consInstanceConfig4(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) :-
-  {
-    config($Instance, $Config1, $Value1).
-    config($Instance, $Config2, $Value2).
-    config($Instance, $Config3, $Value3).
-    config($Instance, $Config4, $Value4).
-    label("instance/$Instance").
-  }.
-
-defcon dtorInstanceConfig4(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) :-
-  {
-    config($Instance, $Config1, $Value1)~
-    config($Instance, $Config2, $Value2)~
-    config($Instance, $Config3, $Value3)~
-    config($Instance, $Config4, $Value4)~
-    label("instance/$Instance").
-    invalid(1).
-  }.
-
-defpost postInstanceConfig4(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) :- [ consInstanceConfig4(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) ].
-defpost delInstanceConfig4(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) :- [ dtorInstanceConfig4(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4) ].
-
-
-defcon consInstanceConfig5(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) :-
-  {
-    config($Instance, $Config1, $Value1).
-    config($Instance, $Config2, $Value2).
-    config($Instance, $Config3, $Value3).
-    config($Instance, $Config4, $Value4).
-    config($Instance, $Config5, $Value5).
-    label("instance/$Instance").
-  }.
-
-defcon dtorInstanceConfig5(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) :-
-  {
-    config($Instance, $Config1, $Value1)~
-    config($Instance, $Config2, $Value2)~
-    config($Instance, $Config3, $Value3)~
-    config($Instance, $Config4, $Value4)~
-    config($Instance, $Config5, $Value5)~
-    label("instance/$Instance").
-    invalid(1).
-  }.
-
-defpost postInstanceConfig5(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) :- [ consInstanceConfig5(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) ].
-defpost delInstanceConfig5(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) :- [ dtorInstanceConfig5(?Instance,?Config1,?Value1,?Config2,?Value2,?Config3,?Value3,?Config4,?Value4,?Config5,?Value5) ].
-
-
 defcon consTrustedEndorserOn(?Endorser, ?Property) :-
   ?TargetSet := label(?Endorser, "trusthub"),
   {
@@ -386,7 +83,7 @@ defcon dtorTrustedEndorserOn(?Endorser, ?Property) :-
   {
     link($TargetSet).
     label("trustedEndorsers").
-    ~trustedEndorserOn($Property, $Endorser).
+    trustedEndorserOn($Property, $Endorser)~
     invalid(1).
   }.
 
@@ -429,302 +126,6 @@ defcon dtorEndorsement(?Target,?Prop,?Value) :-
 defpost postEndorsement(?Target,?Prop,?Value) :- [ consEndorsement(?Target,?Prop,?Value) ].
 defpost delEndorsement(?Target,?Prop,?Value) :- [ dtorEndorsement(?Target,?Prop,?Value) ].
 
-
-defcon consInstanceEndorsement(?Target,?Prop,?Value) :-
-  ?HostSet := label($BearerRef, "instance/$Self"),
-  {
-    link($HostSet).
-    endorse($Target, $Prop, $Value).
-    label("endorsements/$Target").
-  }.
-
-defcon dtorInstanceEndorsement(?Target,?Prop,?Value) :-
-  ?HostSet := label($BearerRef, "instance/$Self"),
-  {
-    link($HostSet).
-    endorse($Target, $Prop, $Value)~
-    label("endorsements/$Target").
-    invalid(1).
-  }.
-
-defpost postInstanceEndorsement(?Target,?Prop,?Value) :- [ consInstanceEndorsement(?Target,?Prop,?Value) ].
-defpost delInstanceEndorsement(?Target,?Prop,?Value) :- [ dtorInstanceEndorsement(?Target,?Prop,?Value) ].
-
-
-defcon consConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) :-
-  {
-    endorseIfEqual($Target, $Key, $Expected, $Prop, $Value).
-    label("endorsements/$Target").
-  }.
-
-defcon dtorConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) :-
-  {
-    endorseIfEqual($Target, $Key, $Expected, $Prop, $Value)~
-    label("endorsements/$Target").
-    invalid(1).
-  }.
-
-defpost postConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) :- [ consConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) ].
-defpost delConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) :- [ dtorConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) ].
-
-
-defcon consInstanceConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) :-
-  ?HostSet := label($BearerRef, "instance/$Self"),
-  {
-    link($HostSet).
-    endorseIfEqual($Target, $Key, $Expected, $Prop, $Value).
-    label("endorsements/$Target").
-  }.
-
-defcon dtorInstanceConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) :-
-  ?HostSet := label($BearerRef, "instance/$Self"),
-  {
-    link($HostSet).
-    endorseIfEqual($Target, $Key, $Expected, $Prop, $Value)~
-    label("endorsements/$Target").
-    invalid(1).
-  }.
-
-defpost postInstanceConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) :- [ consInstanceConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) ].
-defpost delInstanceConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) :- [ dtorInstanceConditionalEndorsement(?Target,?Key,?Expected,?Prop,?Value) ].
-
-
-defcon consParameterizedEndorsement(?Target,?Prop,?ConfName) :-
-  {
-    parameterizedEndorse($Target, $Prop, $ConfName).
-    label("endorsements/$Target").
-  }.
-
-defcon dtorParameterizedEndorsement(?Target,?Prop,?ConfName) :-
-  {
-    parameterizedEndorse($Target, $Prop, $ConfName)~
-    label("endorsements/$Target").
-    invalid(1).
-  }.
-
-defpost postParameterizedEndorsement(?Target,?Prop,?ConfName) :- [ consParameterizedEndorsement(?Target,?Prop,?ConfName) ].
-defpost delParameterizedEndorsement(?Target,?Prop,?ConfName) :- [ dtorParameterizedEndorsement(?Target,?Prop,?ConfName) ].
-
-
-defcon consInstanceParameterizedEndorsement(?Target,?Prop,?ConfName) :-
-  ?HostSet := label($BearerRef, "instance/$Self"),
-  {
-    link($HostSet).
-    parameterizedEndorse($Target, $Prop, $ConfName).
-    label("endorsements/$Target").
-  }.
-
-defcon dtorInstanceParameterizedEndorsement(?Target,?Prop,?ConfName) :-
-  ?HostSet := label($BearerRef, "instance/$Self"),
-  {
-    link($HostSet).
-    parameterizedEndorse($Target, $Prop, $ConfName)~
-    label("endorsements/$Target").
-    invalid(1).
-  }.
-
-defpost postInstanceParameterizedEndorsement(?Target,?Prop,?ConfName) :- [ consInstanceParameterizedEndorsement(?Target,?Prop,?ConfName) ].
-defpost delInstanceParameterizedEndorsement(?Target,?Prop,?ConfName) :- [ dtorInstanceParameterizedEndorsement(?Target,?Prop,?ConfName) ].
-
-
-defcon consCluster(?Cluster,?OwnerGuard,?JoinerGuard) :-
-  ?MasterSet := label($BearerRef, "instance/$Self"),
-  {
-    link($MasterSet).
-    cluster($Cluster, $OwnerGuard, $JoinerGuard).
-    label("instance/$Self").
-  }.
-
-defcon dtorCluster(?Cluster,?OwnerGuard,?JoinerGuard) :-
-  ?MasterSet := label($BearerRef, "instance/$Self"),
-  {
-    link($MasterSet).
-    cluster($Cluster, $OwnerGuard, $JoinerGuard)~
-    label("instance/$Self").
-    invalid(1).
-  }.
-
-defpost postCluster(?Cluster,?OwnerGuard,?JoinerGuard) :- [ consCluster(?Cluster,?OwnerGuard,?JoinerGuard) ].
-defpost delCluster(?Cluster,?OwnerGuard,?JoinerGuard) :- [ dtorCluster(?Cluster,?OwnerGuard,?JoinerGuard) ].
-
-
-defcon consMembership(?Cluster,?WorkerID) :-
-  ?MasterSet := label($BearerRef, "instance/$Self"),
-  {
-    link($MasterSet).
-    member($WorkerID, $Cluster).
-    label("instance/$Self").
-  }.
-
-defcon dtorMembership(?Cluster,?WorkerID) :-
-  ?MasterSet := label($BearerRef, "instance/$Self"),
-  {
-    link($MasterSet).
-    member($WorkerID, $Cluster)~
-    label("instance/$Self").
-    invalid(1).
-  }.
-
-defpost postMembership(?Cluster,?WorkerID) :- [ consMembership(?Cluster,?WorkerID) ].
-defpost delMembership(?Cluster,?WorkerID) :- [ dtorMembership(?Cluster,?WorkerID) ].
-
-
-defcon consAckMembership(?Cluster,?MasterID) :-
-  ?MasterSet := label(?MasterID, "instance/?MasterID"),
-  ?SelfSet := label($BearerRef, "instance/$Self"),
-  {
-    link($MasterSet).
-    link($SelfSet).
-    join($Cluster, $MasterID).
-    label("instance/$Self").
-  }.
-
-defcon dtorAckMembership(?Cluster,?MasterID) :-
-  ?MasterSet := label(?MasterID, "instance/?MasterID"),
-  ?SelfSet := label($BearerRef, "instance/$Self"),
-  {
-    link($MasterSet).
-    link($SelfSet).
-    join($Cluster, $MasterID)~
-    label("instance/$Self").
-    invalid(1).
-  }.
-
-defpost postAckMembership(?Cluster,?MasterID) :- [ consAckMembership(?Cluster,?MasterID) ].
-defpost delAckMembership(?Cluster,?MasterID) :- [ dtorAckMembership(?Cluster,?MasterID) ].
-
-
-defcon consParameterizedConnection(?Target,?Service,?ConfName) :-
-  {
-    parameterizedConnection($Target, $Service, $ConfName).
-    label("endorsements/$Target").
-  }.
-
-defcon dtorParameterizedConnection(?Target,?Service,?ConfName) :-
-  {
-    parameterizedConnection($Target, $Service, $ConfName)~
-    label("endorsements/$Target").
-    invalid(1).
-  }.
-
-defpost postParameterizedConnection(?Target,?Service,?ConfName) :- [ consParameterizedConnection(?Target,?Service,?ConfName) ].
-defpost delParameterizedConnection(?Target,?Service,?ConfName) :- [ dtorParameterizedConnection(?Target,?Service,?ConfName) ].
-
-
-defcon consTrustHubLink(?OtherHub) :-
-  ?HubSet := label(?OtherHub, "trusthub"),
-  {
-    link($HubSet).
-    label("trusthub").
-  }.
-
-defcon dtorTrustHubLink(?OtherHub) :-
-  ?HubSet := label(?OtherHub, "trusthub"),
-  {
-    link($HubSet).
-    label("trusthub").
-    invalid(1).
-  }.
-
-defpost postTrustHubLink(?OtherHub) :- [ consTrustHubLink(?OtherHub) ].
-defpost delTrustHubLink(?OtherHub) :- [ dtorTrustHubLink(?OtherHub) ].
-
-
-//////////////////////////////////////////////////////
-// Raw Slang
-//////////////////////////////////////////////////////
-
-        defcon lazyDtorInstanceSet(?Instance) :-
-          {
-              invalid(1).
-              label("instance/$Instance").
-          }.
-
-        defpost lazyDeleteInstance(?Instance) :- [lazyDtorInstanceSet(?Instance)].
-
-
-
-
-defguard checkEndorse(?Instance,?Image,?Name,?Value) :- 
-  ?InstanceSet := label($BearerRef, "instance/?Instance"),
-  ?HostSet := label(?Instance, "instance/?Instance"),
-  ?TrustWallet := label("trustWallet"),
-  ?TrustedEndorserSet := label($Self, "trustedEndorsers"),
-  ?LibraryRules := label("libraryRules"),
-  {
-    link($InstanceSet).
-    link($HostSet).
-    link($TrustedEndorserSet).
-    link($TrustWallet).
-    link($LibraryRules).
-    endorse($Image, $Name, $Value)?
-  }.
-
-
-defguard checkBuilder(?Instance) :- 
-  ?InstanceSet := label($BearerRef, "instance/?Instance"),
-  ?HostSet := label(?Instance, "instance/?Instance"),
-  ?TrustWallet := label("trustWallet"),
-  ?TrustedEndorserSet := label("trustedEndorsers"),
-  ?LibraryRules := label("libraryRules"),
-  {
-    link($InstanceSet).
-    link($HostSet).
-    link($TrustedEndorserSet).
-    link($TrustWallet).
-    link($LibraryRules).
-    builder($Instance)?
-  }.
-
-
-defguard checkLaunches(?Instance,?Image) :- 
-  ?InstanceSet := label($BearerRef, "instance/?Instance"),
-  ?HostSet := label(?Instance, "instance/?Instance"),
-  ?TrustWallet := label("trustWallet"),
-  ?TrustedEndorserSet := label("trustedEndorsers"),
-  ?LibraryRules := label("libraryRules"),
-  {
-    link($InstanceSet).
-    link($HostSet).
-    link($TrustedEndorserSet).
-    link($TrustWallet).
-    link($LibraryRules).
-    launches($Instance, $Image)?
-  }.
-
-
-defguard checkConfig(?Instance,?Name,?Value) :- 
-  ?InstanceSet := label($BearerRef, "instance/?Instance"),
-  ?HostSet := label(?Instance, "instance/?Instance"),
-  ?TrustWallet := label("trustWallet"),
-  ?TrustedEndorserSet := label("trustedEndorsers"),
-  ?LibraryRules := label("libraryRules"),
-  {
-    link($InstanceSet).
-    link($HostSet).
-    link($TrustedEndorserSet).
-    link($TrustWallet).
-    link($LibraryRules).
-    hasConfig($Instance, $Name, $Value)?
-  }.
-
-
-defguard checkBuildsFrom(?Instance,?Image,?Value) :- 
-  ?InstanceSet := label($BearerRef, "instance/?Instance"),
-  ?HostSet := label(?Instance, "instance/?Instance"),
-  ?TrustWallet := label("trustWallet"),
-  ?TrustedEndorserSet := label("trustedEndorsers"),
-  ?LibraryRules := label("libraryRules"),
-  {
-    link($InstanceSet).
-    link($HostSet).
-    link($TrustedEndorserSet).
-    link($TrustWallet).
-    link($LibraryRules).
-    buildsFrom($Image, $Value)?
-  }.
-
-
 defguard checkProperty(?Instance,?Name,?Value) :- 
   ?InstanceSet := label($BearerRef, "instance/?Instance"),
   ?HostSet := label(?Instance, "instance/?Instance"),
@@ -737,11 +138,11 @@ defguard checkProperty(?Instance,?Name,?Value) :-
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
-    checkProperty($Instance, $Name, $Value)?
+    hasProperty($Instance, $Name, $Value)?
   }.
 
 
-defguard checkAttester(?Instance) :- 
+defguard checkLaunches(?Instance,?Name) :- 
   ?InstanceSet := label($BearerRef, "instance/?Instance"),
   ?HostSet := label(?Instance, "instance/?Instance"),
   ?TrustWallet := label("trustWallet"),
@@ -753,5 +154,7 @@ defguard checkAttester(?Instance) :-
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
-    attester($Instance)?
+    launches($Instance, $Name)?
   }.
+
+
