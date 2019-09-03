@@ -28,6 +28,15 @@ defcon addPropertySpec(?Prohibited, ?Qualifiers, ?Required) :-
 defpost postPropertySpec(?Prohibited, ?Qualifiers, ?Required) :-
   [addPropertySpec(?Prohibited, ?Qualifiers, ?Required)].
 
+defcon addImageSpec(?ImageList) :-
+{
+    specImage($ImageList).
+    label("specification").
+}.
+
+defpost postImageSpec(?Image) :-
+  [addImageSpec(?Image)].
+
 defguard verifyAttestation(?PID) :-
   ?ListRules := listMatchingRules(),
   ?Attestation := label("instance/?PID"),

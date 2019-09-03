@@ -51,28 +51,53 @@ defcon consLibraryRules() :-
       hasProperty(Image, Property, Value).
 
 
-    // K8s specific guard rule, how to?
-    //
-    // approvePod(Pod) :-
-    //   approvePodGlobalConfig(Pod),
-    //   approvePodContainerConfigs(Pod),
-    //
-    // approvePodGlobalConfig(Pod) :-
-    //   hasConfig(Pod, 'global', GlobalKVList),
-    //   ??? (need a specific policy on GlobalKVList).
-    //
-    // approvePodContainerConfigs(Pod).
-    //   hasConfig(Pod, 'containers', ContainerList),
-    //   \+ ( // check all image has someproperty
-    //     ??? (Ctn in ContainerList), Ctn is overloaded
-    //     hasConfig(Ctn, 'image', Image),
-    //     \+hasProperty(Image, 'someproperty', 'somevalue).
-    //   ),
-    //   \+ ( // check all container has approved config
-    //     ??? (Ctn in ContainerList),
-    //     // each container's config is fetched by hasConfig(Ctn, 'config', ConfigKvs)
-    //     ??? (run a policy on Ctn).
-    //   ).
+
+/// Pod specific rules
+
+    approveCtnByQualifier(Pod, [Ctn|Rest]) :-
+      hasConfig(Pod, Ctn, [_|Config]),
+      specQualifier(Spec),
+      subseq(Spec, Config).
+      approveCtnByQualifier(Pod, Rest).
+
+    approveCtnByRequired(Pod, [Ctn|Rest]) :-
+      hasConfig(Pod, Ctn, [_|Config]),
+      specRequired(Spec),
+      propsPresent(Spec, Config),
+      approveCtnByRequired(Rest).
+
+    denyCtnByProhibited(Pod, [Ctn|Rest]) :-
+      hasConfig(Pod, Ctn, [_|Config]),
+      specProhibited(Spec),
+      anyPropPresent(Spec, Config),
+      denyCtnByProhibited(Rest).
+
+    approveCtnByImage(Pod, [Ctn|Rest]) :-
+      hasConfig(Pod, Ctn, [Image|_]),
+      specImage(Spec),
+      subseq(Spec, Image),
+      approveCtnByImage(Pod, Rest).
+
+    approveCtnByQualifier(Pod, []).
+    approveCtnByRequired(Pod, []).
+    approveCtnByPresent(Pod, []).
+    approveCtnByImage(Pod, []).
+
+  approvePodByImage(Pod) :-
+      hasConfig(Pod, 'containers', Containers),
+      approveCtnByImage(Pod, Containers).
+
+  approvePodByQualifier(Pod) :-
+      hasConfig(Pod, 'containers', Containers),
+      approveCtnByQualifier(Pod, Containers).
+
+  approvePodByRequired(Pod) :-
+      hasConfig(Pod, 'containers', Containers),
+      approveCtnByRequired(Pod, Containers).
+
+  denyPodByProhibited(Pod) :-
+      hasConfig(Pod, 'containers', Containers),
+      denyCtnByProhibited(Pod, Containers).
   }.
 
 definit consLibraryRules().
@@ -126,8 +151,8 @@ defcon dtorInstance(?Instance,?Image) :-
     invalid(1).
 }.
 
-defpost postInstance(?Instance,?Image,?TrustHub) :- [ consInstance(?Instance,?Image,?TrustHub) ].
-defpost delInstance(?Instance,?Image,?TrustHub) :- [ dtorInstance(?Instance,?Image,?TrustHub) ].
+defpost postInstance(?Instance,?Image) :- [ consInstance(?Instance,?Image) ].
+defpost delInstance(?Instance,?Image) :- [ dtorInstance(?Instance,?Image) ].
 
 
 defcon consTrustedEndorserOn(?Endorser, ?Property) :-
@@ -188,9 +213,9 @@ defpost delEndorsement(?Target,?Prop,?Value) :- [ dtorEndorsement(?Target,?Prop,
 
 
 
-defcon consInstanceConfigList(?Instance,?Config) :-
+defcon consInstanceConfigList(?Instance,?Config,?Value) :-
 {
-  config($Instance, $Config).
+  config($Instance, $Config, $Value).
   label("instance/$Instance").
 }.
 
@@ -201,8 +226,10 @@ defcon dtorInstanceConfigList(?Instance,?Config,?Value) :-
   invalid().
 }.
 
-defpost postInstanceConfigList(?Instance,?Config,?Value) :- [ consInstanceConfig(?Instance,?Config,?Value) ].
-defpost delInstanceConfigList(?Instance,?Config,?Value) :- [ dtorInstanceConfig(?Instance,?Config,?Value) ].
+defpost postInstanceConfigList(?Instance,?Config,?Value) :- [ consInstanceConfigList(?Instance,?Config,?Value) ].
+defpost delInstanceConfigList(?Instance,?Config,?Value) :- [ dtorInstanceConfigList(?Instance,?Config,?Value) ].
+
+
 
 
 
@@ -237,6 +264,22 @@ defguard checkLaunches(?Instance,?Name) :-
     launches($Instance, $Name)?
   }.
 
+
+defguard checkHasConfig(?Instance,?Name,?Value) :- 
+  ?InstanceSet := label($BearerRef, "instance/?Instance"),
+  ?HostSet := label(?Instance, "instance/?Instance"),
+  ?TrustWallet := label("trustWallet"),
+  ?TrustedEndorserSet := label("trustedEndorsers"),
+  ?LibraryRules := label("libraryRules"),
+  {
+    link($InstanceSet).
+    link($HostSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    hasConfig($Instance, $Name, $Value)?
+  }.
+
 defguard checkTrustedEndorser(?Endorser, ?PropName) :-
   ?TrustedEndorserSet := label("trustedEndorsers"),
   {
@@ -260,3 +303,25 @@ defguard checkAttester(?Instance) :-
     attester($Instance)?
   }.
 
+
+defguard checkPodAttestation(?Instance) :-
+  ?InstanceSet := label($BearerRef, "instance/?Instance"),
+  ?HostSet := label(?Instance, "instance/?Instance"),
+  ?TrustWallet := label("trustWallet"),
+  ?TrustedEndorserSet := label("trustedEndorsers"),
+  ?LibraryRules := label("libraryRules"),
+  ?ListRules := listMatchingRules(),
+  ?Spec := label("specification"),
+{
+  link($InstanceSet).
+  link($HostSet).
+  link($TrustedEndorserSet).
+  link($TrustWallet).
+  link($LibraryRules).
+  link($ListRules).
+  link($Spec).
+  approvePodByImage($Instance)? =@= allow
+  approvePodByQualifier($Instance)? =@= allow
+  approvePodByRequired($Instance)? =@= allow
+  denyPodByProhibited($Instance)? =@= deny
+}.
