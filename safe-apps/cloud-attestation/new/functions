@@ -12,6 +12,14 @@ postInstance() {
 # ?Instance,?Image,?AuthID
     curl -XPOST $SAFE_ADDR/postInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
 }
+postInstanceLocal() {
+    local principal=$1
+    shift 1
+    local bearer=$1
+    shift 1
+# ?Instance,?Image,?AuthID
+    curl -XPOST $SAFE_ADDR/postInstance -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+}
 measurePostInstance() {
     local principal=$1
     shift 1
@@ -29,8 +37,14 @@ delInstance() {
 postVMInstance() {
     local principal=$1
     shift 1
-# ?Instance,?Image,?AuthID,?Cidr,?Vpc,?TrustHub
+# ?Instance,?Image,?AuthID,?Cidr,?Vpc
     curl -XPOST $SAFE_ADDR/postVMInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\",\"${4}\",\"${5}\"], \"auth\":\"${AUTH:-1}\"}"
+}
+postVMInstanceLocal() {
+    local principal=$1
+    shift 1
+# ?Instance,?Image,?Vpc
+    curl -XPOST $SAFE_ADDR/postVMInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 measurePostVMInstance() {
     local principal=$1
@@ -747,6 +761,15 @@ checkAttester() {
 # ?Instance
     curl -XPOST $SAFE_ADDR/checkAttester -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
 }
+checkAttesterLocal() {
+    local principal=$1
+    shift 1
+    local bearer=$1
+    shift 1
+# ?Instance
+    echo curl -XPOST $SAFE_ADDR/checkAttester -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/checkAttester -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
+}
 measureCheckAttester() {
     local principal=$1
     shift 1
@@ -874,6 +897,15 @@ checkPodAttestation() {
     shift 1
 # ?Instance
     curl -XPOST $SAFE_ADDR/checkPodAttestation -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
+}
+checkPodAttestationLocal() {
+    local principal=$1
+    shift 1
+    local bearer=$1
+    shift 1
+# ?Instance
+    echo curl -XPOST $SAFE_ADDR/checkPodAttestation -d \' "{ \"bearerRef\": \"$bearer\",\"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\":\"${AUTH:-1}\"}" \'
+    curl -XPOST $SAFE_ADDR/checkPodAttestation -d "{ \"bearerRef\": \"$bearer\",\"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 measureCheckPodAttestation() {
     local principal=$1
