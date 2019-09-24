@@ -30,7 +30,7 @@ defpost postPropertySpec(?Prohibited, ?Qualifiers, ?Required) :-
 
 defcon addImageSpec(?ImageList) :-
 {
-    specImage($ImageList).
+    specImages($ImageList).
     label("specification").
 }.
 
@@ -50,6 +50,24 @@ defguard verifyAttestation(?PID) :-
   approveByQualifiers($PID)? =@= allow
   approveByRequired($PID)? =@= allow
   denyByProhibited($PID)? =@= deny
+}.
+
+defguard checkSubSeq(?Spec, ?Config) :-
+  ?ListRules := listMatchingRules(),
+  ?PropertyPolicy := label("std-property-policy"),
+{
+  link($ListRules).
+  link($PropertyPolicy).
+  esubseq($Spec, $Config)?
+}.
+
+defguard checkPresent(?Spec, ?Config) :-
+  ?ListRules := listMatchingRules(),
+  ?PropertyPolicy := label("std-property-policy"),
+{
+  link($ListRules).
+  link($PropertyPolicy).
+  propsPresent($Spec, $Config)?
 }.
 
 defcon propertyListPolicy() :-
@@ -82,6 +100,14 @@ subseq([H|L], [S|R]) :-
    S < H,
    subseq([H|L], R).
 subseq([], R).
+
+// Test if L is a subsequence of R.
+esubseq([[X,Y]|L], [[X,Y]|R]) :-
+   esubseq(L, R).
+esubseq([[H,Y]|L], [[S,_]|R]) :-
+   S < H,
+   esubseq([[H,Y]|L], R).
+esubseq([], R).
 
 // Test if each property K in L corresponds to a [K,V] pair in R.
 propsPresent([], R).

@@ -56,32 +56,34 @@ defcon consLibraryRules() :-
 
     approveCtnByQualifier(Pod, [Ctn|Rest]) :-
       hasConfig(Pod, Ctn, [_|Config]),
-      specQualifier(Spec),
-      subseq(Spec, Config).
+      specQualifiers(Spec),
+      esubseq(Config, Spec),
       approveCtnByQualifier(Pod, Rest).
 
     approveCtnByRequired(Pod, [Ctn|Rest]) :-
       hasConfig(Pod, Ctn, [_|Config]),
       specRequired(Spec),
       propsPresent(Spec, Config),
-      approveCtnByRequired(Rest).
+      approveCtnByRequired(Pod, Rest).
 
-    denyCtnByProhibited(Pod, [Ctn|Rest]) :-
+    denyCtnByProhibited(Pod, [Ctn|_]) :-
       hasConfig(Pod, Ctn, [_|Config]),
       specProhibited(Spec),
-      anyPropPresent(Spec, Config),
-      denyCtnByProhibited(Rest).
+      anyPropPresent(Spec, Config).
+
+    denyCtnByProhibited(Pod, [_|Rest]) :-
+      denyCtnByProhibited(Pod, Rest).
 
     approveCtnByImage(Pod, [Ctn|Rest]) :-
       hasConfig(Pod, Ctn, [Image|_]),
-      specImage(Spec),
-      subseq(Spec, Image),
+      specImages(Spec),
+      subseq([Image], Spec),
       approveCtnByImage(Pod, Rest).
 
     approveCtnByQualifier(Pod, []).
     approveCtnByRequired(Pod, []).
-    approveCtnByPresent(Pod, []).
     approveCtnByImage(Pod, []).
+
 
   approvePodByImage(Pod) :-
       hasConfig(Pod, 'containers', Containers),
@@ -320,8 +322,8 @@ defguard checkPodAttestation(?Instance) :-
   link($LibraryRules).
   link($ListRules).
   link($Spec).
-  approvePodByImage($Instance)? =@= allow
-  approvePodByQualifier($Instance)? =@= allow
-  approvePodByRequired($Instance)? =@= allow
+  approvePodByImage($Instance)? =@= require
+  approvePodByQualifier($Instance)? =@= require
+  approvePodByRequired($Instance)? =@= require
   denyPodByProhibited($Instance)? =@= deny
 }.
