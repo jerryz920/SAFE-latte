@@ -25,8 +25,18 @@ defcon addPropertySpec(?Prohibited, ?Qualifiers, ?Required) :-
     label("specification").
 }.
 
+defcon addFilePropertySpec(?File, ?Policy, ?Prohibited, ?Qualifiers, ?Required) :-
+{
+    specProhibited($File, $Policy, $Prohibited).
+    specQualifiers($File, $Policy, $Qualifiers).
+    specRequired($File, $Policy, $Required).
+    label("specification/$File/$Policy").
+}.
 defpost postPropertySpec(?Prohibited, ?Qualifiers, ?Required) :-
   [addPropertySpec(?Prohibited, ?Qualifiers, ?Required)].
+
+defpost postFilePropertySpec(?File, ?Policy, ?Prohibited, ?Qualifiers, ?Required) :-
+  [addPropertySpec(?File, ?Policy, ?Prohibited, ?Qualifiers, ?Required)].
 
 defcon addImageSpec(?ImageList) :-
 {
@@ -34,8 +44,17 @@ defcon addImageSpec(?ImageList) :-
     label("specification").
 }.
 
+defcon addFileImageSpec(?File, ?Policy, ?ImageList) :-
+{
+    specImages($File, $Policy, $ImageList).
+    label("specification/$File/$Policy").
+}.
+
 defpost postImageSpec(?Image) :-
   [addImageSpec(?Image)].
+
+defpost postFileImageSpec(?File, ?Policy, ?Image) :-
+  [addFileImageSpec(?File, ?Policy, ?Image)].
 
 defguard verifyAttestation(?PID) :-
   ?ListRules := listMatchingRules(),
