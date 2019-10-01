@@ -100,6 +100,59 @@ defcon consLibraryRules() :-
   denyPodByProhibited(Pod) :-
       hasConfig(Pod, 'containers', Containers),
       denyCtnByProhibited(Pod, Containers).
+
+  approvePodAccessFileByImage(File, Owner, Pod, Policy) :-
+      hasConfig(Pod, 'containers', Containers),
+      approveCtnByImagePolicy(File, Owner, Policy, Pod, Containers).
+
+  approvePodAccessFileByRequired(File, Owner, Pod, Policy) :-
+      hasConfig(Pod, 'containers', Containers),
+      approveCtnByRequiredPolicy(File, Owner, Policy, Pod, Containers).
+
+  approvePodAccessFileByQualifier(File, Owner, Pod, Policy) :-
+      hasConfig(Pod, 'containers', Containers),
+      approveCtnByQualifierPolicy(File, Owner, Policy, Pod, Containers).
+
+  approvePodAccessFileByProhibited(File, Owner, Pod, Policy) :-
+      hasConfig(Pod, 'containers', Containers),
+      approveCtnByProhibitedPolicy(File, Owner, Policy, Pod, Containers).
+
+  approveCtnByProhibitedPolicy(File, Owner, Policy, Pod, [Ctn | _]).
+      hasConfig(Pod, Ctn, [_|Config]),
+      H: specProhibited(File, Policy, Spec),
+      Owner: trustedEndorserOn("FileProhibited", H),
+      anyPropPresent(Spec, Config).
+
+  approveCtnByProhibitedPolicy(File, Owner, Policy, Pod, [_| Rest]) :-
+    approveCtnByProhibitedPolicy(File, Owner, Policy, Pod, Rest) :-
+
+  approveCtnByQualifierPolicy(File, Owner, Policy, Pod, [Ctn | Rest]) :-
+      hasConfig(Pod, Ctn, [_|Config]),
+      H: specQualifier(File, Policy, Spec),
+      Owner: trustedEndorserOn("FileQualifier", H),
+      esubseq(Config, Spec),
+      approveCtnByQualifierPolicy(File, Owner, Policy, Pod, Rest).
+
+  approveCtnByQualifierPolicy(File, Owner, Policy, Pod, []).
+
+  approveCtnByRequiredPolicy(File, Owner, Policy, Pod, [Ctn | Rest]) :-
+      hasConfig(Pod, Ctn, [_|Config]),
+      H: specRequired(File, Policy, Spec),
+      Owner: trustedEndorserOn("FileRequired", H),
+      propsPresent(Spec, Config),
+      approveCtnByRequiredPolicy(File, Owner, Policy, Pod, Rest).
+
+  approveCtnByRequiredPolicy(File, Owner, Policy, Pod, []).
+
+  approveCtnByImagePolicy(File, Owner, Policy, Pod, [Ctn | Rest]) :-
+      hasConfig(Pod, Ctn, [Image|_]),
+      H: specImages(File, Policy, Spec),
+      Owner: trustedEndorserOn("FileImage", H),
+      subseq([Image], Spec),
+      approveCtnByImagePolicy(File, Owner, Policy, Pod, Rest).
+
+  approveCtnByImagePolicy(File, Owner, Policy, Pod, []).
+
   }.
 
 definit consLibraryRules().
@@ -327,3 +380,30 @@ defguard checkPodAttestation(?Instance) :-
   approvePodByRequired($Instance)? =@= require
   denyPodByProhibited($Instance)? =@= deny
 }.
+
+// ?Owner is extracted from the file path...
+defguard hdfsAccessFile(?Instance, ?File, ?Owner, ?Policy) :-
+  ?InstanceSet := label($BearerRef, "instance/?Instance"),
+  ?HostSet := label(?Instance, "instance/?Instance"),
+  ?TrustWallet := label("trustWallet"),
+  ?TrustedEndorserSet := label(?Owner, "trustedEndorsers"),
+  ?LibraryRules := label("libraryRules"),
+  ?ListRules := listMatchingRules(),
+  ?Spec := label("specification"),
+  {
+  link($InstanceSet).
+  link($HostSet).
+  link($TrustedEndorserSet).
+  link($TrustWallet).
+  link($LibraryRules).
+  link($ListRules).
+  link($Spec).
+  approvePodAccessFileByImage($File, $Owner, $Instance, $Policy)? =@= require
+  approvePodAccessFileByRequired($File, $Owner, $Instance, $Policy)? =@= require
+  approvePodAccessFileByQualifier($File, $Owner, $Instance, $Policy)? =@= require
+  approvePodAccessFileByProhibited($File, $Owner, $Instance, $Policy)? =@= deny
+  }
+
+
+
+
