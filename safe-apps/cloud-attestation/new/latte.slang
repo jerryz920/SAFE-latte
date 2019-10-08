@@ -1,4 +1,5 @@
 import("../plist-lib.slang").
+import("./policy.slang").
 
 //////////////////////////////////////////////////////
 // Enviroments
@@ -51,8 +52,6 @@ defcon consLibraryRules() :-
       hasProperty(Image, Property, Value).
 
 
-    
-
 
 /// Pod specific rules
 
@@ -103,58 +102,70 @@ defcon consLibraryRules() :-
       hasConfig(Pod, 'containers', Containers),
       denyCtnByProhibited(Pod, Containers).
 
-  approvePodAccessFileByImage(File, Owner, Pod, Policy) :-
+  //// Above approve and deny rules are just for references.
+
+  // If Pod's image/required config key/qualified config kvs are approved by
+  // given policy ID. We can not query if there is such a policy that can
+  // approve the Pod at the moment.
+  approvePodByRequiredPolicy(Pod, Policy) :- 
+      policy(Policy, ImagePolicy, _, QualifiedKvs, RequiredKeys),
       hasConfig(Pod, 'containers', Containers),
-      approveCtnByImagePolicy(File, Owner, Policy, Pod, Containers).
-
-  approvePodAccessFileByRequired(File, Owner, Pod, Policy) :-
-      hasConfig(Pod, 'containers', Containers),
-      approveCtnByRequiredPolicy(File, Owner, Policy, Pod, Containers).
-
-  approvePodAccessFileByQualifier(File, Owner, Pod, Policy) :-
-      hasConfig(Pod, 'containers', Containers),
-      approveCtnByQualifierPolicy(File, Owner, Policy, Pod, Containers).
-
-  approvePodAccessFileByProhibited(File, Owner, Pod, Policy) :-
-      hasConfig(Pod, 'containers', Containers),
-      approveCtnByProhibitedPolicy(File, Owner, Policy, Pod, Containers).
-
-  approveCtnByProhibitedPolicy(File, Owner, Policy, Pod, [Ctn | _]).
-      hasConfig(Pod, Ctn, [_|Config]),
-      H: specProhibited(File, Policy, Spec),
-      Owner: trustedEndorserOn("FileProhibited", H),
-      anyPropPresent(Spec, Config).
-
-  approveCtnByProhibitedPolicy(File, Owner, Policy, Pod, [_| Rest]) :-
-    approveCtnByProhibitedPolicy(File, Owner, Policy, Pod, Rest) :-
-
-  approveCtnByQualifierPolicy(File, Owner, Policy, Pod, [Ctn | Rest]) :-
-      hasConfig(Pod, Ctn, [_|Config]),
-      H: specQualifier(File, Policy, Spec),
-      Owner: trustedEndorserOn("FileQualifier", H),
-      esubseq(Config, Spec),
-      approveCtnByQualifierPolicy(File, Owner, Policy, Pod, Rest).
-
-  approveCtnByQualifierPolicy(File, Owner, Policy, Pod, []).
-
-  approveCtnByRequiredPolicy(File, Owner, Policy, Pod, [Ctn | Rest]) :-
-      hasConfig(Pod, Ctn, [_|Config]),
-      H: specRequired(File, Policy, Spec),
-      Owner: trustedEndorserOn("FileRequired", H),
-      propsPresent(Spec, Config),
-      approveCtnByRequiredPolicy(File, Owner, Policy, Pod, Rest).
-
-  approveCtnByRequiredPolicy(File, Owner, Policy, Pod, []).
-
-  approveCtnByImagePolicy(File, Owner, Policy, Pod, [Ctn | Rest]) :-
+      approveCtnByImagePolicy(Pod, Containers, ImagePolicy),
+      approveCtnByQualifiedKvs(Pod, Containers, QualifiedKvs),
+      approveCtnByRequiredKeys(Pod, Containers, RequiredKeys).
+  
+  /// Image handling
+  approveCtnByImagePolicy(Pod, [Ctn|Rest], ImagePolicy) :-
       hasConfig(Pod, Ctn, [Image|_]),
-      H: specImages(File, Policy, Spec),
-      Owner: trustedEndorserOn("FileImage", H),
-      subseq([Image], Spec),
-      approveCtnByImagePolicy(File, Owner, Policy, Pod, Rest).
+      approveImage(Image, ImagePolicy),
+      approveCtnByImage(Pod, Rest, ImagePolicy).
 
-  approveCtnByImagePolicy(File, Owner, Policy, Pod, []).
+  approveCtnByImagePolicy(_, [], _).
 
+  // Handle image: whitelist, or an endorsed property
+  approveImage(Image, [Prop|_]) :-
+      hasProperty(Image, Prop, 1).
+  approveImage(Image, [Image|_]).
+
+  approveImage(Image, [_|Rest]) :-
+      approveImage(Image, Rest).
+
+  // Handle Required Keys and QualifiedKvs
+  approveCtnByQualifiedKvs(Pod, [Ctn|Rest], QualifiedKvs) :-
+      hasConfig(Pod, Ctn, [_|Config]),
+      esubseq(QualifiedKvs, Config),
+      approveCtnByQualifiedKvs(Pod, Rest, QualifiedKvs).
+
+  approveCtnByQualifiedKvs(_, [], _).
+
+  approveCtnByRequiredKeys(Pod, [Ctn|Rest], RequiredKeys) :-
+      hasConfig(Pod, Ctn, [_|Config]),
+      propsPresent(RequiredKeys, Config),
+      approveCtnByRequiredKeys(Pod, Rest, RequiredKeys).
+
+  approveCtnByRequiredKeys(_, [], _).
+
+  // Configuration Checks
+
+  denyPodByProhibitedKeys(Pod, Policy) :-
+      policy(Policy, _, ProhibitedKeys, _, _),
+      hasConfig(Pod, 'containers', Containers),
+      denyCtnByProhibitedKeys(Pod, Containers, ProhibitedKeys).
+
+    denyCtnByProhibited(Pod, [Ctn|_], ProhibitedKeys) :-
+      hasConfig(Pod, Ctn, [_|Config]),
+      anyPropPresent(ProhibitedKeys, Config).
+
+    denyCtnByProhibited(Pod, [_|Rest], ProhibitedKeys) :-
+      denyCtnByProhibited(Pod, Rest, ProhibitedKeys).
+
+  // Latte-K8s only logic.
+  authPodToUser(Pod, User) :-
+    hasConfig(Pod, "latte.user", User).
+
+  authPodToUser(Pod, User) :-
+    hasConfig(Pod, "latte.creator", Creator),
+    authPodToUser(Creator, User).
   }.
 
 definit consLibraryRules().
@@ -384,14 +395,13 @@ defguard checkPodAttestation(?Instance) :-
 }.
 
 // ?Owner is extracted from the file path...
-defguard hdfsAccessFile(?Instance, ?File, ?Owner, ?Policy) :-
+defguard checkPodByPolicy(?Instance, ?Policy) :-
   ?InstanceSet := label($BearerRef, "instance/?Instance"),
   ?HostSet := label(?Instance, "instance/?Instance"),
   ?TrustWallet := label("trustWallet"),
   ?TrustedEndorserSet := label(?Owner, "trustedEndorsers"),
   ?LibraryRules := label("libraryRules"),
   ?ListRules := listMatchingRules(),
-  ?Spec := label("specification"),
   {
   link($InstanceSet).
   link($HostSet).
@@ -399,13 +409,24 @@ defguard hdfsAccessFile(?Instance, ?File, ?Owner, ?Policy) :-
   link($TrustWallet).
   link($LibraryRules).
   link($ListRules).
-  link($Spec).
-  approvePodAccessFileByImage($File, $Owner, $Instance, $Policy)? =@= require
-  approvePodAccessFileByRequired($File, $Owner, $Instance, $Policy)? =@= require
-  approvePodAccessFileByQualifier($File, $Owner, $Instance, $Policy)? =@= require
-  approvePodAccessFileByProhibited($File, $Owner, $Instance, $Policy)? =@= deny
+  approvePodByRequiredPolicy($Instance, $Policy)? =@= require
+  denyPodByProhibitedKeys($Instance, $Policy)? =@= deny
   }.
 
+defguard checkPodOwner(?Instance, ?Owner) :-
+  ?InstanceSet := label($BearerRef, "instance/?Instance"),
+  ?HostSet := label(?Instance, "instance/?Instance"),
+  ?TrustWallet := label("trustWallet"),
+  ?TrustedEndorserSet := label(?Owner, "trustedEndorsers"),
+  ?LibraryRules := label("libraryRules"),
+   {
+     link($InstanceSet).
+       link($HostSet).
+       link($TrustedEndorserSet).
+       link($TrustWallet).
+       link($LibraryRules).
+       authPodToUser($Instance, $Owner)?
+   }
 
 
 

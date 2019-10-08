@@ -128,6 +128,13 @@ esubseq([[H,Y]|L], [[S,_]|R]) :-
    esubseq([[H,Y]|L], R).
 esubseq([], R).
 
+// Test if L is a extended subsequence of any element in right hand side
+esubseq([], R).
+esubseq([Head|_], R) :-
+   esubseq(Head, R).
+esubseq([_|Rest], R) :-
+   esubseq(Rest, R).
+
 // Test if each property K in L corresponds to a [K,V] pair in R.
 propsPresent([], R).
 propsPresent([K|L], [[K,_]|R]):-
@@ -136,6 +143,11 @@ propsPresent(L, [[S,_]|R]):-
   [H|_] = L,
   S < H,
   propsPresent(L, R).
+
+propsPresent([Head|_], R) :-
+  propsPresent(Head, R).
+propsPresent([_|Rest], R) :-
+  propsPresent(Rest, R).
 
 // Test if any property K in L corresponds to a [K,V] pair in R.
 anyPropPresent([K|_],[[K,_]|_]).
@@ -147,6 +159,13 @@ anyPropPresent([S|L], R) :-
   [[H,_]|_] = R,
   S < H,
   anyPropPresent(L,R).
+
+anyPropPresent([Head | _], R) :-
+  anyPropPresent(Head, R).
+
+anyPropPresent([_| Rest], R) :-
+  anyPropPresent(Rest, R).
+
 
   label("property-list-rules").
 }.
