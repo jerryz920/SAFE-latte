@@ -394,7 +394,6 @@ defguard checkPodAttestation(?Instance) :-
   denyPodByProhibited($Instance)? =@= deny
 }.
 
-// ?Owner is extracted from the file path...
 defguard checkPodByPolicy(?Instance, ?Policy) :-
   ?InstanceSet := label($BearerRef, "instance/?Instance"),
   ?HostSet := label(?Instance, "instance/?Instance"),
@@ -426,7 +425,4 @@ defguard checkPodOwner(?Instance, ?Owner) :-
        link($TrustWallet).
        link($LibraryRules).
        authPodToUser($Instance, $Owner)?
-   }
-
-
-
+   }.
