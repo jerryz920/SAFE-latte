@@ -107,57 +107,66 @@ defcon consLibraryRules() :-
   // If Pod's image/required config key/qualified config kvs are approved by
   // given policy ID. We can not query if there is such a policy that can
   // approve the Pod at the moment.
-  approvePodByRequiredPolicy(Pod, Policy) :- 
-      policy(Policy, ImagePolicy, _, QualifiedKvs, RequiredKeys),
+  approvePodByRequiredPolicy(Pod, PolicyID) :- 
       hasConfig(Pod, 'containers', Containers),
-      approveCtnByImagePolicy(Pod, Containers, ImagePolicy),
-      approveCtnByQualifiedKvs(Pod, Containers, QualifiedKvs),
-      approveCtnByRequiredKeys(Pod, Containers, RequiredKeys).
-  
+      approveCtnByImagePolicy(Pod, Containers, PolicyID),
+      approveCtnByQualifiedKvs(Pod, Containers, PolicyID),
+      approveCtnByRequiredKeys(Pod, Containers, PolicyID).
+
   /// Image handling
-  approveCtnByImagePolicy(Pod, [Ctn|Rest], ImagePolicy) :-
+  approveCtnByImagePolicy(Pod, [Ctn|Rest], PolicyID) :-
       hasConfig(Pod, Ctn, [Image|_]),
-      approveImage(Image, ImagePolicy),
-      approveCtnByImage(Pod, Rest, ImagePolicy).
+      policy(PolicyID, "image", WhiteListImages),
+      approveImage(Image, WhiteListImages),
+      approveCtnByImage(Pod, Rest, PolicyID).
+
+  matchImage(Image, Matcher) :-
+      hasProperty(Image, Prop, 1).
+  matchImage(Image, Image).
 
   approveCtnByImagePolicy(_, [], _).
 
   // Handle image: whitelist, or an endorsed property
   approveImage(Image, [Prop|_]) :-
-      hasProperty(Image, Prop, 1).
-  approveImage(Image, [Image|_]).
+      matchImage(Image, Prop).
 
   approveImage(Image, [_|Rest]) :-
       approveImage(Image, Rest).
 
+
   // Handle Required Keys and QualifiedKvs
-  approveCtnByQualifiedKvs(Pod, [Ctn|Rest], QualifiedKvs) :-
-      hasConfig(Pod, Ctn, [_|Config]),
+  approveCtnByQualifiedKvs(Pod, [Ctn|Rest], PolicyID) :-
+      hasConfig(Pod, Ctn, [Image|Config]),
+      policy(PolicyID, "qualifier", [ImageMatcher|QualifiedKvs]),
+      matchImage(Image, ImageMatcher),
       esubseq(QualifiedKvs, Config),
-      approveCtnByQualifiedKvs(Pod, Rest, QualifiedKvs).
+      approveCtnByQualifiedKvs(Pod, Rest, PolicyID).
 
   approveCtnByQualifiedKvs(_, [], _).
 
-  approveCtnByRequiredKeys(Pod, [Ctn|Rest], RequiredKeys) :-
-      hasConfig(Pod, Ctn, [_|Config]),
+  approveCtnByRequiredKeys(Pod, [Ctn|Rest], PolicyID) :-
+      hasConfig(Pod, Ctn, [Image|Config]),
+      policy(PolicyID, "required", [ImageMatcher|RequiredKeys]),
+      matchImage(Image, ImageMatcher),
       propsPresent(RequiredKeys, Config),
-      approveCtnByRequiredKeys(Pod, Rest, RequiredKeys).
+      approveCtnByRequiredKeys(Pod, Rest, PolicyID).
 
   approveCtnByRequiredKeys(_, [], _).
 
   // Configuration Checks
 
-  denyPodByProhibitedKeys(Pod, Policy) :-
-      policy(Policy, _, ProhibitedKeys, _, _),
+    denyPodByProhibitedKeys(Pod, PolicyID) :-
       hasConfig(Pod, 'containers', Containers),
-      denyCtnByProhibitedKeys(Pod, Containers, ProhibitedKeys).
+      denyCtnByProhibitedKeys(Pod, Containers, PolicyID).
 
-    denyCtnByProhibited(Pod, [Ctn|_], ProhibitedKeys) :-
-      hasConfig(Pod, Ctn, [_|Config]),
+    denyCtnByProhibited(Pod, [Ctn|_], PolicyID) :-
+      hasConfig(Pod, Ctn, [Image|Config]),
+      matchImage(Image, ImageMatcher),
+      policy(PolicyID, "prohibited", [ImageMatcher|ProhibitedKeys]),
       anyPropPresent(ProhibitedKeys, Config).
 
-    denyCtnByProhibited(Pod, [_|Rest], ProhibitedKeys) :-
-      denyCtnByProhibited(Pod, Rest, ProhibitedKeys).
+    denyCtnByProhibited(Pod, [_|Rest], PolicyID) :-
+      denyCtnByProhibited(Pod, Rest, PolicyID).
 
   // Latte-K8s only logic.
   authPodToUser(Pod, User) :-
