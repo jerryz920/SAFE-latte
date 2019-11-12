@@ -40,9 +40,17 @@ defcon createQualifierKeyPolicy(?PolicyID, ?ConfQualifiers) :-
 // of "matching" some policy. It could be optimized such that images of each container in a Pod
 // appears always in sort order, which can accelerate the policy matching process.
 
-defpost postPolicy(?PolicyID, ?ImgWhiteList, ?ConfProhibited, ?ConfQualifiers, ?ConfRequired) :-
-  [createPolicy(?PolicyID, ?ImgWhiteList, ?ConfProhibited, ?ConfQualifiers, ?ConfRequired)].
+defpost postImagePolicy(?PolicyID, ?ImgWhiteList) :-
+  [createImagePolicy(?PolicyID, ?ImgWhiteList)].
 
+defpost postProhibitedKeyPolicy(?PolicyID, ?ConfProhibited) :-
+  [createProhibitedKeyPolicy(?PolicyID, ?ConfProhibited)].
+
+defpost postRequiredKeyPolicy(?PolicyID,  ?ConfRequired) :-
+  [createRequiredKeyPolicy(?PolicyID, ?ConfRequired)].
+
+defpost postQualifierKeyPolicy(?PolicyID, ?ConfQualifiers) :-
+  [createQualifierKeyPolicy($PolicyID, ConfQualifiers)].
 
 defcon policyRules() :- 
   {
