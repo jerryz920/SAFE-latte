@@ -438,7 +438,31 @@ delTrustHubLink() {
     shift 1
     curl -XPOST $SAFE_ADDR/delTrustHubLink -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\": \"${AUTH:-1}\"}"
 }
-        
+
+
+postImagePolicy() {
+    local principal=$1
+    shift 1
+    curl -XPOST $SAFE_ADDR/postImagePolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
+}
+
+postRequiredKeyPolicy() {
+    local principal=$1
+    shift 1
+    curl -XPOST $SAFE_ADDR/postRequiredKeyPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
+}
+
+postQualifierKeyPolicy() {
+    local principal=$1
+    shift 1
+    curl -XPOST $SAFE_ADDR/postQualifierKeyPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
+}
+
+postProhibitedKeyPolicy() {
+    local principal=$1
+    shift 1
+    curl -XPOST $SAFE_ADDR/postProhibitedKeyPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
+}
 
 checkContainerIsolation() {
     local principal=$1
@@ -915,3 +939,33 @@ measureCheckPodAttestation() {
 " -o debug.log -XPOST $SAFE_ADDR/checkPodAttestation -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
 }
         
+debugCheck1() {
+    local principal=$1
+    shift 1
+# ?Instance
+    curl -XPOST $SAFE_ADDR/debugCheck1 -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+}
+debugCheck2() {
+    local principal=$1
+    shift 1
+# ?Instance
+    curl -XPOST $SAFE_ADDR/debugCheck2 -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+}
+debugCheck3() {
+    local principal=$1
+    shift 1
+# ?Instance
+    curl -XPOST $SAFE_ADDR/debugCheck3 -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\", \"${3}\"], \"auth\":\"${AUTH:-1}\"}"
+}
+debugCheck4() {
+    local principal=$1
+    shift 1
+# ?Instance
+    curl -XPOST $SAFE_ADDR/debugCheck4 -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\" ], \"auth\":\"${AUTH:-1}\"}"
+}
+checkPodByPolicy() {
+    local principal=$1
+    shift 1
+# ?Instance
+    curl -XPOST $SAFE_ADDR/checkPodByPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+}

@@ -22,7 +22,7 @@ defcon createRequiredKeyPolicy(?PolicyID,  ?ConfRequired) :-
 
 defcon createQualifierKeyPolicy(?PolicyID, ?ConfQualifiers) :-
 {
-   policy($PolicyID, "qualifier", ConfQualifiers).
+   policy($PolicyID, "qualifier", $ConfQualifiers).
    label("endorsements/trustPolicy/$PolicyID").
 }.
 
@@ -50,7 +50,7 @@ defpost postRequiredKeyPolicy(?PolicyID,  ?ConfRequired) :-
   [createRequiredKeyPolicy(?PolicyID, ?ConfRequired)].
 
 defpost postQualifierKeyPolicy(?PolicyID, ?ConfQualifiers) :-
-  [createQualifierKeyPolicy($PolicyID, ConfQualifiers)].
+  [createQualifierKeyPolicy(?PolicyID, ?ConfQualifiers)].
 
 defcon policyRules() :- 
   {
@@ -58,10 +58,12 @@ defcon policyRules() :-
 	label("trustPolicyRules").
 
 	// if endorsement occurs and trusted, then derive policy as well
-	policy(ID, Type, Value) :-
+	hasPolicy(ID, Type, Value) :-
 	   E: policy(ID, Type, Value),
 	   trustedEndorserOn("trustPolicy", E).
 
+	hasPolicy(ID, Type, Value) :-
+	   policy(ID, Type, Value).
   }.
 
 definit policyRules().

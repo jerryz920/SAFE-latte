@@ -55,52 +55,52 @@ defcon consLibraryRules() :-
 
 /// Pod specific rules
 
-    approveCtnByQualifier(Pod, [Ctn|Rest]) :-
-      hasConfig(Pod, Ctn, [_|Config]),
-      specQualifiers(Spec),
-      esubseq(Config, Spec),
-      approveCtnByQualifier(Pod, Rest).
+    //approveCtnByQualifier(Pod, [Ctn|Rest]) :-
+    //  hasConfig(Pod, Ctn, [_|Config]),
+    //  specQualifiers(Spec),
+    //  esubseq(Config, Spec),
+    //  approveCtnByQualifier(Pod, Rest).
 
-    approveCtnByRequired(Pod, [Ctn|Rest]) :-
-      hasConfig(Pod, Ctn, [_|Config]),
-      specRequired(Spec),
-      propsPresent(Spec, Config),
-      approveCtnByRequired(Pod, Rest).
+    //approveCtnByRequired(Pod, [Ctn|Rest]) :-
+    //  hasConfig(Pod, Ctn, [_|Config]),
+    //  specRequired(Spec),
+    //  propsPresent(Spec, Config),
+    //  approveCtnByRequired(Pod, Rest).
 
-    denyCtnByProhibited(Pod, [Ctn|_]) :-
-      hasConfig(Pod, Ctn, [_|Config]),
-      specProhibited(Spec),
-      anyPropPresent(Spec, Config).
+    //denyCtnByProhibited(Pod, [Ctn|_]) :-
+    //  hasConfig(Pod, Ctn, [_|Config]),
+    //  specProhibited(Spec),
+    //  anyPropPresent(Spec, Config).
 
-    denyCtnByProhibited(Pod, [_|Rest]) :-
-      denyCtnByProhibited(Pod, Rest).
+    //denyCtnByProhibited(Pod, [_|Rest]) :-
+    //  denyCtnByProhibited(Pod, Rest).
 
-    approveCtnByImage(Pod, [Ctn|Rest]) :-
-      hasConfig(Pod, Ctn, [Image|_]),
-      specImages(Spec),
-      subseq([Image], Spec),
-      approveCtnByImage(Pod, Rest).
+    //approveCtnByImage(Pod, [Ctn|Rest]) :-
+    //  hasConfig(Pod, Ctn, [Image|_]),
+    //  specImages(Spec),
+    //  subseq([Image], Spec),
+    //  approveCtnByImage(Pod, Rest).
 
-    approveCtnByQualifier(Pod, []).
-    approveCtnByRequired(Pod, []).
-    approveCtnByImage(Pod, []).
+    //approveCtnByQualifier(Pod, []).
+    //approveCtnByRequired(Pod, []).
+    //approveCtnByImage(Pod, []).
 
 
-  approvePodByImage(Pod) :-
-      hasConfig(Pod, 'containers', Containers),
-      approveCtnByImage(Pod, Containers).
+  //approvePodByImage(Pod) :-
+  //    hasConfig(Pod, 'containers', Containers),
+  //    approveCtnByImage(Pod, Containers).
 
-  approvePodByQualifier(Pod) :-
-      hasConfig(Pod, 'containers', Containers),
-      approveCtnByQualifier(Pod, Containers).
+  //approvePodByQualifier(Pod) :-
+  //    hasConfig(Pod, 'containers', Containers),
+  //    approveCtnByQualifier(Pod, Containers).
 
-  approvePodByRequired(Pod) :-
-      hasConfig(Pod, 'containers', Containers),
-      approveCtnByRequired(Pod, Containers).
+  //approvePodByRequired(Pod) :-
+  //    hasConfig(Pod, 'containers', Containers),
+  //    approveCtnByRequired(Pod, Containers).
 
-  denyPodByProhibited(Pod) :-
-      hasConfig(Pod, 'containers', Containers),
-      denyCtnByProhibited(Pod, Containers).
+  //denyPodByProhibited(Pod) :-
+  //    hasConfig(Pod, 'containers', Containers),
+  //    denyCtnByProhibited(Pod, Containers).
 
   //// Above approve and deny rules are just for references.
 
@@ -116,9 +116,9 @@ defcon consLibraryRules() :-
   /// Image handling
   approveCtnByImagePolicy(Pod, [Ctn|Rest], PolicyID) :-
       hasConfig(Pod, Ctn, [Image|_]),
-      policy(PolicyID, "image", WhiteListImages),
+      hasPolicy(PolicyID, "image", WhiteListImages),
       approveImage(Image, WhiteListImages),
-      approveCtnByImage(Pod, Rest, PolicyID).
+      approveCtnByImagePolicy(Pod, Rest, PolicyID).
 
   matchImage(Image, Matcher) :-
       hasProperty(Image, Prop, 1).
@@ -137,7 +137,7 @@ defcon consLibraryRules() :-
   // Handle Required Keys and QualifiedKvs
   approveCtnByQualifiedKvs(Pod, [Ctn|Rest], PolicyID) :-
       hasConfig(Pod, Ctn, [Image|Config]),
-      policy(PolicyID, "qualifier", [ImageMatcher|QualifiedKvs]),
+      hasPolicy(PolicyID, "qualifier", [ImageMatcher|QualifiedKvs]),
       matchImage(Image, ImageMatcher),
       esubseq(QualifiedKvs, Config),
       approveCtnByQualifiedKvs(Pod, Rest, PolicyID).
@@ -146,7 +146,7 @@ defcon consLibraryRules() :-
 
   approveCtnByRequiredKeys(Pod, [Ctn|Rest], PolicyID) :-
       hasConfig(Pod, Ctn, [Image|Config]),
-      policy(PolicyID, "required", [ImageMatcher|RequiredKeys]),
+      hasPolicy(PolicyID, "required", [ImageMatcher|RequiredKeys]),
       matchImage(Image, ImageMatcher),
       propsPresent(RequiredKeys, Config),
       approveCtnByRequiredKeys(Pod, Rest, PolicyID).
@@ -159,14 +159,14 @@ defcon consLibraryRules() :-
       hasConfig(Pod, 'containers', Containers),
       denyCtnByProhibitedKeys(Pod, Containers, PolicyID).
 
-    denyCtnByProhibited(Pod, [Ctn|_], PolicyID) :-
+    denyCtnByProhibitedKeys(Pod, [Ctn|_], PolicyID) :-
       hasConfig(Pod, Ctn, [Image|Config]),
       matchImage(Image, ImageMatcher),
-      policy(PolicyID, "prohibited", [ImageMatcher|ProhibitedKeys]),
+      hasPolicy(PolicyID, "prohibited", [ImageMatcher|ProhibitedKeys]),
       anyPropPresent(ProhibitedKeys, Config).
 
-    denyCtnByProhibited(Pod, [_|Rest], PolicyID) :-
-      denyCtnByProhibited(Pod, Rest, PolicyID).
+    denyCtnByProhibitedKeys(Pod, [_|Rest], PolicyID) :-
+      denyCtnByProhibitedKeys(Pod, Rest, PolicyID).
 
   // Latte-K8s only logic.
   authPodToUser(Pod, User) :-
@@ -407,9 +407,10 @@ defguard checkPodByPolicy(?Instance, ?Policy) :-
   ?InstanceSet := label($BearerRef, "instance/?Instance"),
   ?HostSet := label(?Instance, "instance/?Instance"),
   ?TrustWallet := label("trustWallet"),
-  ?TrustedEndorserSet := label(?Owner, "trustedEndorsers"),
+  ?TrustedEndorserSet := label("trustedEndorsers"),
   ?LibraryRules := label("libraryRules"),
   ?ListRules := listMatchingRules(),
+  ?PolicyRules := label("trustPolicyRules"),
   {
   link($InstanceSet).
   link($HostSet).
@@ -417,6 +418,7 @@ defguard checkPodByPolicy(?Instance, ?Policy) :-
   link($TrustWallet).
   link($LibraryRules).
   link($ListRules).
+  link($PolicyRules).
   approvePodByRequiredPolicy($Instance, $Policy)? =@= require
   denyPodByProhibitedKeys($Instance, $Policy)? =@= deny
   }.
@@ -427,11 +429,83 @@ defguard checkPodOwner(?Instance, ?Owner) :-
   ?TrustWallet := label("trustWallet"),
   ?TrustedEndorserSet := label(?Owner, "trustedEndorsers"),
   ?LibraryRules := label("libraryRules"),
+  ?PolicyRules := label("trustPolicyRules"),
    {
      link($InstanceSet).
        link($HostSet).
        link($TrustedEndorserSet).
        link($TrustWallet).
        link($LibraryRules).
+       link($PolicyRules).
        authPodToUser($Instance, $Owner)?
    }.
+
+defguard debugCheck1(?Instance, ?Policy) :-
+  ?InstanceSet := label($BearerRef, "instance/?Instance"),
+  ?HostSet := label(?Instance, "instance/?Instance"),
+  ?TrustWallet := label("trustWallet"),
+  ?TrustedEndorserSet := label("trustedEndorsers"),
+  ?LibraryRules := label("libraryRules"),
+  ?ListRules := listMatchingRules(),
+  ?PolicyRules := label("trustPolicyRules"),
+  {
+  link($InstanceSet).
+  link($HostSet).
+  link($TrustedEndorserSet).
+  link($TrustWallet).
+  link($LibraryRules).
+  link($ListRules).
+  link($PolicyRules).
+  approvePodByRequiredPolicy($Instance, $Policy)? =@= require
+  }.
+
+defguard debugCheck2(?Instance, ?Policy) :-
+  ?InstanceSet := label($BearerRef, "instance/?Instance"),
+  ?HostSet := label(?Instance, "instance/?Instance"),
+  ?TrustWallet := label("trustWallet"),
+  ?TrustedEndorserSet := label("trustedEndorsers"),
+  ?LibraryRules := label("libraryRules"),
+  ?ListRules := listMatchingRules(),
+  ?PolicyRules := label("trustPolicyRules"),
+  {
+  link($InstanceSet).
+  link($HostSet).
+  link($TrustedEndorserSet).
+  link($TrustWallet).
+  link($LibraryRules).
+  link($ListRules).
+  link($PolicyRules).
+  denyPodByProhibitedKeys($Instance, $Policy)? =@= deny
+  }.
+
+defguard debugCheck3(?Instance, ?Policy, ?Containers) :-
+  ?InstanceSet := label($BearerRef, "instance/?Instance"),
+  ?HostSet := label(?Instance, "instance/?Instance"),
+  ?TrustWallet := label("trustWallet"),
+  ?TrustedEndorserSet := label("trustedEndorsers"),
+  ?LibraryRules := label("libraryRules"),
+  ?ListRules := listMatchingRules(),
+  ?PolicyRules := label("trustPolicyRules"),
+  {
+  link($InstanceSet).
+  link($HostSet).
+  link($TrustedEndorserSet).
+  link($TrustWallet).
+  link($LibraryRules).
+  link($ListRules).
+  link($PolicyRules).
+  denyCtnByProhibitedKeys($Instance, $Containers, $Policy)? =@=deny
+  }.
+
+defguard debugCheck4(?Image, ?ImageList) :-
+  ?TrustWallet := label("trustWallet"),
+  ?TrustedEndorserSet := label("trustedEndorsers"),
+  ?LibraryRules := label("libraryRules"),
+  ?ListRules := listMatchingRules(),
+  {
+  link($TrustedEndorserSet).
+  link($TrustWallet).
+  link($LibraryRules).
+  link($ListRules).
+  approveImage($Image, $ImageList)?
+  }.
