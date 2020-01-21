@@ -175,6 +175,9 @@ defcon consLibraryRules() :-
   authPodToUser(Pod, User) :-
     hasConfig(Pod, "latte.creator", Creator),
     authPodToUser(Creator, User).
+
+  authPodForLabel(Pod, Label, Expected) :-
+    hasConfig(Pod, Label, Expected).
   }.
 
 definit consLibraryRules().
@@ -438,6 +441,23 @@ defguard checkPodOwner(?Instance, ?Owner) :-
        link($LibraryRules).
        link($PolicyRules).
        authPodToUser($Instance, $Owner)?
+   }.
+
+defguard checkPodLabel(?Instance, ?Label, ?Expected) :-
+  ?InstanceSet := label($BearerRef, "instance/?Instance"),
+  ?HostSet := label(?Instance, "instance/?Instance"),
+  ?TrustWallet := label("trustWallet"),
+  ?TrustedEndorserSet := label(?Owner, "trustedEndorsers"),
+  ?LibraryRules := label("libraryRules"),
+  ?PolicyRules := label("trustPolicyRules"),
+   {
+     link($InstanceSet).
+       link($HostSet).
+       link($TrustedEndorserSet).
+       link($TrustWallet).
+       link($LibraryRules).
+       link($PolicyRules).
+       authPodForLabel($Instance, $Label, $Expected)?
    }.
 
 defguard debugCheck1(?Instance, ?Policy) :-
