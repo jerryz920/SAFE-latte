@@ -8,19 +8,19 @@ defcon createImagePolicy(?PolicyID, ?ImgWhiteList) :-
     label("endorsements/trustPolicy/$PolicyID").
 }.
 
-defcon createProhibitedKeyPolicy(?PolicyID, ?ConfProhibited) :-
+defcon createProhibitedKeysPolicy(?PolicyID, ?ConfProhibited) :-
 {
     policy($PolicyID, "prohibited", $ConfProhibited).
     label("endorsements/trustPolicy/$PolicyID").
 }.
 
-defcon createRequiredKeyPolicy(?PolicyID,  ?ConfRequired) :-
+defcon createRequiredKeysPolicy(?PolicyID,  ?ConfRequired) :-
 {
     policy($PolicyID, "required", $ConfRequired).
     label("endorsements/trustPolicy/$PolicyID").
 }.
 
-defcon createQualifierPolicy(?PolicyID, ?ConfQualifiers) :-
+defcon createQualifierKVsPolicy(?PolicyID, ?ConfQualifiers) :-
 {
     policy($PolicyID, "qualifier", $ConfQualifiers).
     label("endorsements/trustPolicy/$PolicyID").
@@ -43,14 +43,14 @@ defcon createQualifierPolicy(?PolicyID, ?ConfQualifiers) :-
 defpost postImagePolicy(?PolicyID, ?ImgWhiteList) :-
     [createImagePolicy(?PolicyID, ?ImgWhiteList)].
 
-defpost postProhibitedKeyPolicy(?PolicyID, ?ConfProhibited) :-
-    [createProhibitedKeyPolicy(?PolicyID, ?ConfProhibited)].
+defpost postProhibitedPolicy(?PolicyID, ?ConfProhibited) :-
+    [createProhibitedKeysPolicy(?PolicyID, ?ConfProhibited)].
 
-defpost postRequiredKeyPolicy(?PolicyID,  ?ConfRequired) :-
-    [createRequiredKeyPolicy(?PolicyID, ?ConfRequired)].
+defpost postRequiredPolicy(?PolicyID,  ?ConfRequired) :-
+    [createRequiredKeysPolicy(?PolicyID, ?ConfRequired)].
 
-defpost postQualifierKVsPolicy(?PolicyID, ?ConfQualifiers) :-
-    [createQualifierPolicy(?PolicyID, ?ConfQualifiers)].
+defpost postQualifierPolicy(?PolicyID, ?ConfQualifiers) :-
+    [createQualifierKVsPolicy(?PolicyID, ?ConfQualifiers)].
 
 defcon policyRules() :- 
 {
