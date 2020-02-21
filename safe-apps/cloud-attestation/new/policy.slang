@@ -4,26 +4,26 @@
 
 defcon createImagePolicy(?PolicyID, ?ImgWhiteList) :-
 {
-   policy($PolicyID, "image", $ImgWhiteList).
-   label("endorsements/trustPolicy/$PolicyID").
+    policy($PolicyID, "image", $ImgWhiteList).
+    label("endorsements/trustPolicy/$PolicyID").
 }.
 
 defcon createProhibitedKeyPolicy(?PolicyID, ?ConfProhibited) :-
 {
-   policy($PolicyID, "prohibited", $ConfProhibited).
-   label("endorsements/trustPolicy/$PolicyID").
+    policy($PolicyID, "prohibited", $ConfProhibited).
+    label("endorsements/trustPolicy/$PolicyID").
 }.
 
 defcon createRequiredKeyPolicy(?PolicyID,  ?ConfRequired) :-
 {
-   policy($PolicyID, "required", $ConfRequired).
-   label("endorsements/trustPolicy/$PolicyID").
+    policy($PolicyID, "required", $ConfRequired).
+    label("endorsements/trustPolicy/$PolicyID").
 }.
 
-defcon createQualifierKeyPolicy(?PolicyID, ?ConfQualifiers) :-
+defcon createQualifierPolicy(?PolicyID, ?ConfQualifiers) :-
 {
-   policy($PolicyID, "qualifier", $ConfQualifiers).
-   label("endorsements/trustPolicy/$PolicyID").
+    policy($PolicyID, "qualifier", $ConfQualifiers).
+    label("endorsements/trustPolicy/$PolicyID").
 }.
 
 // Logically each policy is composed by four lists.
@@ -41,30 +41,30 @@ defcon createQualifierKeyPolicy(?PolicyID, ?ConfQualifiers) :-
 // appears always in sort order, which can accelerate the policy matching process.
 
 defpost postImagePolicy(?PolicyID, ?ImgWhiteList) :-
-  [createImagePolicy(?PolicyID, ?ImgWhiteList)].
+    [createImagePolicy(?PolicyID, ?ImgWhiteList)].
 
 defpost postProhibitedKeyPolicy(?PolicyID, ?ConfProhibited) :-
-  [createProhibitedKeyPolicy(?PolicyID, ?ConfProhibited)].
+    [createProhibitedKeyPolicy(?PolicyID, ?ConfProhibited)].
 
 defpost postRequiredKeyPolicy(?PolicyID,  ?ConfRequired) :-
-  [createRequiredKeyPolicy(?PolicyID, ?ConfRequired)].
+    [createRequiredKeyPolicy(?PolicyID, ?ConfRequired)].
 
-defpost postQualifierKeyPolicy(?PolicyID, ?ConfQualifiers) :-
-  [createQualifierKeyPolicy(?PolicyID, ?ConfQualifiers)].
+defpost postQualifierKVsPolicy(?PolicyID, ?ConfQualifiers) :-
+    [createQualifierPolicy(?PolicyID, ?ConfQualifiers)].
 
 defcon policyRules() :- 
-  {
+{
 
-	label("trustPolicyRules").
+    label("trustPolicyRules").
 
-	// if endorsement occurs and trusted, then derive policy as well
-	hasPolicy(ID, Type, Value) :-
-	   E: policy(ID, Type, Value),
-	   trustedEndorserOn("trustPolicy", E).
+    // if endorsement occurs and trusted, then derive policy as well
+    hasPolicy(ID, Type, Value) :-
+        E: policy(ID, Type, Value),
+	trustedEndorserOn("trustPolicy", E).
 
-	hasPolicy(ID, Type, Value) :-
-	   policy(ID, Type, Value).
-  }.
+    hasPolicy(ID, Type, Value) :-
+	policy(ID, Type, Value).
+}.
 
 definit policyRules().
 
