@@ -54,7 +54,8 @@ postInstanceConfigList kmaster pod1 ctn2 '[image_c2,[k2,v2],[k4,v4]]'
 Latte allow endorsements on image properties, configuration properties, and
 endorsers. 
 
-### One can endorse certain properties of images based on the code. 
+### VM image properties
+One can endorse certain properties of images based on the code. 
 For example, the following 
 endorses the ``attester'' of a kube-image running in a VM. 
 
@@ -62,7 +63,8 @@ endorses the ``attester'' of a kube-image running in a VM.
 postEndorsement bob kube-image attester 1
 ```
 
-### A principal can make use of an image endorsement by incorporating the
+### Use of endorsements
+A principal can make use of an image endorsement by incorporating the
 endorsement into its own trust wallet. The principal could set
 its policy on whose endorsements it trusts.
 
@@ -72,7 +74,9 @@ postTrustedEndorser alice bob attester
 postTrustedEndorser bob bob attester
 ``` 
 
-### One can  endorse properties of configurations in Latte. Latte provides
+### Config properties
+
+One can  endorse properties of configurations in Latte. Latte provides
 three predicates to deal with config properties: Qualifier,
 required, and prohibited.  The following endorses VM images and container
 configurations.
@@ -82,7 +86,7 @@ postImagePolicy alice default "[image_c1, image_c2]"
 postPropertyPolicy alice default "[ [*,k1,k2], [*,k3] ]" "[ [*,[k1,v1],[k2,v2]], [*,[k3,v3]] ]" "[ [*,k4], [*,k9] ]"
 ```
 
-## Authorizing access requests
+## Authorizing access
 A service guard invokes a Latte client to check policy compliance on receiving
 an access request. Latte's authorization checking ensures that not only the 
 code and configuration of the requester but also the environment where the
