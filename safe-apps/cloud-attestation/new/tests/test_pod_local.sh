@@ -48,14 +48,14 @@ postInstanceConfigList kmaster pod5 ctn1 '[image_c1,[k1,v1],[k2,v2]]'
 postInstanceConfigList kmaster pod5 ctn2 '[image_c2,[k3,v3],[k4,v5]]'
 
 # Image whitelist
-# Params: [Principal] [PolicyID] [ImageList] 
+# postImagePolicy [Principal] [PolicyID] [ImageList] 
 postImagePolicy alice default "[image_c1, image_c2]"
 
 # Lists of required keys per container,  lists of qualifier properties
 # (KV) per container, and lists of prohibited keys per container
 #
-# Params: [Principal] [PolicyID] [RequiredKeysPerCtn] [QualifierPropsPerCtn] [ProhibitedKeysPerCtn]
-postPropertyPolicy alice default "[ [*,k1,k2], [*,k3] ]" "[ [*,[k1,v1],[k2,v2]], [*,[k3,v3]] ]" "[ [*,k4], [*,k9] ]"
+# postPropertyPolicy [Principal] [PolicyID] [RequiredKeysPerCtn] [QualifierPropsPerCtn] [ProhibitedKeysPerCtn]
+postPropertyPolicy alice default "[ [any,k1,k2], [any,k3] ]" "[ [any,[k1,v1],[k2,v2]], [any,[k3,v3]] ]" "[ [any,k4], [any,k9] ]"
 printf "\n\n\nchecking pod\n\n"
 # Special format:
 # checkPodAttestationLocal authorizer parentInstance targetInstance

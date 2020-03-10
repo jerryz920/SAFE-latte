@@ -51,7 +51,7 @@ postInstanceConfigList kmaster pod1 ctn2 '[image_c2,[k2,v2],[k4,v4]]'
 ```
 
 ## Endorsing properties
-Latte allow endorsements on image properties, configuration properties, and
+Latte allows endorsements on image properties, configuration properties, and
 endorsers. 
 
 ### VM image properties

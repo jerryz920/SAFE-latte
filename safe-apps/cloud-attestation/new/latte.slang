@@ -52,6 +52,9 @@ defcon consLibraryRules() :-
         hasProperty(Image, Property, Value).
 
 
+    hasPolicy(PolicyID, Name, Value) :-
+        policy(PolicyID, Name, Value).
+
     // Approve a pod by checking it against a whitelist of images,
     // a list of qualifier config KV pairs, a list of required config
     // keys specified by a policy (which is identified by a policy ID).
@@ -73,7 +76,7 @@ defcon consLibraryRules() :-
         hasProperty(Image, Prop, 1).
 
     // Allow wildcard
-    matchImage(_, "*").
+    matchImage(_, any).
 
     matchImage(Image, Image).
 

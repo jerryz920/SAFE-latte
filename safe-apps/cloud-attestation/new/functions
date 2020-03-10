@@ -933,16 +933,13 @@ postPropertyPolicy() {
     local policyId=$1
     shift 1
 
-    curl -XPOST $SAFE_ADDR/postRequiredPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${policyId}\",\"${1}\"], \"auth\":\"${AUTH\
-:-1}\"}"
+    curl -XPOST $SAFE_ADDR/postRequiredPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${policyId}\",\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
 
     shift 1
-    curl -XPOST $SAFE_ADDR/postQualifierPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${policyId}\",\"${1}\"], \"auth\":\"${AUTH\
-:-1}\"}"
+    curl -XPOST $SAFE_ADDR/postQualifierPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${policyId}\",\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
 
     shift 1
-    curl -XPOST $SAFE_ADDR/postProhibitedPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${policyId}\",\"${1}\"], \"auth\":\"${AUTH\
-:-1}\"}"
+    curl -XPOST $SAFE_ADDR/postProhibitedPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${policyId}\",\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
 
 }
 
