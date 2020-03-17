@@ -5,11 +5,17 @@ if [ -z "$SAFE_ADDR" ]; then
     exit 1
 fi
 
+# Thoughts to re-org this code
+# BearerRef check for method name
+# Arity check for method name
+
 postInstance() {
     local principal=$1
     shift 1
+    local bearer=$1
+    shift 1
 # ?Instance,?Image,?AuthID
-    curl -XPOST $SAFE_ADDR/postInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/postInstance -d "{\"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 postInstanceLocal() {
@@ -18,7 +24,7 @@ postInstanceLocal() {
     local bearer=$1
     shift 1
 # ?Instance,?Image
-    curl -XPOST $SAFE_ADDR/postInstance -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/postInstanceLocal -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 measurePostInstance() {
@@ -29,16 +35,26 @@ measurePostInstance() {
 " -o debug.log -XPOST $SAFE_ADDR/postInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
+delInstanceLocal() {
+    local principal=$1
+    shift 1
+    curl -XPOST $SAFE_ADDR/delInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\": \"${AUTH:-1}\"}"
+}
+
+
 delInstance() {
     local principal=$1
     shift 1
     curl -XPOST $SAFE_ADDR/delInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\": \"${AUTH:-1}\"}"
 }
+
         
 postVMInstance() {
     local principal=$1
     shift 1
-# ?Instance,?Image,?AuthID,?Cidr,?Vpc
+# ?Instance,?Image,?Vpc,?AuthID,?Cidr
+#
+# ?Instance, ?Image, ?Vpc, ?NetAddr, ?Cidr
     curl -XPOST $SAFE_ADDR/postVMInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\",\"${4}\",\"${5}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
@@ -46,23 +62,32 @@ postVMInstanceLocal() {
     local principal=$1
     shift 1
 # ?Instance,?Image,?Vpc
-    curl -XPOST $SAFE_ADDR/postVMInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/postVMInstanceLocal -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 measurePostVMInstance() {
     local principal=$1
     shift 1
 # ?Instance,?Image,?AuthID,?Cidr,?Vpc,?TrustHub
+#
+# [qiang] Make a rest call with 4 params
+# ?Instance,?Image,?Vpc,?NetAddr
     curl -s -w "postVMInstance %{time_total}
-" -o debug.log -XPOST $SAFE_ADDR/postVMInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\",\"${4}\",\"${5}\"], \"auth\":\"${AUTH:-1}\"}"
+" -o debug.log -XPOST $SAFE_ADDR/postVMInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",c\"${2}\",\"${3}\",\"${4}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 delVMInstance() {
     local principal=$1
     shift 1
-    curl -XPOST $SAFE_ADDR/delVMInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\",\"${4}\",\"${5}\"], \"auth\": \"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/delVMInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\",\"${4}\"], \"auth\": \"${AUTH:-1}\"}"
 }
-        
+ 
+delVMInstanceLocal() {
+    local principal=$1
+    shift 1
+    curl -XPOST $SAFE_ADDR/delVMInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\": \"${AUTH:-1}\"}"
+}
+       
 postVpcConfig1() {
     local principal=$1
     shift 1
@@ -468,22 +493,22 @@ postImagePolicy() {
     curl -XPOST $SAFE_ADDR/postImagePolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
 }
 
-postRequiredKeyPolicy() {
+postRequiredPolicy() {
     local principal=$1
     shift 1
-    curl -XPOST $SAFE_ADDR/postRequiredKeyPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/postRequiredPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
 }
 
-postQualifierKeyPolicy() {
+postQualifierPolicy() {
     local principal=$1
     shift 1
-    curl -XPOST $SAFE_ADDR/postQualifierKeyPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/postQualifierPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
 }
 
-postProhibitedKeyPolicy() {
+postProhibitedPolicy() {
     local principal=$1
     shift 1
-    curl -XPOST $SAFE_ADDR/postProhibitedKeyPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/postProhibitedPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
 }
 
 checkContainerIsolation() {
@@ -742,10 +767,12 @@ measureCheckBuilder() {
 }
 
 checkLaunches() {
+# ?Principal,?BearerRef,?Instance,?Image
     local principal=$1
     shift 1
-# ?Instance,?Image
-    curl -XPOST $SAFE_ADDR/checkLaunches -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+    local bearer=$1
+    shift 1
+    curl -XPOST $SAFE_ADDR/checkLaunches -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 measureCheckLaunches() {
@@ -789,8 +816,10 @@ measureCheckBuildsFrom() {
 checkProperty() {
     local principal=$1
     shift 1
+    local bearer=$1
+    shift 1
 # ?Instance,?Name,?Value
-    curl -XPOST $SAFE_ADDR/checkProperty -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/checkProperty -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 measureCheckProperty() {
@@ -801,11 +830,14 @@ measureCheckProperty() {
 " -o debug.log -XPOST $SAFE_ADDR/checkProperty -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
-checkAttester() {
+checkAttester() {  # Note that this is essentially the same as function checkAttesterLocal()
+# ?Principal,?BearerRef,?Instance
     local principal=$1
     shift 1
-# ?Instance
-    curl -XPOST $SAFE_ADDR/checkAttester -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
+    local bearer=$1
+    shift 1
+    echo curl -XPOST $SAFE_ADDR/checkAttester -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/checkAttester -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 checkAttesterLocal() {
@@ -953,10 +985,13 @@ measurePropertyPolicy() {
 }
 
 checkHasConfig() {
+# ?Principal,?BearerRef,?Instance,?Name,?Value
     local principal=$1
     shift 1
-# ?Instance,?Name,?Value
-    curl -XPOST $SAFE_ADDR/checkHasConfig -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
+    local bearer=$1
+    shift 1
+
+    curl -XPOST $SAFE_ADDR/checkHasConfig -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 measureCheckHasConfig() {
@@ -970,8 +1005,10 @@ measureCheckHasConfig() {
 checkPodAttestation() {
     local principal=$1
     shift 1
+    local bearer=$1
+    shift 1
 # ?Instance
-    curl -XPOST $SAFE_ADDR/checkPodAttestation -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/checkPodAttestation -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 checkPodAttestationLocal() {

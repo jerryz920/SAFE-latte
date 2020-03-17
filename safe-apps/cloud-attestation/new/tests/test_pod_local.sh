@@ -54,11 +54,14 @@ postImagePolicy alice default "[image_c1, image_c2]"
 # Lists of required keys per container,  lists of qualifier properties
 # (KV) per container, and lists of prohibited keys per container
 #
-# postPropertyPolicy [Principal] [PolicyID] [RequiredKeysPerCtn] [QualifierPropsPerCtn] [ProhibitedKeysPerCtn]
-postPropertyPolicy alice default "[ [any,k1,k2], [any,k3] ]" "[ [any,[k1,v1],[k2,v2]], [any,[k3,v3]] ]" "[ [any,k4], [any,k9] ]"
+# postPropertyPolicy [Principal] [PolicyID] [RequiredKeysPerImg] [QualifierPropsPerImg] [ProhibitedKeysPerImg]
+postPropertyPolicy alice default "[image_c1,k1,k2]" "[image_c1,[k1,v1],[k2,v2]]" "[image_c1,k4]"
+postPropertyPolicy alice default "[image_c2,k3]" "[image_c2,[k3,v3]]" "[image_c2,k9]"
+
 printf "\n\n\nchecking pod\n\n"
 # Special format:
-# checkPodAttestationLocal authorizer parentInstance targetInstance
+# checkPodAttestationLocal authorizer parentInstanceIdAsBearerref targetInstanceId
+# checks on pod4 and pod5 should pass, according to their attestations and alice's policy.
 checkPodAttestationLocal alice kmaster pod1
 checkPodAttestationLocal alice kmaster pod2
 checkPodAttestationLocal alice kmaster pod3

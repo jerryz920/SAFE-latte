@@ -51,9 +51,9 @@ defcon consLibraryRules() :-
         launches(Instance, Image),
         hasProperty(Image, Property, Value).
 
-
-    hasPolicy(PolicyID, Name, Value) :-
-        policy(PolicyID, Name, Value).
+    // This rule below is included in policy.slang
+    //hasPolicy(PolicyID, Name, Value) :-
+    //    policy(PolicyID, Name, Value).
 
     // Approve a pod by checking it against a whitelist of images,
     // a list of qualifier config KV pairs, a list of required config
@@ -139,24 +139,33 @@ defcon consLibraryRules() :-
 
 definit consLibraryRules().
 
-defcon consVMInstance(?Instance,?Image,?Vpc) :-
+defcon consVMInstanceLocal(?Instance,?Image,?Vpc) :-
     ?VpcSet := label("vpc/?Vpc"),
-    ?SelfSet := label($Self, "instance/?Instance"),
 {
     link($VpcSet).
-    link($SelfSet).
     root("$IaaS").
     config($Instance,$PropertyVpcId, $Vpc).
     runs($Instance, $Image).
     label("instance/$Instance").
 }.
 
-defcon dtorVMInstance(?Instance,?Image,?Vpc) :-
+defcon addNetAddr(?Instance,?NetAddr) :-
+{
+    bindToID($Instance, $NetAddr).
+    label("instance/$Instance").
+}.
+
+defcon addCIDR(?Instance, ?CIDR) :-
+{
+    cidr($Instance, $CIDR).
+    label("instance/$Instance").
+}.
+
+
+defcon dtorVMInstanceLocal(?Instance,?Image,?Vpc) :-
     ?VpcSet := label("vpc/?Vpc"),
-    ?SelfSet := label($Self, "instance/$Self"),
 {
     link($VpcSet).
-    link($SelfSet).
     root("$IaaS")~
     config($Instance,$PropertyVpcId, $Vpc)~
     runs($Instance, $Image)~
@@ -164,37 +173,67 @@ defcon dtorVMInstance(?Instance,?Image,?Vpc) :-
     invalid(1).
 }.
 
-defpost postVMInstance(?Instance,?Image,?Vpc) :-
-    [ consVMInstance(?Instance,?Image,?Vpc) ].
-defpost delVMInstance(?Instance,?Image,?Vpc) :-
-    [ dtorVMInstance(?Instance,?Image,?Vpc) ].
+defcon delNetAddr(?Instance,?NetAddr) :-
+{
+    bindToID($Instance, $NetAddr)~
+    label("instance/$Instance").
+}.
 
-defcon consInstance(?Instance,?Image) :-
+defcon delCIDR(?Instance,?CIDR) :-
+{
+    cidr($Instance, $CIDR)~
+    label("instance/$Instance").
+}.
+
+defpost postVMInstanceLocal(?Instance,?Image,?Vpc) :-
+    [ consVMInstanceLocal(?Instance,?Image,?Vpc) ].
+defpost delVMInstanceLocal(?Instance,?Image,?Vpc) :-
+    [ dtorVMInstanceLocal(?Instance,?Image,?Vpc) ].
+
+defpost postVMInstance(?Instance, ?Image, ?Vpc, ?NetAddr, ?CIDR) :-
+    [ consVMInstanceLocal(?Instance, ?Image, ?Vpc),
+      addNetAddr(?Instance, ?NetAddr),
+      addCIDR(?Instance, ?CIDR)
+    ].
+
+defpost delVMInstance(?Instance, ?Image, ?Vpc, ?NetAddr, ?CIDR) :-
+    [ dtorVMInstanceLocal(?Instance, ?Image, ?Vpc),
+      delNetAddr(?Instance, ?NetAddr),
+      delCIDR(?Instance, ?CIDR)
+    ]. 
+
+// Attestation of pods
+defcon consInstanceLocal(?Instance,?Image) :-
     ?HostSet := label($BearerRef, "instance/$Self"),
-    ?SelfSet := label($Self, "instance/$Self"),
 {
     link($HostSet).
-    link($SelfSet).
     runs($Instance, $Image).
     label("instance/$Instance").
 }.
 
-defcon dtorInstance(?Instance,?Image) :-
+defcon dtorInstanceLocal(?Instance,?Image) :-
     ?HostSet := label($BearerRef, "instance/$Self"),
-    ?SelfSet := label($Self, "instance/$Self"),
 {
     link($HostSet).
-    link($SelfSet).
     runs($Instance, $Image)~
     label("instance/$Instance").
     invalid(1).
 }.
 
-defpost postInstance(?Instance,?Image) :-
-    [ consInstance(?Instance,?Image) ].
-defpost delInstance(?Instance,?Image) :-
-    [ dtorInstance(?Instance,?Image) ].
+defpost postInstanceLocal(?Instance,?Image) :-
+    [ consInstanceLocal(?Instance,?Image) ].
+defpost delInstanceLocal(?Instance,?Image) :-
+    [ dtorInstanceLocal(?Instance,?Image) ].
 
+defpost postInstance(?Instance, ?Image, ?NetAddr) :-
+   [ consInstanceLocal(?Instance, ?Image),
+     addNetAddr(?Instance, ?NetAddr)
+   ].
+
+defpost delInstance(?Instance, ?Image, ?NetworkAddr) :-
+   [  dtorInstanceLocal(?Instance, ?Image),
+      delNetAddr(?Instance, ?NetAddr)
+   ].
 
 defcon consTrustedEndorserOn(?Endorser, ?Property) :-
     ?TargetSet := label(?Endorser, "trusthub"),
@@ -279,13 +318,11 @@ defpost delInstanceConfigList(?Instance,?Config,?Value) :-
 
 defguard checkProperty(?Instance,?Name,?Value) :- 
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?HostSet := label(?Instance, "instance/?Instance"),
     ?TrustWallet := label("trustWallet"),
     ?TrustedEndorserSet := label("trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
 {
     link($InstanceSet).
-    link($HostSet).
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
@@ -295,13 +332,11 @@ defguard checkProperty(?Instance,?Name,?Value) :-
 
 defguard checkLaunches(?Instance,?Name) :- 
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?HostSet := label(?Instance, "instance/?Instance"),
     ?TrustWallet := label("trustWallet"),
     ?TrustedEndorserSet := label("trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
 {
     link($InstanceSet).
-    link($HostSet).
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
@@ -311,13 +346,11 @@ defguard checkLaunches(?Instance,?Name) :-
 
 defguard checkHasConfig(?Instance,?Name,?Value) :- 
   ?InstanceSet := label($BearerRef, "instance/?Instance"),
-  ?HostSet := label(?Instance, "instance/?Instance"),
   ?TrustWallet := label("trustWallet"),
   ?TrustedEndorserSet := label("trustedEndorsers"),
   ?LibraryRules := label("LKubeLibraryRules"),
   {
     link($InstanceSet).
-    link($HostSet).
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
@@ -334,13 +367,11 @@ defguard checkTrustedEndorser(?Endorser, ?PropName) :-
 
 defguard checkAttester(?Instance) :- 
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?HostSet := label(?Instance, "instance/?Instance"),
     ?TrustWallet := label("trustWallet"),
     ?TrustedEndorserSet := label("trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
 {
     link($InstanceSet).
-    link($HostSet).
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
@@ -350,20 +381,20 @@ defguard checkAttester(?Instance) :-
 
 defguard checkPodAttestationLocal(?Instance) :-
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?HostSet := label(?Instance, "instance/?Instance"),
     ?TrustWallet := label("trustWallet"),
     ?TrustedEndorserSet := label("trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
     ?ListRules := listMatchingRules(),
     ?Spec := label("endorsements/trustPolicy/default"),
+    ?PolicyRules := label("trustPolicyRules"),
 {
     link($InstanceSet).
-    link($HostSet).
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
     link($ListRules).
     link($Spec).
+    link($PolicyRules).
     approvePodByPolicy($Instance, default)? =@= require
     denyPodByPolicy($Instance, default)? =@= deny
 }.
@@ -371,27 +402,26 @@ defguard checkPodAttestationLocal(?Instance) :-
 
 defguard checkPodAttestation(?Instance, ?PolicyID) :-
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?HostSet := label(?Instance, "instance/?Instance"),
     ?TrustWallet := label("trustWallet"),
     ?TrustedEndorserSet := label("trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
     ?ListRules := listMatchingRules(),
     ?Spec := label("endorsements/trustPolicy/?PolicyID"),
+    ?PolicyRules := label("trustPolicyRules"),
 {
     link($InstanceSet).
-    link($HostSet).
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
     link($ListRules).
     link($Spec).
+    link($PolicyRules).
     approvePodByPolicy($Instance, $PolicyID)? =@= require
     denyPodByPolicy($Instance, $PolicyID)? =@= deny
 }.
 
 defguard checkPodByPolicy(?Instance, ?Policy) :-
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?HostSet := label(?Instance, "instance/?Instance"),
     ?TrustWallet := label("trustWallet"),
     ?TrustedEndorserSet := label("trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
@@ -399,7 +429,6 @@ defguard checkPodByPolicy(?Instance, ?Policy) :-
     ?PolicyRules := label("trustPolicyRules"),
 {
     link($InstanceSet).
-    link($HostSet).
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
@@ -411,14 +440,12 @@ defguard checkPodByPolicy(?Instance, ?Policy) :-
 
 defguard checkPodOwner(?Instance, ?Owner) :-
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?HostSet := label(?Instance, "instance/?Instance"),
     ?TrustWallet := label("trustWallet"),
     ?TrustedEndorserSet := label(?Owner, "trustedEndorsers"),
     ?LibraryRules := label("LKubelibraryRules"),
     ?PolicyRules := label("trustPolicyRules"),
 {
     link($InstanceSet).
-    link($HostSet).
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
@@ -428,14 +455,12 @@ defguard checkPodOwner(?Instance, ?Owner) :-
 
 defguard checkPodLabel(?Instance, ?Label, ?Expected) :-
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?HostSet := label(?Instance, "instance/?Instance"),
     ?TrustWallet := label("trustWallet"),
     ?TrustedEndorserSet := label(?Owner, "trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
     ?PolicyRules := label("trustPolicyRules"),
 {
      link($InstanceSet).
-     link($HostSet).
      link($TrustedEndorserSet).
      link($TrustWallet).
      link($LibraryRules).
@@ -445,7 +470,6 @@ defguard checkPodLabel(?Instance, ?Label, ?Expected) :-
 
 defguard debugCheck1(?Instance, ?Policy) :-
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?HostSet := label(?Instance, "instance/?Instance"),
     ?TrustWallet := label("trustWallet"),
     ?TrustedEndorserSet := label("trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
@@ -453,7 +477,6 @@ defguard debugCheck1(?Instance, ?Policy) :-
     ?PolicyRules := label("trustPolicyRules"),
 {
     link($InstanceSet).
-    link($HostSet).
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
@@ -464,7 +487,6 @@ defguard debugCheck1(?Instance, ?Policy) :-
 
 defguard debugCheck2(?Instance, ?Policy) :-
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?HostSet := label(?Instance, "instance/?Instance"),
     ?TrustWallet := label("trustWallet"),
     ?TrustedEndorserSet := label("trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
@@ -472,7 +494,6 @@ defguard debugCheck2(?Instance, ?Policy) :-
     ?PolicyRules := label("trustPolicyRules"),
 {
     link($InstanceSet).
-    link($HostSet).
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
@@ -483,7 +504,6 @@ defguard debugCheck2(?Instance, ?Policy) :-
 
 defguard debugCheck3(?Instance, ?Policy, ?Containers) :-
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?HostSet := label(?Instance, "instance/?Instance"),
     ?TrustWallet := label("trustWallet"),
     ?TrustedEndorserSet := label("trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
@@ -491,7 +511,6 @@ defguard debugCheck3(?Instance, ?Policy, ?Containers) :-
     ?PolicyRules := label("trustPolicyRules"),
 {
     link($InstanceSet).
-    link($HostSet).
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
