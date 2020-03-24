@@ -1,9 +1,9 @@
 
-export SAFE_ADDR=http://127.0.0.1:19851
+export SAFE_ADDR=http://127.0.0.1:7777
 export IAAS=152.3.145.38:444
 . ../functions
 
-postVMInstance $IAAS kmaster kube-image 192.168.0.2:1-65535 192.168.2.0/24 vpc-1
+postVMInstance $IAAS kmaster kube-image vpc-1 192.168.0.2:1-65535 192.168.2.0/24
 
 postEndorsementLink bob kube-image
 postEndorsementLink bob trustPolicy/policy1
@@ -15,63 +15,88 @@ postTrustedEndorser alice bob trustPolicy
 #postTrustedEndorser alice alice trustPolicy
 postTrustedEndorser bob bob attester
 
-checkAttester alice kmaster
+checkAttester alice $IAAS kmaster
 
-postInstance kmaster pod1 imagenotused 192.168.2.0:1-65535
-checkLaunches alice pod1 imagenotused
+postInstance kmaster $IAAS pod1 imagenotused 192.168.2.0:1-65535
+checkLaunches alice kmaster pod1 imagenotused
 postInstanceConfigList kmaster pod1 containers '[ctn1,ctn2]'
-checkHasConfig alice pod1 containers '[ctn1,ctn2]'
+checkHasConfig alice kmaster pod1 containers '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod1 global '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod1 ctn1 '[image_c1,[k1,v1],[k2,v2]]'
 postInstanceConfigList kmaster pod1 ctn2 '[image_c2,[k3,v3],[k4,v4]]'
 
-postInstance kmaster pod2 imagenotused 192.168.2.1:1-65535
+postInstance kmaster $IAAS pod2 imagenotused 192.168.2.1:1-65535
 postInstanceConfigList kmaster pod2 containers '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod2 global '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod2 ctn1 '[image_c3,[k1,v1],[k2,v2]]'
 postInstanceConfigList kmaster pod2 ctn2 '[image_c2,[k3,v3],[k4,v4]]'
 
-postInstance kmaster pod3 imagenotused 192.168.2.2:1-65535
+postInstance kmaster $IAAS pod3 imagenotused 192.168.2.2:1-65535
 postInstanceConfigList kmaster pod3 containers '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod3 global '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod3 ctn1 '[image_c1,[k1,v1],[k2,v2]]'
 postInstanceConfigList kmaster pod3 ctn2 '[image_c1,[k3,v3],[k5,v5]]'
 
-postInstance kmaster pod4 imagenotused 192.168.2.3:1-65535
+postInstance kmaster $IAAS pod4 imagenotused 192.168.2.3:1-65535
 postInstanceConfigList kmaster pod4 containers '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod4 global '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod4 ctn1 '[image_c1,[k1,v1],[k2,v2]]'
 postInstanceConfigList kmaster pod4 ctn2 '[image_c2,[k3,v3]]'
 
-postInstance kmaster pod5 imagenotused 192.168.2.4:1-65535
+postInstance kmaster $IAAS pod5 imagenotused 192.168.2.4:1-65535
 postInstanceConfigList kmaster pod5 containers '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod5 global '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod5 ctn1 '[image_c1,[k1,v1],[k2,v2]]'
 postInstanceConfigList kmaster pod5 ctn2 '[image_c2,[k3,v3],[k4,v5]]'
 
-postImagePolicy bob policy1 "[image_c1,image_c2]"
-postProhibitedKeyPolicy bob policy1 "[image_c2,k5]" 
-postProhibitedKeyPolicy bob policy1 "[image_c1,k5]" 
-postRequiredKeyPolicy bob policy1 "[image_c1,k1,k2]"
-postRequiredKeyPolicy bob policy1 "[image_c2,k3]"
-postQualifierKeyPolicy bob policy1 "[image_c2,[k4,v4]]"
-postQualifierKeyPolicy bob policy1 "[image_c1,[k1,v1]]"
+postInstance kmaster $IAAS pod6 imagenotused 192.168.2.4:1-65535
+postInstanceConfigList kmaster pod6 containers '[ctn1,ctn2]'
+postInstanceConfigList kmaster pod6 global '[ctn1,ctn2]'
+postInstanceConfigList kmaster pod6 ctn1 '[image_c1,[k1,v6],[k2,v7],[k4,v4]]'
+postInstanceConfigList kmaster pod6 ctn2 '[image_c2,[k1,v1],[k4,v5]]'
 
-printf "\n\n\nchecking pod\n\n"
-#debugCheck1 alice pod1 policy1
-#debugCheck2 alice pod1 policy1
-#checkHasConfig alice pod1 ctn1 '[image_c1,[[k1,v1],[k2,v2]]]'
-#debugCheck3 alice pod1 policy1 "[ctn2]"
-checkPodByPolicy alice pod1 policy1
-checkPodByPolicy alice pod2 policy1
-checkPodByPolicy alice pod3 policy1
-checkPodByPolicy alice pod4 policy1
-checkPodByPolicy alice pod5 policy1
-#debugCheck4 alice image_c1 "[image_c1, image_c2]"
-#debugCheck4 alice image_c1 "[image_c1]"
-#debugCheck4 alice image_c1 "[image_c2]"
-#checkPodAttestation alice pod1 policy1
-#checkPodAttestation alice pod2 policy1
-#checkPodAttestation alice pod3 policy1
-#checkPodAttestation alice pod4 policy1 
-#checkPodAttestation alice pod5 policy1
+
+postImagePolicy bob policy1 "[image_c1,image_c2]"
+postProhibitedPolicy bob policy1 "[image_c1,k5]" 
+postProhibitedPolicy bob policy1 "[image_c2,k5]" 
+postRequiredPolicy bob policy1 "[image_c1,k1,k2]"
+postRequiredPolicy bob policy1 "[image_c2,k3]"
+postQualifierPolicy bob policy1 "[image_c1,[k1,v1]]"
+postQualifierPolicy bob policy1 "[image_c2,[k4,v4]]"
+
+# Among the queries, only the check on the first pod would pass.
+printf "\n\n\nchecking pods\n\n"
+checkPodByPolicy alice kmaster pod1 policy1
+checkPodByPolicy alice kmaster pod2 policy1
+checkPodByPolicy alice kmaster pod3 policy1
+checkPodByPolicy alice kmaster pod4 policy1
+checkPodByPolicy alice kmaster pod5 policy1
+
+# All of the following checks must pass
+debugCheck1 alice kmaster pod1 policy1
+#debugCheck2 alice kmaster pod1 policy1
+checkHasConfig alice kmaster pod1 ctn1 '[image_c1,[k1,v1],[k2,v2]]'
+#debugCheck3 alice kmaster pod1 policy1 "[ctn2]"
+debugCheck4 alice image_c1 "[image_c1, image_c2]"
+debugCheck4 alice image_c1 "[image_c1]"
+
+# This one should fail
+debugCheck4 alice image_c1 "[image_c2]"
+
+
+# Using alice's own policy
+postImagePolicy alice policy1 "[image_c1,image_c2,image_c3]"
+postProhibitedPolicy alice policy1 "[image_c1,k5]"
+postProhibitedPolicy alice policy1 "[image_c2,k5]"
+postRequiredPolicy alice policy1 "[image_c1,k1,k2]"
+postRequiredPolicy alice policy1 "[image_c2,k1]"
+postQualifierPolicy alice policy1 "[image_c1,[k4,v4]]"
+postQualifierPolicy alice policy1 "[image_c2,[k1,v1]]"
+
+# All following checks except for the first one and the last one would fail.
+checkPodAttestation alice kmaster pod1 policy1
+checkPodAttestation alice kmaster pod2 policy1
+checkPodAttestation alice kmaster pod3 policy1
+checkPodAttestation alice kmaster pod4 policy1 
+checkPodAttestation alice kmaster pod5 policy1
+checkPodAttestation alice kmaster pod6 policy1

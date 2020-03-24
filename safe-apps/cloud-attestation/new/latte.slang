@@ -89,7 +89,6 @@ defcon consLibraryRules() :-
     approveImage(Image, [_|Rest]) :-
         approveImage(Image, Rest).
 
-
     // Handle Required Keys and QualifiedKvs
     approveCtnByQualifiedKvs(Pod, [Ctn|Rest], PolicyID) :-
         hasConfig(Pod, Ctn, [Image|Config]),
@@ -117,8 +116,8 @@ defcon consLibraryRules() :-
 
     denyCtnByProhibitedKeys(Pod, [Ctn|_], PolicyID) :-
         hasConfig(Pod, Ctn, [Image|Config]),
-        matchImage(Image, ImageMatcher),
         hasPolicy(PolicyID, "prohibited", [ImageMatcher|ProhibitedKeys]),
+        matchImage(Image, ImageMatcher),
         anyPropPresent(ProhibitedKeys, Config).
 
     denyCtnByProhibitedKeys(Pod, [_|Rest], PolicyID) :-
@@ -266,11 +265,11 @@ defcon consEndorsementLink(?Target) :-
 
 defcon dtorEndorsementLink(?Target) :-
   ?TargetSet := label("endorsements/?Target"),
-  {
+{
     link($TargetSet)~
     label("trusthub").
     invalid(1).
-  }.
+}.
 
 defpost postEndorsementLink(?Target) :-
     [ consEndorsementLink(?Target) ].
@@ -434,8 +433,8 @@ defguard checkPodByPolicy(?Instance, ?Policy) :-
     link($LibraryRules).
     link($ListRules).
     link($PolicyRules).
-    approvePodByRequiredPolicy($Instance, $Policy)? =@= require
-    denyPodByProhibitedKeys($Instance, $Policy)? =@= deny
+    approvePodByPolicy($Instance, $Policy)? =@= require
+    denyPodByPolicy($Instance, $Policy)? =@= deny
 }.
 
 defguard checkPodOwner(?Instance, ?Owner) :-
@@ -482,7 +481,7 @@ defguard debugCheck1(?Instance, ?Policy) :-
     link($LibraryRules).
     link($ListRules).
     link($PolicyRules).
-    approvePodByRequiredPolicy($Instance, $Policy)? =@= require
+    approvePodByPolicy($Instance, $Policy)? =@= require
 }.
 
 defguard debugCheck2(?Instance, ?Policy) :-
@@ -499,7 +498,7 @@ defguard debugCheck2(?Instance, ?Policy) :-
     link($LibraryRules).
     link($ListRules).
     link($PolicyRules).
-    denyPodByProhibitedKeys($Instance, $Policy)? =@= deny
+    denyPodByPolicy($Instance, $Policy)? =@= deny
 }.
 
 defguard debugCheck3(?Instance, ?Policy, ?Containers) :-

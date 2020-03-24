@@ -1032,22 +1032,28 @@ measureCheckPodAttestation() {
 debugCheck1() {
     local principal=$1
     shift 1
+    local bearer=$1
+    shift 1
 # ?Instance
-    curl -XPOST $SAFE_ADDR/debugCheck1 -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/debugCheck1 -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 debugCheck2() {
     local principal=$1
     shift 1
+    local bearer=$1
+    shift 1
 # ?Instance
-    curl -XPOST $SAFE_ADDR/debugCheck2 -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/debugCheck2 -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 debugCheck3() {
     local principal=$1
     shift 1
+    local bearer=$1
+    shift 1
 # ?Instance
-    curl -XPOST $SAFE_ADDR/debugCheck3 -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\", \"${3}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/debugCheck3 -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\", \"${3}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
 debugCheck4() {
@@ -1060,6 +1066,8 @@ debugCheck4() {
 checkPodByPolicy() {
     local principal=$1
     shift 1
+    local bearer=$1
+    shift 1
 # ?Instance
-    curl -XPOST $SAFE_ADDR/checkPodByPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/checkPodByPolicy -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
 }

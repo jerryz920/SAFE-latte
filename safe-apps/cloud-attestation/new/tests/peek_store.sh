@@ -1,4 +1,5 @@
-export STORE_ADDR=129.114.108.140:8098
+#export STORE_ADDR=128.105.145.138:8098
+export STORE_ADDR=localhost:8098
 export SAFE_CERT_DIR=types/safesets/buckets/safe/keys
 
 for t in "$@"; do
