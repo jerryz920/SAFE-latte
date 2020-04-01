@@ -9,9 +9,9 @@ attestation-based access control in applications, e.g., joint data
 analytics. 
 
 ## Latte Slang scripts
-The Latte Slang script [https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/new/latte.slang]
-imports plist library [https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/plist-lib.slang]
-and Latte policy Slang [https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/policy.slang].
+The [Latte Slang script] [https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/new/latte.slang]
+imports [plist library] [https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/plist-lib.slang]
+and [Latte policy Slang] [https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/policy.slang].
 These Slang scripts provide a variety of constructs for attesting Latte instances
 (e.g., VMs and pods), endorsing code properties (e.g., attester) and trusted endorsers,
 and checking policy compilance to guard service access. A common set of
@@ -19,8 +19,8 @@ latte policy rules provided in the scripts allows re-use to check configurations
 and properties attested by instances which themselves are attested.
 The following section walks through a typical process of
 attesting, endorsing, and checking in Latte using an end-to-end running example.
-In this example, a test uses a bash shell
-[https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/new/test_pod_local.sh] 
+In this example, a test uses a bash shell [script]
+[https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/new/test_app_policy.sh] 
 for invoking a Latte construct. 
   
 
@@ -59,7 +59,7 @@ postInstanceConfigList kmaster pod1 ctn2 '[image_c2,[k3,v3],[k4,v4]]'
 ```
 
 ```
-postInstance kmaster $IAAS pod6 imagenotused 192.168.2.4:1-65535
+postInstance kmaster $IAAS pod6 imagenotused 192.168.2.6:1-65535
 postInstanceConfigList kmaster pod6 containers '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod6 global '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod6 ctn1 '[image_c1,[k1,v6],[k2,v7],[k4,v4]]'
