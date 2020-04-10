@@ -48,13 +48,13 @@ postInstanceConfigList kmaster pod5 ctn1 '[image_c1,[k1,v1],[k2,v2]]'
 postInstanceConfigList kmaster pod5 ctn2 '[image_c2,[k3,v3],[k4,v5]]'
 
 # Image whitelist
-# postImagePolicy [Principal] [PolicyID] [ImageList] 
+# postImagePolicy <Principal> <PolicyID> <ImageList> 
 postImagePolicy alice default "[image_c1, image_c2]"
 
 # Lists of required keys per container,  lists of qualifier properties
 # (KV) per container, and lists of prohibited keys per container
 #
-# postPropertyPolicy [Principal] [PolicyID] [RequiredKeysPerImg] [QualifierPropsPerImg] [ProhibitedKeysPerImg]
+# postPropertyPolicy <Principal> <PolicyID> <RequiredKeysPerImg> <QualifierPropsPerImg> <ProhibitedKeysPerImg>
 postPropertyPolicy alice default "[image_c1,k1,k2]" "[image_c1,[k1,v1],[k2,v2]]" "[image_c1,k4]"
 postPropertyPolicy alice default "[image_c2,k3]" "[image_c2,[k3,v3]]" "[image_c2,k9]"
 

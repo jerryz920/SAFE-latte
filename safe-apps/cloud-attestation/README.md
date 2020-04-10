@@ -9,9 +9,9 @@ attestation-based access control in applications, e.g., joint data
 analytics. 
 
 ## Latte Slang scripts
-The [Latte Slang script] [https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/new/latte.slang]
-imports [plist library] [https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/plist-lib.slang]
-and [Latte policy Slang] [https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/policy.slang].
+The [Latte Slang script] (https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/new/latte.slang)
+imports [plist library] (https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/plist-lib.slang)
+and [Latte policy Slang] (https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/new/policy.slang).
 These Slang scripts provide a variety of constructs for attesting Latte instances
 (e.g., VMs and pods), endorsing code properties (e.g., attester) and trusted endorsers,
 and checking policy compilance to guard service access. A common set of
@@ -20,7 +20,7 @@ and properties attested by instances which themselves are attested.
 The following section walks through a typical process of
 attesting, endorsing, and checking in Latte using an end-to-end running example.
 In this example, a test uses a bash shell [script]
-[https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/new/test_app_policy.sh] 
+(https://github.com/jerryz920/SAFE-latte/blob/yan/latte/safe-apps/cloud-attestation/new/test_app_policy.sh) 
 for invoking a Latte construct. 
   
 
@@ -35,7 +35,7 @@ master in a VM and attests to the kube image that this master
 runs. The attestation can also include statements about the network
 address of this VM and the range of IP addresses allocated for
 pods on the k8s cluster. In this example, the k8s master belongs to a
-VPC (i.e., vpc-1), owns an IP address
+VPC (i.e., vpc-1), uses an IP address
 172.16.0.2 and a port range 0-65535, and is assigned an IP range (CIDR)
 192.168.2.0/24 for pods to be launched from it.
 
@@ -44,14 +44,26 @@ postVMInstance $IAAS kmaster kube-image vpc-1 172.16.0.2:0-65535 192.168.2.0/24
 ```
 
 ### Create a pod on the k8s cluster
+
 On creation of a new pod, k8s master attests to the network
 address and the manifest
-of this pod. The latter leads to attestation of each container
-inside this pod, and the configurations
-of each image that those containers run.
+of this pod. Network address attested by k8s master is comprised of two
+components: an IP address and a port range. In this example, pod1 is on
+IP address 192.168.2.1 and owns a port range 0-65535; pod6 is on 
+IP address 192.168.2.6 and owns the same port range as pod1 does. 
+An attestation of a pod also includes attestation of each container
+inside this pod, and the configuration
+of the image with which the container run. The *image configuration* 
+associated to a running container is captured in an attestation using 
+a *list* of configuration key-value tuples which
+themselves are also represented with lists. 
+
+<!--  ``$IAAS'' uses an environment
+variable holding the ID of the IAAS underneath.
+-->
 
 ```
-postInstance kmaster $IAAS pod1 imagenotused 192.168.2.0:1-65535
+postInstance kmaster $IAAS pod1 imagenotused 192.168.2.1:0-65535
 postInstanceConfigList kmaster pod1 containers '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod1 global '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod1 ctn1 '[image_c1,[k1,v1],[k2,v2]]'
@@ -59,7 +71,7 @@ postInstanceConfigList kmaster pod1 ctn2 '[image_c2,[k3,v3],[k4,v4]]'
 ```
 
 ```
-postInstance kmaster $IAAS pod6 imagenotused 192.168.2.6:1-65535
+postInstance kmaster $IAAS pod6 imagenotused 192.168.2.6:0-65535
 postInstanceConfigList kmaster pod6 containers '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod6 global '[ctn1,ctn2]'
 postInstanceConfigList kmaster pod6 ctn1 '[image_c1,[k1,v6],[k2,v7],[k4,v4]]'
@@ -74,7 +86,7 @@ the endorsers themselves.
 One can endorse certain properties of images based on the code. 
 For example, with the following commands bob 
 endorses the property of *attester* for kube-image that kmaster runs. 
-Bob then stores the link to this endorsement into his trust hub.
+Bob then stores the link to this endorsement into his *trust hub*.
 
 ```
 postEndorsement bob kube-image attester 1
@@ -83,10 +95,12 @@ postEndorsementLink bob kube-image
 
 ### Use of endorsements
 A principal can make use of an image endorsement by incorporating the
-endorsement into its own trust wallet. The principal sets
-its policy on whose endorsements it trusts and on what property.
+endorsement along with its trusted endorsers. This is accomplished via logic-set
+linking of SAFE. The principal can choose to link an interested endorsement 
+(or a trust hub) to its own endorsement policy set where it sets
+a policy on whose endorsements it trusts and on what endorsable property.
 For instance, Alice can optionally accepts bob's endorsements on the
-property attester. Of course, Bob accepts the endorsements made by itself. 
+property *attester*. Of course, Bob accepts the endorsements made by itself. 
 
 ```
 postTrustedEndorser alice bob attester
@@ -95,17 +109,24 @@ postTrustedEndorser bob bob attester
 
 ### Property lists for configurations
 
-A policy asserts certain properties for images
-and their configurations.
-Latte provides  mechanics to support a common set of configuration properties.
-It uses three dedicated predicates to faciliate expression and evaluation
-of properties of configuration: *prohibited*, *qualifier*, and *required*.
-In this example, Alice publishes policy1 to specify what are
-acceptable container images, and for each image what are prohibited 
-configuration (represented by keys), qualifier configuration (represented
-by key-value pairs) and required configuration (represented by
-keys). Note that prohibited, qualifier, and required configuration 
-are captured in statements using *property lists*.
+An authorization policy asserts certain properties for images
+and their configurations. An authorizer may only
+accept images from a vetted whitelist, and may not allow an image configured
+in an arbitrary way. For example, safety-sensitive configuration
+must be unset, set, or set in particular ways, depending on application
+context.  
+Latte provides  mechanics to support checks on a common set of configuration properties.
+It uses *property lists*, a predicated list representation of configuration using properties,
+to faciliate expression, interpretation, and evaluation
+for three categories of properties: *prohibited*, *required*, *qualifier*.
+These three properties are used to denote configurations that must not be present,
+must be present, and must be specified in a certain way, respectively. 
+In this example, Alice accrues the specifications of policy1, publishing what are
+acceptable container images, and for each image what are the prohibited 
+configuration (by keys), the required configuration (by
+keys), and the qualifier configuration 
+(by key-value tuples). Note that prohibited, qualifier, and required configurations are 
+all property lists.
 
 ```
 postImagePolicy alice policy1 "[image_c1,image_c2,image_c3]"
@@ -120,7 +141,7 @@ postQualifierPolicy alice policy1 "[image_c2,[k1,v1]]"
 ## Authorizing
 An authorizor invokes a Latte guard in Slang to check if 
 related attestations, configurations, and endorsements of a requester
-meet the specification of a particular policy before it
+together meet the specification of a particular policy before it
 grants access or allocates resources
 to the requester. 
 
@@ -153,14 +174,19 @@ postQualifierPolicy bob policy1 "[image_c1,[k1,v1]]"
 postQualifierPolicy bob policy1 "[image_c2,[k4,v4]]"
 postRequiredPolicy bob policy1 "[image_c1,k1,k2]"
 postRequiredPolicy bob policy1 "[image_c2,k3]"
-postEndorsementLink bob trustPolicy/policy1
 ```
 
-Alice adopts Bob's policy by endorsing Bob as a trusted policy source.
+Alice adopts Bob's policy by endorsing Bob as a trusted policy source. Note that 
+here it uses SAFE's *direct linking* to incorporate the desired policy into this
+endorsement of trusted endorsers. This prunes the inference context at authorization time
+and can dramatically reduce resource consumption on the authorizer (e.g., memory footprint), 
+and the delay of property proving.
 
+ 
 ```
-postTrustedEndorser alice bob trustPolicy
+postAndDLinkTrustedEndorser alice bob trustPolicy endorsements/trustPolicy/policy1
 ```
+
 
 Now, Alice can check a pod, e.g., pod1, using this policy. While it previously has failed, 
 this check passes. 

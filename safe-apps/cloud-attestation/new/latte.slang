@@ -234,16 +234,16 @@ defpost delInstance(?Instance, ?Image, ?NetworkAddr) :-
       delNetAddr(?Instance, ?NetAddr)
    ].
 
-defcon consTrustedEndorserOn(?Endorser, ?Property) :-
-    ?TargetSet := label(?Endorser, "trusthub"),
+defcon consTrustedEndorserOn(?Endorser, ?Property, ?EndorsementLabel) :-
+    ?TargetSet := label(?Endorser, ?EndorsementLabel),
 {
     link($TargetSet).
     trustedEndorserOn($Property, $Endorser).
     label("trustedEndorsers").
 }.
 
-defcon dtorTrustedEndorserOn(?Endorser, ?Property) :-
-    ?TargetSet := label(?Endorser, "trusthub"),
+defcon dtorTrustedEndorserOn(?Endorser, ?Property, ?EndorsementLabel) :-
+    ?TargetSet := label(?Endorser, ?EndorsementLabel),
 {
     link($TargetSet).
     label("trustedEndorsers").
@@ -252,9 +252,16 @@ defcon dtorTrustedEndorserOn(?Endorser, ?Property) :-
 }.
 
 defpost postTrustedEndorser(?Target, ?Property) :-
-    [ consTrustedEndorserOn(?Target, ?Property) ].
+    [ consTrustedEndorserOn(?Target, ?Property, "trusthub") ].
 defpost delTrustedEndorser(?Target, ?Property) :-
-    [ dtorTrustedEndorserOn(?Target, ?Property) ].
+    [ dtorTrustedEndorserOn(?Target, ?Property, "trusthub") ].
+
+
+defpost postAndDLinkTrustedEndorser(?Target, ?Property, ?EndorsementLabel) :-
+    [ consTrustedEndorserOn(?Target, ?Property, ?EndorsementLabel) ].
+defpost delAndDULinkTrustedEndorser(?Target, ?Property, ?EndorsementLabel) :-
+    [ dtorTrustedEndorserOn(?Target, ?Property, ?EndorsementLabel) ].
+
 
 defcon consEndorsementLink(?Target) :-
     ?TargetSet := label("endorsements/?Target"),

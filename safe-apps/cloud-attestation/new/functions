@@ -242,6 +242,13 @@ postTrustedEndorser() {
     curl -XPOST $SAFE_ADDR/postTrustedEndorser -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
+postAndDLinkTrustedEndorser() {
+    local principal=$1
+    shift 1
+# ?Endorser,?Target,?EndorsementLabel
+    curl -XPOST $SAFE_ADDR/postAndDLinkTrustedEndorser -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\", \"${3}\"], \"auth\":\"${AUTH:-1}\"}"
+}
+
 measurePostTrustedEndorser() {
     local principal=$1
     shift 1
