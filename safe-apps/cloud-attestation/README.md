@@ -53,10 +53,10 @@ IP address 192.168.2.1 and owns a port range 0-65535; pod6 is on
 IP address 192.168.2.6 and owns the same port range as pod1 does. 
 An attestation of a pod also includes attestation of each container
 inside this pod, and the configuration
-of the image with which the container run. The *image configuration* 
+of the image with which the container runs. The *image configuration* 
 associated to a running container is captured in an attestation using 
 a *list* of configuration key-value tuples which
-themselves are also represented with lists. 
+themselves are also represented as lists. 
 
 <!--  ``$IAAS'' uses an environment
 variable holding the ID of the IAAS underneath.
@@ -84,8 +84,8 @@ the endorsers themselves.
 
 ### VM image properties
 One can endorse certain properties of images based on the code. 
-For example, with the following commands bob 
-endorses the property of *attester* for kube-image that kmaster runs. 
+For example, with the following commands Bob 
+endorses on the property of *attester* for kube-image that kmaster runs. 
 Bob then stores the link to this endorsement into his *trust hub*.
 
 ```
@@ -94,12 +94,12 @@ postEndorsementLink bob kube-image
 ```
 
 ### Use of endorsements
-A principal can make use of an image endorsement by incorporating the
-endorsement along with its trusted endorsers. This is accomplished via logic-set
+A principal can make use of an image endorsement by incorporating this
+endorsement along with a declaration of the speaker as a trusted endorser. This is accomplished via logic-set
 linking of SAFE. The principal can choose to link an interested endorsement 
-(or a trust hub) to its own endorsement policy set where it sets
-a policy on whose endorsements it trusts and on what endorsable property.
-For instance, Alice can optionally accepts bob's endorsements on the
+(or a trust hub) to a set of its own for an endorser policy which
+specifies  whose endorsements it trusts and on what endorsable property.
+For instance, Alice can optionally accept Bob's endorsements on the
 property *attester*. Of course, Bob accepts the endorsements made by itself. 
 
 ```
@@ -114,14 +114,13 @@ and their configurations. An authorizer may only
 accept images from a vetted whitelist, and may not allow an image configured
 in an arbitrary way. For example, safety-sensitive configuration
 must be unset, set, or set in particular ways, depending on application
-context.  
-Latte provides  mechanics to support checks on a common set of configuration properties.
+context. Latte provides  mechanics to support checks on a common set of configuration properties.
 It uses *property lists*, a predicated list representation of configuration using properties,
 to faciliate expression, interpretation, and evaluation
-for three categories of properties: *prohibited*, *required*, *qualifier*.
+for three categories of properties: *prohibited*, *required*, and *qualifier*.
 These three properties are used to denote configurations that must not be present,
 must be present, and must be specified in a certain way, respectively. 
-In this example, Alice accrues the specifications of policy1, publishing what are
+In this example, Alice accrues the specifications for policy1, publishing what are
 acceptable container images, and for each image what are the prohibited 
 configuration (by keys), the required configuration (by
 keys), and the qualifier configuration 
@@ -178,9 +177,9 @@ postRequiredPolicy bob policy1 "[image_c2,k3]"
 
 Alice adopts Bob's policy by endorsing Bob as a trusted policy source. Note that 
 here it uses SAFE's *direct linking* to incorporate the desired policy into this
-endorsement of trusted endorsers. This prunes the inference context at authorization time
-and can dramatically reduce resource consumption on the authorizer (e.g., memory footprint), 
-and the delay of property proving.
+endorsement of trusted endorser. This linking structure prunes the inference context at authorization time
+and can dramatically reduce resource consumption (e.g., memory footprint), 
+and delay of property proving on the authorizer.
 
  
 ```
