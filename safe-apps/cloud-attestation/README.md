@@ -124,7 +124,7 @@ In this example, Alice accrues the specifications for policy1, publishing what a
 acceptable container images, and for each image what are the prohibited 
 configuration (by keys), the required configuration (by
 keys), and the qualifier configuration 
-(by key-value tuples). Note that prohibited, qualifier, and required configurations are 
+(by key-value tuples). Note that prohibited, required, and qualifier configurations are 
 all property lists.
 
 ```

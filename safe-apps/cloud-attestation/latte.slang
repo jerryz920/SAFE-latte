@@ -1,457 +1,539 @@
-defenv IaaS() :- '152.3.145.38:444'.
-//defenv Self() :- '152.3.136.26:446'.
-
-//defenv Selfie() :-
-//  spec('Loading principal keypair'),
-//  principal('/home/qiang/Desktop/safe-new-version-benchmark/safe/safe-server/src/main/resources/multi-principal-keys/key_p8034.pem').
-
-defcon addTokenToSubjectSet(?Token) :-
-  spec("Add a token to a subject set. Invoke after the user gets a delegation"),
-  {
-    link($Token).
-    label("subject($Self)").
-  }.
-
-defpost updateSubjectSet(?Token) :- [addTokenToSubjectSet(?Token)]. 
-
-defcon addMembershipToSubjectSet(?MasterAuthNID) :-
-  spec("Add cluster membership endorsed by a master to a subject set. Invoke after a worker gets a membership"),
-  ?MemberSet := label(?MasterAuthNID, "workers/$Self"),
-  {
-    link($MemberSet).
-    label("subject($Self)").
-  }.
-
-defpost updateWorkerSet(?MasterAuthNID) :- 
-  [addMembershipToSubjectSet(?MasterAuthNID)]. 
-
-defcon makeAttesterImage(?Image, ?Config) :-
-  spec("Endorse an attester image"),
-  {
-    endorseAttesterImage($Image, $Config). 
-    label("vm-image/$Image").
-  }.
-
-defpost postAttesterImage(?Image, ?Config) :- [makeAttesterImage(?Image, ?Config)]. 
-
-
-defcon certifyImage(?ImgId, ?ConfigId, ?Property) :-
-  spec("A third party certifies a property of an image"),
-  {
-    hasProgramProperty($ImgId, $ConfigId, $Property).
-    label("vm-image/$ImgId").
-  }.
-
-defpost postImageProperty(?ImgId, ?ConfigId, ?Property) :- [certifyImage(?ImgId, ?ConfigId, ?Property)].
-
-
-// Data owner: set up object ACLs based on image properties
-defcon addObjectAcl(?ObjectId, ?Property) :-
-  spec("A data owner adds an ACL to her object based on an image property"),
-  {
-     accessPrivilegeByProgramProperty($Property, $ObjectId).
-     label("acl/$ObjectId").
-  }.
-
-defpost postObjectAcl(?ObjectId, ?Property) :- [addObjectAcl(?ObjectId, ?Property)].
-
-
-
-// A VM image is identified by a hash over 
-// ?Git, ?Revision, ?Checksum, ?Timestamp 
-//
-//  [vmImgWhiteList(?Git, ?Revision, ?Checksum, ?Timestamp)].
-
-// Now Docker container images and vm images share the same ID space
-// we might need a separate space for docker container images
-
-
-defcon attestationPolicySet() :-
-  spec('Rules to validate an attestation chain'),
-  {
-    approveAccess(Instance, ObjectID) :-
-      runs(Instance, Program),
-      programHasAccessPrivilege(Program, ObjectID). 
- 
-    runs(Instance, Image) :-
-      runsGuestInstance(H, Instance, Image),
-      attester(H).
-
-    attester(Instance) :- 
-      runs(Instance, Image), 
-      E: endorseAttesterImage(Image), 
-      attesterImageEndorser(E).
-
-    attester(H) :- trustedCloudProvider(H).
- 
-    label("tapcon-attestation-policy").
-  }.
-
-definit attestationPolicySet().
-
-defcon attestationWithAuthNPolicySet() :-
-  spec('Rules for attestation and authentication'),
-  {
-    approveAccessFromWorker(WorkerIP, WorkerPort, ObjectID) :-
-      runs(WorkerIP, WorkerPort, WorkerProgram, Config),
-      programHasAccessPrivilege(WorkerProgram, Config, ObjectID),
-      MasterAuthNID: clusterMember(WorkerIP, WorkerPort, WorkerID),
-      MasterIP := ipFromNetworkID(MasterAuthNID),
-      MasterPort := portFromNetworkID(MasterAuthNID),
-      runs(MasterIP, MasterPort, MasterProgram, Config),
-      programHasAccessPrivilege(MasterProgram, Config, ObjectID).
-
-    approveAccess(AppIP, AppPort, ObjectID) :-
-      runs(AppIP, AppPort, Program, Conf),
-      programHasAccessPrivilege(Program, Conf, ObjectID). 
- 
-    runs(IP, Port, Image, Conf) :-
-      HAuthNID: bindToAuthNID(GAuthNID, SuperIP, SuperPort, Instance),
-      IP <: SuperIP,
-      Port <: SuperPort,
-      HAuthNID: runGuestInstance(Instance, Image),
-      HAuthNID: guestConf(Instance, Conf),
-      \+(delegatedRange(GAuthNID, IP, Port)),
-      \+(poison(HAuthNID, Instance)),
-      \+(vulnerableImage(Image)),
-      attester(HAuthNID).
-
-    delegatedRange(AuthNID, IP, Port) :- 
-      AuthNID: bindToAuthNID(GAuthNID, SuperIP, SuperPort, Instance),
-      IP <: SuperIP,
-      Port <: SuperPort.
-
-    poison(HAuthNID, Instance) :- HAuthNID: compromised(Instance).
-
-    vulnerableImage(Image) :- trustedCloudProvider(E), E: vulnerable(Image). 
-
-    //  \+(HAuthNID: compromised(Instance)),
-    //  attester(HAuthNID).
-
-    attester(AuthNID) :- 
-      InstanceIP := ipFromNetworkID(AuthNID),
-      InstancePort := portFromNetworkID(AuthNID),
-      runs(InstanceIP, InstancePort, Image, Conf), 
-      E: endorseAttesterImage(Image, Conf), 
-      attesterImageEndorser(E).
-
-    attesterImageEndorser(E) :- trustedCloudProvider(E).
-
-    attester(H) :- trustedCloudProvider(H).
-
-    programHasProperty(AppIP, AppPort, Property) :-
-      runs(AppIP, AppPort, Program, Config),
-      Certifier: hasProgramProperty(Program, Config, Property),
-      trustedCertifier(Certifier).
- 
-    label("tapcon-attestation-with-authN-policy").
-  }.
-
-definit attestationWithAuthNPolicySet().
-
-
-defcon authenticationRuleSet() :-
-  spec('Rules for authenticate a statement'),
-  {
-    runsGuestInstance(H, Instance, Image) :-
-      H: runGuestInstance(Instance, Image).
-      //NetAddr: runGuestInstance(Instance, Image),
-      //bindsToNetAddr(H, NetAddr).
-      //speaksFor(NetAddr, H).
-
-    //speaksFor(NetAddr, Instance) :-
-    //  H: bindToNetAddr(Instance, Addr),
-    //  attester(H).  
-
-     //bindsToNetAddr(Instance, NetAddr) :-
-     //  HNetAddr: bindToNetAddr(Instance, NetAddr),
-     //  bindsToNetAddr(H, HNetAddr).
-
-    label("tapcon-authentication").
-  }.
-
-definit authenticationRuleSet().
-
-
-defcon programPrivilegePolicySet() :-
-  spec("Rules to grant program access privilege based on data owner's belief"),
-  {
-    programHasAccessPrivilege(Program, Conf, ObjectID) :-
-      Owner := rootPrincipal(ObjectID),
-      ownerAcceptsProgramProperty(Owner, Program, Conf, Property), 
-      Owner: accessPrivilegeByProgramProperty(Property, ObjectID).
-      //validateBuildingChainOnImage(Program).    
-
-    ownerAcceptsProgramProperty(Owner, Program, Conf, Property) :-
-      Certifier: hasProgramProperty(Program, Conf, Property),
-      trustedCertifier(Certifier).
-      //Owner: trustCertifierOn(Certifier, Property).
-
-    trustedCertifier(C) :- trustedCloudProvider(C).
-
-    label('program-access-priv-policy').
-  }.
-
-definit programPrivilegePolicySet().
-
-defcon attesterImagePolicySet() :-
-  spec('Rules to check endorsers of an attester image'),
-  {
-    attesterImageEndorser(Endorser) :- 
-      attesterImageEndorser(Endorser, _).
-
-    attesterImageEndorser(P, Delegatable) :- 
-      Delegator: delegateAttesterImageEndorsingCap(P, Delegatable),
-      attesterImageEndorser(Delegator, true).
-
-    label('attester-image-endorsing-policy').
-  }.
-
-definit trustedHostImagePolicySet().
-
-defcon imageBuildingChainPolicySet() :-
-  spec('Policies to validate the building chain of an image'),
-  {
-
-    validateBuildingChainOnImage(Program) :- 
-      programIsImage(Program, ProgramType), 
-      acceptImageBuildingChain(ProgramHash, ProgramType).
-
-    acceptImageBuildingChain(Program, ProgramType) :-
-      ?ProgramType = "non_image".
-
-    acceptImageBuildingChain(Program, ?ProgramType) :-
-      acceptImageBuildingChain(Program).
-
-    acceptImageBuildingChain(Image) :-
-      Endorser: tapconImage(Image),
-      imageEndorser(Endorser).
-
-    acceptImageBuildingChain(Image) :-
-      Endorser: buildVMImg(BuilderImage, Image),
-      imageEndorser(Endorser),
-      acceptImageBuildingChain(BuilderImage).
-
-    imageEndorser(Endorser) :- trustedCloudProvider(Endorser).
-
-    label('image-building-policy').
-  }.
-
-definit imageBuildingChainPolicySet().
-
-//
-// Image property checking
-//
-
-defcon imageSafetyPolicySet() :-
-  spec('Rules to check whether an image has an endorsed safety property'),
-  {
-    hasSafetyProperty(ImgId, ConfigId, Property) :-
-      $IaaS: hasProgramProperty(ImgId, ConfigId, Property).
-
-    label("tapcon-image-safety-policy").
-  }.
-
-definit imageSafetyPolicySet().
-
-defcon deploymentRuleSet() :-
-  spec('Rules specific to tapcon deployment'),
-  {
-    
-    hostContainsGuest(Host, Guest) :-
-      hostEndorsesGuest(Guest, Host, GuestProgram, GuestScid, GuestNetAddr),
-      hostEndorsesGuest(Host, HHID, HostProgram, HostScid, HostNetAddr),
-      GuestNetAddr <: HostNetAddr,
-      AuthorityOfGuest := rootPrincipal(GuestScid),
-      AuthorityOfGuest = Host.
-
-    hostEndorsesGuest(GuestID, Host, GuestProgram, GuestScid, GuestNetAddr) :-
-      Host: runGuestInstance(GuestID, GuestProgram),
-      Host: nameGuestInstance(GuestID, GuestScid),
-      Host: bindNetworkAddr(GuestScid, GuestNetAddr).
-  
-    label("deployment-policy").
-  }.
-
-definit deploymentRuleSet().
-
-defcon makeTapconVMImage(?ImageHash) :-
-  spec("IaaS announces a Tapcon VM image"),
-  {
-    tapconImage($ImageHash).
-    label("tapcon-images/$ImageHash").
-  }. 
-
-defpost postTapconVMImage(?ImageHash) :- 
-  [makeTapconVMImage(?ImageHash)].
-
-
-defcon launchInstance(?InstanceID, ?Image, ?ProgramType, ?GuestAuthNID, ?GuestConfig) :-
-  ?ImgSet := label($IaaS, "vm-image/?Image"), 
-  ?HostSet := label($Self, "subject($Self)"), 
-  ?GuestIP := ipFromNetworkID(?GuestAuthNID),
-  ?GuestPort := portFromNetworkID(?GuestAuthNID),
-  {
-    link($ImgSet).
-    link($HostSet). 
-    runGuestInstance($InstanceID, $Image).
-    bindToAuthNID($GuestAuthNID, $GuestIP, $GuestPort, $InstanceID).
-    programIsImage($Image, $ProgramType).
-    guestConf($InstanceID, $GuestConfig).
-    label("guest-instance/$GuestAuthNID").  // update this link to the guest's subject set 
-  }.
-
-defpost postInstanceSet(?InstanceID, ?Image, ?ProgramType, ?GuestAuthNID, ?GuestConfig) :-
-  [launchInstance(?InstanceID, ?Image, ?ProgramType, ?GuestAuthNID, ?GuestConfig)].
-
-defcon tearDownInstance(?InstanceID, ?Image, ?ProgramType, ?GuestAuthNID, ?GuestConfig) :-
-  ?ImgSet := label($IaaS, "vm-image/?Image"), 
-  ?HostSet := label($Self, "subject($Self)"), 
-  ?GuestIP := ipFromNetworkID(?GuestAuthNID),
-  ?GuestPort := portFromNetworkID(?GuestAuthNID),
-  {
-    link($ImgSet)~
-    link($HostSet)~ 
-    runGuestInstance($InstanceID, $Image)~
-    bindToAuthNID($GuestAuthNID, $GuestIP, $GuestPort, $InstanceID)~
-    programIsImage($Image, $ProgramType)~
-    guestConf($InstanceID, $GuestConfig)~
-    label("guest-instance/$GuestAuthNID"). 
-  }.
-
-defpost retractInstanceSet(?InstanceID, ?Image, ?ProgramType, ?GuestAuthNID, ?GuestConfig) :-
-  [tearDownInstance(?InstanceID, ?Image, ?ProgramType, ?GuestAuthNID, ?GuestConfig)].
-
-defcon launchWorker(?WorkerID, ?WorkerAuthNID, ?WorkerConfig) :-
-  ?MasterSet := label($Self, "subject($Self)"), 
-  ?WorkerIP := ipFromNetworkID(?WorkerAuthNID),
-  ?WorkerPort := portFromNetworkID(?WorkerAuthNID),
-  {
-    link($MasterSet). 
-    clusterMember($WorkerIP, $WorkerPort, $WorkerID).
-    workerConf($WorkerID, $WorkerConfig).
-    label("workers/$WorkerAuthNID").  // update this link to the worker's subject set 
-  }.
-
-defpost postWorkerSet(?WorkerID, ?WorkerAuthNID, ?WorkerConfig) :-
-  [launchWorker(?WorkerID, ?WorkerAuthNID, ?WorkerConfig)].
-
-defcon tearDownWorker(?WorkerID, ?WorkerAuthNID, ?WorkerConfig) :-
-  ?MasterSet := label($Self, "subject($Self)"), 
-  ?WorkerIP := ipFromNetworkID(?WorkerAuthNID),
-  ?WorkerPort := portFromNetworkID(?WorkerAuthNID),
-  {
-    link($MasterSet)~ 
-    clusterMember($WorkerIP, $WorkerPort, $WorkerID)~
-    workerConf($WorkerID, $WorkerConfig)~
-    label("workers/$WorkerAuthNID"). 
-  }.
-
-defpost retractWorkerSet(?WorkerID, ?WorkerAuthNID, ?WorkerConfig) :-
-  [tearDownWorker(?WorkerID, ?WorkerAuthNID, ?WorkerConfig)].
-
-defcon poisonInstance(?InstanceID, ?GuestAuthNID) :-
-  {
-    compromised($InstanceID).
-    label("guest-instance/$GuestAuthNID"). 
-  }.
-
-defpost postInstancePoison(?InstanceID, ?GuestAuthNID) :-
-  [poisonInstance(?InstanceID, ?GuestAuthNID)].
-
-defcon poisonImage(?Image) :-
-  {
-    vulnerable($Image).
-    label("vm-image/$Image").
-  }.
-
-defpost postImagePoison(?Image) :-
-  [poisonImage(?Image)].
-
-defguard workerAccessesObject(?WorkerID, ?ObjectID) :-
-  ?DataOwner := rootPrincipal(?ObjectID),
-  //?OwnerTrustWallet := label(?DataOwner, "trust wallet"),
-  ?ACLSet := label(?DataOwner, "acl/?ObjectID"),
-  ?WorkerSet := label(?WorkerID, "subject(?WorkerID)"),
-  ?PolicySet := label("tapcon/anchor-set"),
-  ?WorkerIP := ipFromNetworkID(?WorkerID),
-  ?WorkerPort := portFromNetworkID(?WorkerID),
-  {
-    //link($OwnerTrustWallet).
-    link($BearerRef).
-    link($ACLSet).
-    link($WorkerSet).
-    link($PolicySet).
-    approveAccessFromWorker($WorkerIP, $WorkerPort, $ObjectID)?
-    //runs($AppID, ?Image)?
-  }.
-
-
-defguard appAccessesObject(?AppID, ?ObjectID) :-
-  ?DataOwner := rootPrincipal(?ObjectID),
-  //?OwnerTrustWallet := label(?DataOwner, "trust wallet"),
-  ?ACLSet := label(?DataOwner, "acl/?ObjectID"),
-  ?AppSet := label(?AppID, "subject(?AppID)"),
-  ?PolicySet := label("tapcon/anchor-set"),
-  ?AppIP := ipFromNetworkID(?AppID),
-  ?AppPort := portFromNetworkID(?AppID),
-  {
-    //link($OwnerTrustWallet).
-    link($BearerRef).
-    link($ACLSet).
-    link($AppSet).
-    link($PolicySet).
-    approveAccess($AppIP, $AppPort, $ObjectID)?
-    //runs($AppID, ?Image)?
-  }.
-
-defguard attestInstance(?AppID) :-
-  ?AppSet := label(?AppID, "subject(?AppID)"),
-  ?PolicySet := label("tapcon/anchor-set"),
-  ?AppIP := ipFromNetworkID(?AppID),
-  ?AppPort := portFromNetworkID(?AppID),
-  {
-    link($BearerRef).
-    link($AppSet).
-    link($PolicySet).
-    runs($AppIP, $AppPort, ?Image, ?Conf)?
-  }.
-
-defguard attestAppProperty(?AppID, ?Property) :-
-  ?AppSet := label(?AppID, "subject(?AppID)"),
-  ?PolicySet := label("tapcon/anchor-set"),
-  ?AppIP := ipFromNetworkID(?AppID),
-  ?AppPort := portFromNetworkID(?AppID),
-  {
-    link($BearerRef).
-    link($AppSet).
-    link($PolicySet).
-    programHasProperty($AppIP, $AppPort, $Property)?
-  }.
-
-defguard checkImgProperty(?ImgID, ?Config, ?Property) :-
-  ?ImgSet := label($IaaS, "vm-image/?ImgID"),
-  ?PolicySet := label("tapcon-image-safety-policy"),
-  {
-    link($ImgSet).
-    link($PolicySet).
-    hasSafetyProperty($ImgID, $Config, $Property)?
-  }.
-
-defcon anchorSet() :- 
-  ?AttestationPolicy := label("tapcon-attestation-with-authN-policy"),
-  ?ProgramPrivilegePolicy := label("program-access-priv-policy"),
-  ?AttesterImageEndorsingPolicy := label("attester-image-endorsing-policy"),
-  ?ImageBuildingChainPolicy := label("image-building-policy"), 
-  //DeploymentPolicy := label("deployment-policy"),
-  {
+import("./plist-lib.slang").
+import("./policy.slang").
+
+//////////////////////////////////////////////////////
+// Enviroments
+//////////////////////////////////////////////////////
+// Envs from Latte default
+defenv IaaS() :- "152.3.145.38:444".
+defenv PropertyAttester() :- "attester".
+defenv PropertyVpcId() :- "vpc-id".
+
+//////////////////////////////////////////////////////
+// Rulesets
+//////////////////////////////////////////////////////
+// Rulesets of Latte library
+
+defcon consTrustWallet() :-
+{
+    label("trustWallet").
     trustedCloudProvider($IaaS).
-    link($AttestationPolicy).
-    link($ProgramPrivilegePolicy).
-    link($AttesterImageEndorsingPolicy).
-    link($ImageBuildingChainPolicy).
-    //link($DeploymentPolicy).
-    label("tapcon/anchor-set").
+}.
+
+definit consTrustWallet().
+
+defcon consLibraryRules() :-
+{
+    label("LKubeLibraryRules").
+
+    launches(Instance, Image) :-
+        H : runs(Instance, Image),
+        attester(H).
+
+    attester(Instance) :-
+        trustedCloudProvider(Instance).
+
+    attester(Instance) :-
+        hasProperty(Instance, 'attester', 1).
+
+    hasConfig(Instance, Name, Value) :-
+        H: config(Instance, Name, Value),
+        attester(H).
+
+    hasProperty(Obj, Property, Value) :-
+        endorse(Obj, Property, Value).
+
+    hasProperty(Obj, Property, Value) :-
+        H: endorse(Obj, Property, Value),
+        trustedEndorserOn(Property, H).
+
+    hasProperty(Instance, Property, Value) :-
+        launches(Instance, Image),
+        hasProperty(Image, Property, Value).
+
+    // This rule below is included in policy.slang
+    //hasPolicy(PolicyID, Name, Value) :-
+    //    policy(PolicyID, Name, Value).
+
+    // Approve a pod by checking it against a whitelist of images,
+    // a list of qualifier config KV pairs, a list of required config
+    // keys specified by a policy (which is identified by a policy ID).
+    approvePodByPolicy(Pod, PolicyID) :- 
+        hasConfig(Pod, 'containers', Containers),
+        approveCtnByImagePolicy(Pod, Containers, PolicyID),
+        approveCtnByQualifiedKvs(Pod, Containers, PolicyID),
+        approveCtnByRequiredKeys(Pod, Containers, PolicyID).
+
+    /// Image handling
+    approveCtnByImagePolicy(Pod, [Ctn|Rest], PolicyID) :-
+        hasConfig(Pod, Ctn, [Image|_]),
+        hasPolicy(PolicyID, "image", WhiteListImages),
+        approveImage(Image, WhiteListImages),
+        approveCtnByImagePolicy(Pod, Rest, PolicyID).
+
+    /// Image matching polices
+    matchImage(Image, Matcher) :-
+        hasProperty(Image, Prop, 1).
+
+    // Allow wildcard
+    matchImage(_, any).
+
+    matchImage(Image, Image).
+
+    approveCtnByImagePolicy(_, [], _).
+
+    // Handle image: whitelist, or an endorsed property
+    approveImage(Image, [Prop|_]) :-
+        matchImage(Image, Prop).
+
+    approveImage(Image, [_|Rest]) :-
+        approveImage(Image, Rest).
+
+    // Handle Required Keys and QualifiedKvs
+    approveCtnByQualifiedKvs(Pod, [Ctn|Rest], PolicyID) :-
+        hasConfig(Pod, Ctn, [Image|Config]),
+        hasPolicy(PolicyID, "qualifier", [ImageMatcher|QualifiedKvs]),
+        matchImage(Image, ImageMatcher),
+        esubseq(QualifiedKvs, Config),
+        approveCtnByQualifiedKvs(Pod, Rest, PolicyID).
+
+    approveCtnByQualifiedKvs(_, [], _).
+
+    approveCtnByRequiredKeys(Pod, [Ctn|Rest], PolicyID) :-
+        hasConfig(Pod, Ctn, [Image|Config]),
+        hasPolicy(PolicyID, "required", [ImageMatcher|RequiredKeys]),
+        matchImage(Image, ImageMatcher),
+        propsPresent(RequiredKeys, Config),
+        approveCtnByRequiredKeys(Pod, Rest, PolicyID).
+
+    approveCtnByRequiredKeys(_, [], _).
+
+
+    // Deny check on a pod's config against a policy
+    denyPodByPolicy(Pod, PolicyID) :-
+        hasConfig(Pod, 'containers', Containers),
+        denyCtnByProhibitedKeys(Pod, Containers, PolicyID).
+
+    denyCtnByProhibitedKeys(Pod, [Ctn|_], PolicyID) :-
+        hasConfig(Pod, Ctn, [Image|Config]),
+        hasPolicy(PolicyID, "prohibited", [ImageMatcher|ProhibitedKeys]),
+        matchImage(Image, ImageMatcher),
+        anyPropPresent(ProhibitedKeys, Config).
+
+    denyCtnByProhibitedKeys(Pod, [_|Rest], PolicyID) :-
+      denyCtnByProhibitedKeys(Pod, Rest, PolicyID).
+
+    // Latte-K8s only logic.
+    authPodToUser(Pod, User) :-
+      hasConfig(Pod, "latte.user", User).
+
+    authPodToUser(Pod, User) :-
+      hasConfig(Pod, "latte.creator", Creator),
+      authPodToUser(Creator, User).
+
+    authPodForLabel(Pod, Label, Expected) :-
+      hasConfig(Pod, Label, Expected).
+
+}.
+
+definit consLibraryRules().
+
+defcon consVMInstanceLocal(?Instance,?Image,?Vpc) :-
+    ?VpcSet := label("vpc/?Vpc"),
+{
+    link($VpcSet).
+    root("$IaaS").
+    config($Instance,$PropertyVpcId, $Vpc).
+    runs($Instance, $Image).
+    label("instance/$Instance").
+}.
+
+defcon addNetAddr(?Instance,?NetAddr) :-
+{
+    bindToID($Instance, $NetAddr).
+    label("instance/$Instance").
+}.
+
+defcon addCIDR(?Instance, ?CIDR) :-
+{
+    cidr($Instance, $CIDR).
+    label("instance/$Instance").
+}.
+
+
+defcon dtorVMInstanceLocal(?Instance,?Image,?Vpc) :-
+    ?VpcSet := label("vpc/?Vpc"),
+{
+    link($VpcSet).
+    root("$IaaS")~
+    config($Instance,$PropertyVpcId, $Vpc)~
+    runs($Instance, $Image)~
+    label("instance/$Instance").
+    invalid(1).
+}.
+
+defcon delNetAddr(?Instance,?NetAddr) :-
+{
+    bindToID($Instance, $NetAddr)~
+    label("instance/$Instance").
+}.
+
+defcon delCIDR(?Instance,?CIDR) :-
+{
+    cidr($Instance, $CIDR)~
+    label("instance/$Instance").
+}.
+
+defpost postVMInstanceLocal(?Instance,?Image,?Vpc) :-
+    [ consVMInstanceLocal(?Instance,?Image,?Vpc) ].
+defpost delVMInstanceLocal(?Instance,?Image,?Vpc) :-
+    [ dtorVMInstanceLocal(?Instance,?Image,?Vpc) ].
+
+defpost postVMInstance(?Instance, ?Image, ?Vpc, ?NetAddr, ?CIDR) :-
+    [ consVMInstanceLocal(?Instance, ?Image, ?Vpc),
+      addNetAddr(?Instance, ?NetAddr),
+      addCIDR(?Instance, ?CIDR)
+    ].
+
+defpost delVMInstance(?Instance, ?Image, ?Vpc, ?NetAddr, ?CIDR) :-
+    [ dtorVMInstanceLocal(?Instance, ?Image, ?Vpc),
+      delNetAddr(?Instance, ?NetAddr),
+      delCIDR(?Instance, ?CIDR)
+    ]. 
+
+// Attestation of pods
+defcon consInstanceLocal(?Instance,?Image) :-
+    ?HostSet := label($BearerRef, "instance/$Self"),
+{
+    link($HostSet).
+    runs($Instance, $Image).
+    label("instance/$Instance").
+}.
+
+defcon dtorInstanceLocal(?Instance,?Image) :-
+    ?HostSet := label($BearerRef, "instance/$Self"),
+{
+    link($HostSet).
+    runs($Instance, $Image)~
+    label("instance/$Instance").
+    invalid(1).
+}.
+
+defpost postInstanceLocal(?Instance,?Image) :-
+    [ consInstanceLocal(?Instance,?Image) ].
+defpost delInstanceLocal(?Instance,?Image) :-
+    [ dtorInstanceLocal(?Instance,?Image) ].
+
+defpost postInstance(?Instance, ?Image, ?NetAddr) :-
+   [ consInstanceLocal(?Instance, ?Image),
+     addNetAddr(?Instance, ?NetAddr)
+   ].
+
+defpost delInstance(?Instance, ?Image, ?NetworkAddr) :-
+   [  dtorInstanceLocal(?Instance, ?Image),
+      delNetAddr(?Instance, ?NetAddr)
+   ].
+
+defcon consTrustedEndorserOn(?Endorser, ?Property, ?EndorsementLabel) :-
+    ?TargetSet := label(?Endorser, ?EndorsementLabel),
+{
+    link($TargetSet).
+    trustedEndorserOn($Property, $Endorser).
+    label("trustedEndorsers").
+}.
+
+defcon dtorTrustedEndorserOn(?Endorser, ?Property, ?EndorsementLabel) :-
+    ?TargetSet := label(?Endorser, ?EndorsementLabel),
+{
+    link($TargetSet).
+    label("trustedEndorsers").
+    trustedEndorserOn($Property, $Endorser)~
+    invalid(1).
+}.
+
+defpost postTrustedEndorser(?Target, ?Property) :-
+    [ consTrustedEndorserOn(?Target, ?Property, "trusthub") ].
+defpost delTrustedEndorser(?Target, ?Property) :-
+    [ dtorTrustedEndorserOn(?Target, ?Property, "trusthub") ].
+
+
+defpost postAndDLinkTrustedEndorser(?Target, ?Property, ?EndorsementLabel) :-
+    [ consTrustedEndorserOn(?Target, ?Property, ?EndorsementLabel) ].
+defpost delAndDULinkTrustedEndorser(?Target, ?Property, ?EndorsementLabel) :-
+    [ dtorTrustedEndorserOn(?Target, ?Property, ?EndorsementLabel) ].
+
+
+defcon consEndorsementLink(?Target) :-
+    ?TargetSet := label("endorsements/?Target"),
+{
+    link($TargetSet).
+    label("trusthub").
+}.
+
+defcon dtorEndorsementLink(?Target) :-
+  ?TargetSet := label("endorsements/?Target"),
+{
+    link($TargetSet)~
+    label("trusthub").
+    invalid(1).
+}.
+
+defpost postEndorsementLink(?Target) :-
+    [ consEndorsementLink(?Target) ].
+defpost delEndorsementLink(?Target) :-
+    [ dtorEndorsementLink(?Target) ].
+
+
+defcon consEndorsement(?Target,?Prop,?Value) :-
+{
+    endorse($Target, $Prop, $Value).
+    label("endorsements/$Target").
+}.
+
+defcon dtorEndorsement(?Target,?Prop,?Value) :-
+{
+    endorse($Target, $Prop, $Value)~
+    label("endorsements/$Target").
+    invalid(1).
+}.
+
+defpost postEndorsement(?Target,?Prop,?Value) :-
+    [ consEndorsement(?Target,?Prop,?Value) ].
+defpost delEndorsement(?Target,?Prop,?Value) :-
+    [ dtorEndorsement(?Target,?Prop,?Value) ].
+
+
+
+defcon consInstanceConfigList(?Instance,?Config,?Value) :-
+{
+    config($Instance, $Config, $Value).
+    label("instance/$Instance").
+}.
+
+defcon dtorInstanceConfigList(?Instance,?Config,?Value) :-
+{
+    config($Instance, $Config, $Value)~
+    label("instance/$Instance").
+    invalid().
+}.
+
+defpost postInstanceConfigList(?Instance,?Config,?Value) :-
+    [ consInstanceConfigList(?Instance,?Config,?Value) ].
+defpost delInstanceConfigList(?Instance,?Config,?Value) :-
+    [ dtorInstanceConfigList(?Instance,?Config,?Value) ].
+
+defguard checkProperty(?Instance,?Name,?Value) :- 
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+{
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    hasProperty($Instance, $Name, $Value)?
+}.
+
+
+defguard checkLaunches(?Instance,?Name) :- 
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+{
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    launches($Instance, $Name)?
+}.
+
+
+defguard checkHasConfig(?Instance,?Name,?Value) :- 
+  ?InstanceSet := label($BearerRef, "instance/?Instance"),
+  ?TrustWallet := label("trustWallet"),
+  ?TrustedEndorserSet := label("trustedEndorsers"),
+  ?LibraryRules := label("LKubeLibraryRules"),
+  {
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    hasConfig($Instance, $Name, $Value)?
   }.
 
-definit anchorSet().
+defguard checkTrustedEndorser(?Endorser, ?PropName) :-
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+{
+    link($TrustedEndorserSet).
+    trustedEndorserOn($PropName, $Endorser)?
+}.
+
+
+defguard checkAttester(?Instance) :- 
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+{
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    attester($Instance)?
+}.
+
+
+defguard checkPodAttestationLocal(?Instance) :-
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+    ?ListRules := listMatchingRules(),
+    ?Spec := label("endorsements/trustPolicy/default"),
+    ?PolicyRules := label("trustPolicyRules"),
+{
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    link($ListRules).
+    link($Spec).
+    link($PolicyRules).
+    approvePodByPolicy($Instance, default)? =@= require
+    denyPodByPolicy($Instance, default)? =@= deny
+}.
+
+
+defguard checkPodAttestation(?Instance, ?PolicyID) :-
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+    ?ListRules := listMatchingRules(),
+    ?Spec := label("endorsements/trustPolicy/?PolicyID"),
+    ?PolicyRules := label("trustPolicyRules"),
+{
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    link($ListRules).
+    link($Spec).
+    link($PolicyRules).
+    approvePodByPolicy($Instance, $PolicyID)? =@= require
+    denyPodByPolicy($Instance, $PolicyID)? =@= deny
+}.
+
+defguard checkPodByPolicy(?Instance, ?Policy) :-
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+    ?ListRules := listMatchingRules(),
+    ?PolicyRules := label("trustPolicyRules"),
+{
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    link($ListRules).
+    link($PolicyRules).
+    approvePodByPolicy($Instance, $Policy)? =@= require
+    denyPodByPolicy($Instance, $Policy)? =@= deny
+}.
+
+defguard checkPodOwner(?Instance, ?Owner) :-
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label(?Owner, "trustedEndorsers"),
+    ?LibraryRules := label("LKubelibraryRules"),
+    ?PolicyRules := label("trustPolicyRules"),
+{
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    link($PolicyRules).
+    authPodToUser($Instance, $Owner)?
+}.
+
+defguard checkPodLabel(?Instance, ?Label, ?Expected) :-
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label(?Owner, "trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+    ?PolicyRules := label("trustPolicyRules"),
+{
+     link($InstanceSet).
+     link($TrustedEndorserSet).
+     link($TrustWallet).
+     link($LibraryRules).
+     link($PolicyRules).
+     authPodForLabel($Instance, $Label, $Expected)?
+}.
+
+defguard debugCheck1(?Instance, ?Policy) :-
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+    ?ListRules := listMatchingRules(),
+    ?PolicyRules := label("trustPolicyRules"),
+{
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    link($ListRules).
+    link($PolicyRules).
+    approvePodByPolicy($Instance, $Policy)? =@= require
+}.
+
+defguard debugCheck2(?Instance, ?Policy) :-
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+    ?ListRules := listMatchingRules(),
+    ?PolicyRules := label("trustPolicyRules"),
+{
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    link($ListRules).
+    link($PolicyRules).
+    denyPodByPolicy($Instance, $Policy)? =@= deny
+}.
+
+defguard debugCheck3(?Instance, ?Policy, ?Containers) :-
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+    ?ListRules := listMatchingRules(),
+    ?PolicyRules := label("trustPolicyRules"),
+{
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    link($ListRules).
+    link($PolicyRules).
+    denyCtnByProhibitedKeys($Instance, $Containers, $Policy)? =@=deny
+}.
+
+defguard debugCheck4(?Image, ?ImageList) :-
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+    ?ListRules := listMatchingRules(),
+{
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    link($ListRules).
+    approveImage($Image, $ImageList)?
+}.
