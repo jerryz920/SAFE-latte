@@ -1,5 +1,6 @@
 import("./plist-lib.slang").
 import("./policy.slang").
+import("../strong.slang").
 
 //////////////////////////////////////////////////////
 // Enviroments
@@ -50,6 +51,14 @@ defcon consLibraryRules() :-
     hasProperty(Instance, Property, Value) :-
         launches(Instance, Image),
         hasProperty(Image, Property, Value).
+
+    checkPodOwnerOnTag(Instance, Tag) :-
+        podOwner(Instance, Owner),
+        membership(Tag, Owner).
+
+    checkPodByPolicy(Instance, Policy) :-
+        approvePodByPolicy(Instance, Policy),
+        \+( denyPodByPolicy(Instance, Policy) ).
 
     // This rule below is included in policy.slang
     //hasPolicy(PolicyID, Name, Value) :-
@@ -219,6 +228,18 @@ defcon dtorInstanceLocal(?Instance,?Image) :-
     invalid(1).
 }.
 
+defcon addOwner(?Instance,?Owner) :-
+{
+    ownedBy($Instance, $Owner).
+    label("instance/$Instance").
+}.
+
+defcon delOwner(?Instance,?Owner) :-
+{
+    ownedBy($Instance, $Owner)~
+    label("instance/$Instance").
+}.
+
 defpost postInstanceLocal(?Instance,?Image) :-
     [ consInstanceLocal(?Instance,?Image) ].
 defpost delInstanceLocal(?Instance,?Image) :-
@@ -232,6 +253,18 @@ defpost postInstance(?Instance, ?Image, ?NetAddr) :-
 defpost delInstance(?Instance, ?Image, ?NetworkAddr) :-
    [  dtorInstanceLocal(?Instance, ?Image),
       delNetAddr(?Instance, ?NetAddr)
+   ].
+
+defpost postInstanceAndOwner(?Instance, ?Image, ?NetAddr, ?Owner) :-
+   [ consInstanceLocal(?Instance, ?Image),
+     addNetAddr(?Instance, ?NetAddr),
+     addOwner(?Owner)
+   ].
+
+defpost delInstanceAndOwner(?Instance, ?Image, ?NetworkAddr, ?Owner) :-
+   [  dtorInstanceLocal(?Instance, ?Image),
+      delNetAddr(?Instance, ?NetAddr),
+      delOwner(?Owner)
    ].
 
 defcon consTrustedEndorserOn(?Endorser, ?Property, ?EndorsementLabel) :-
@@ -443,6 +476,28 @@ defguard checkPodByPolicy(?Instance, ?Policy) :-
     approvePodByPolicy($Instance, $Policy)? =@= require
     denyPodByPolicy($Instance, $Policy)? =@= deny
 }.
+
+
+defguard checkPodOnTag(?Instance, ?Tag) :-
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustWallet := label("trustWallet"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+    ?ListRules := listMatchingRules(),
+    ?PolicyRules := label("trustPolicyRules"),
+    ?MembershipPolicy := label('standard-membership-policy'),
+{
+    link($InstanceSet).
+    link($TrustedEndorserSet).
+    link($TrustWallet).
+    link($LibraryRules).
+    link($ListRules).
+    link($PolicyRules).
+    link($MembershipPolicy).
+    checkPodByPolicy($Instance, $Tag) =@= allow
+    checkPodOwnerOnTag($Instance, $Tag) =@= allow
+}.
+
 
 defguard checkPodOwner(?Instance, ?Owner) :-
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
