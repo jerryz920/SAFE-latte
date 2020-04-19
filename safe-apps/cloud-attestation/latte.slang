@@ -52,11 +52,14 @@ defcon consLibraryRules() :-
         launches(Instance, Image),
         hasProperty(Image, Property, Value).
 
-    checkPodOwnerOnTag(Instance, Tag) :-
+    checkPodOnTag(Instance, Tag) :-
         podOwner(Instance, Owner),
         membership(Tag, Owner).
 
-    checkPodByPolicy(Instance, Policy) :-
+    checkPodOnTag(Instance, Tag) :-
+        membership(Tag, Instance).
+
+    checkCompliance(Instance, Policy) :-
         approvePodByPolicy(Instance, Policy),
         \+( denyPodByPolicy(Instance, Policy) ).
 
@@ -494,8 +497,7 @@ defguard checkPodOnTag(?Instance, ?Tag) :-
     link($ListRules).
     link($PolicyRules).
     link($MembershipPolicy).
-    checkPodByPolicy($Instance, $Tag) =@= allow
-    checkPodOwnerOnTag($Instance, $Tag) =@= allow
+    checkPodOnTag($Instance, $Tag)?
 }.
 
 

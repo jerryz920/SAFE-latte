@@ -16,6 +16,15 @@ defcon addGroupMember(?Group, ?User, ?Delegatable) :-
 
 defpost postGroupMember(?Group, ?User, ?Delegatable) :- [addGroupMember(?Group, ?User, ?Delegatable)].
 
+defcon setAdmissionPolicy(?Group, ?Policy) :-
+  spec("Set admission policy for group"),
+  {
+    groupAdmissionPolicy($Group, $Policy).
+    label("groups/$Group").
+  }.
+
+defpost postGroupAdmissionPolicy(?Group, ?Policy) :- [setAdmissionPolicy(?Group, ?Policy)].
+
 defcon delegateGroup(?Group, ?SubGroup, ?Delegatable) :-
   spec('Delegate administration to another group'), (* Membership is granted if membership of sub-group is granted *)
   ?GroupRef := label($Self, "groups/?Group"),
@@ -112,7 +121,7 @@ defcon memberSet() :-
     membership(?Group, ?User, ?Delegatable) :-
       ?GRoot := rootPrincipal(?Group), 
       ?GRoot: groupMember(?Group, ?User, ?Delegatable).
-    
+
     membership(?Group, ?User, ?Delegatable) :-
       ?Delegator: delegateMembership(?User, ?Group, ?Delegatable),
       membership(?Group, ?Delegator, true).
@@ -127,6 +136,11 @@ defcon memberSet() :-
       ?GRoot: nestGroup(?Group, ?SubGroup, false), 
       ?SubGroupRoot := rootPrincipal(?SubGroup),
       ?SubGroupRoot: groupMember(?SubGroup, ?User, ?Delegatable).
+
+    membership(?Group, ?User, true) :-
+      ?GRoot := rootPrincipal(?Group),
+      ?GRoot: groupAdmissionPolicy(?Group, ?Policy),
+      checkCompliance(?User, ?Policy).
 
     label('standard-membership-policy').
   }.
