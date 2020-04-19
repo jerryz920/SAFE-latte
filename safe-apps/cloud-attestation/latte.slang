@@ -53,8 +53,8 @@ defcon consLibraryRules() :-
         hasProperty(Image, Property, Value).
 
     checkPodOnTag(Instance, Tag) :-
-        podOwner(Instance, Owner),
-        membership(Tag, Owner).
+        authPodToUser(Instance, User),
+        membership(Tag, User).
 
     checkPodOnTag(Instance, Tag) :-
         membership(Tag, Instance).
@@ -231,18 +231,6 @@ defcon dtorInstanceLocal(?Instance,?Image) :-
     invalid(1).
 }.
 
-defcon addOwner(?Instance,?Owner) :-
-{
-    ownedBy($Instance, $Owner).
-    label("instance/$Instance").
-}.
-
-defcon delOwner(?Instance,?Owner) :-
-{
-    ownedBy($Instance, $Owner)~
-    label("instance/$Instance").
-}.
-
 defpost postInstanceLocal(?Instance,?Image) :-
     [ consInstanceLocal(?Instance,?Image) ].
 defpost delInstanceLocal(?Instance,?Image) :-
@@ -256,18 +244,6 @@ defpost postInstance(?Instance, ?Image, ?NetAddr) :-
 defpost delInstance(?Instance, ?Image, ?NetworkAddr) :-
    [  dtorInstanceLocal(?Instance, ?Image),
       delNetAddr(?Instance, ?NetAddr)
-   ].
-
-defpost postInstanceAndOwner(?Instance, ?Image, ?NetAddr, ?Owner) :-
-   [ consInstanceLocal(?Instance, ?Image),
-     addNetAddr(?Instance, ?NetAddr),
-     addOwner(?Owner)
-   ].
-
-defpost delInstanceAndOwner(?Instance, ?Image, ?NetworkAddr, ?Owner) :-
-   [  dtorInstanceLocal(?Instance, ?Image),
-      delNetAddr(?Instance, ?NetAddr),
-      delOwner(?Owner)
    ].
 
 defcon consTrustedEndorserOn(?Endorser, ?Property, ?EndorsementLabel) :-
