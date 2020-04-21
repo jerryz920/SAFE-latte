@@ -458,21 +458,25 @@ defguard checkPodByPolicy(?Instance, ?Policy) :-
 
 
 defguard checkPodOnTag(?Instance, ?Tag) :-
+    ?TRoot := rootPrincipal(?Tag),
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
-    ?TrustWallet := label("trustWallet"),
-    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?TrustWallet := label(?TRoot, "trustWallet"),
+    ?TrustedEndorserSet := label(?TRoot, "trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
     ?ListRules := listMatchingRules(),
     ?PolicyRules := label("trustPolicyRules"),
-    ?MembershipPolicy := label('standard-membership-policy'),
+    ?MembershipPolicy := label("standard-membership-policy"),
 {
     link($InstanceSet).
-    link($TrustedEndorserSet).
     link($TrustWallet).
+    link($TrustedEndorserSet).
     link($LibraryRules).
     link($ListRules).
     link($PolicyRules).
     link($MembershipPolicy).
+    attester(P) :- $TRoot: attester(P).
+    trustedCloudProvider(P) :- $TRoot: trustedCloudProvider(P).
+    trustedEndorserOn(Property, E) :- $TRoot: trustedEndorserOn(Property, E).
     checkPodOnTag($Instance, $Tag)?
 }.
 
