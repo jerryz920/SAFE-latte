@@ -192,3 +192,28 @@ this check passes.
 ```
 checkPodByPolicy alice kmaster pod1 policy1
 ```
+
+### Tag-based access control
+Latte supports file access based on tag privilege. A file owner attaches to a file an access tag, which 
+indicates a required privilege before access to this file can be permitted. The access tag could be under
+management of the principal of the file owner, but in general it could be under any principal. A managing
+principal uses standard [STRONG](../strong) groups to establish and operate on a tag, e.g., adding and removing
+members into/from a tag, delegating and revoking authority of membership to/from another principal. In L-Kube,
+A tag-managing principal installs an attestation policy on the tag for admission control. An instance whose
+attestation complies with the admission policy gets the tag privilege for file access. As in STRONG,
+an access tag in L-Kube is represented by a self-certifying ID, a string containing the ID of tag's managing principal
+and an identifying substring of the tag.
+
+
+In this example, Alice creates tag0 and installs policy1 to guard this access tag. 
+
+```
+postGroupAdmissionPolicy alice alice:tag0 policy1
+```
+
+Another authorizer Frank can now check if pod1 has access privilege tag0 under Alice, i.e., alice:tag0.
+This check should pass because Alice's tag policy (policy1) admits the attestation of pod1.
+
+```
+checkPodOnTag frank kmaster pod1 alice:tag0
+```
