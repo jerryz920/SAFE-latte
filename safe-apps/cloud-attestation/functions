@@ -451,6 +451,13 @@ delAckMembership() {
     shift 1
     curl -XPOST $SAFE_ADDR/delAckMembership -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\": \"${AUTH:-1}\"}"
 }
+
+postGroupAdmissionPolicy() {
+    local principal=$1
+    shift 1
+# GroupID, PolicyID                                                                                                                    
+    curl -XPOST $SAFE_ADDR/postGroupAdmissionPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+}
         
 postParameterizedConnection() {
     local principal=$1
@@ -1075,6 +1082,15 @@ checkPodByPolicy() {
     shift 1
     local bearer=$1
     shift 1
-# ?Instance
+# ?Instance, ?Policy
     curl -XPOST $SAFE_ADDR/checkPodByPolicy -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+}
+
+checkPodOnTag() {
+    local principal=$1
+    shift 1
+    local bearer=$1
+    shift 1
+# ?Instance, ?Tag                                                                                                                                                         
+    curl -XPOST $SAFE_ADDR/checkPodOnTag -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
 }

@@ -93,6 +93,7 @@ postRequiredPolicy alice policy1 "[image_c1,k1,k2]"
 postRequiredPolicy alice policy1 "[image_c2,k1]"
 postQualifierPolicy alice policy1 "[image_c1,[k4,v4]]"
 postQualifierPolicy alice policy1 "[image_c2,[k1,v1]]"
+postEndorsementLink alice trustPolicy/policy1
 
 # All following checks except for the first one and the last one would fail.
 checkPodAttestation alice kmaster pod1 policy1
@@ -101,3 +102,18 @@ checkPodAttestation alice kmaster pod3 policy1
 checkPodAttestation alice kmaster pod4 policy1 
 checkPodAttestation alice kmaster pod5 policy1
 checkPodAttestation alice kmaster pod6 policy1
+
+
+# Install policy1 for admission of alice's tag0
+postGroupAdmissionPolicy alice alice:tag0 policy1
+
+
+# Authorizer frank issues the following checks using alice:tag0
+# pod1 and pod6 can pass this check
+printf "\n\n\nchecking pods using a tag\n\n"
+checkPodOnTag frank kmaster pod1 alice:tag0
+checkPodOnTag frank kmaster pod2 alice:tag0
+checkPodOnTag frank kmaster pod3 alice:tag0
+checkPodOnTag frank kmaster pod4 alice:tag0
+checkPodOnTag frank kmaster pod5 alice:tag0
+checkPodOnTag frank kmaster pod6 alice:tag0

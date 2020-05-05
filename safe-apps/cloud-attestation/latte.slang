@@ -1,6 +1,6 @@
 import("./plist-lib.slang").
 import("./policy.slang").
-import("../strong.slang").
+import("../strong/strong.slang").
 
 //////////////////////////////////////////////////////
 // Enviroments
@@ -459,7 +459,9 @@ defguard checkPodByPolicy(?Instance, ?Policy) :-
 
 defguard checkPodOnTag(?Instance, ?Tag) :-
     ?TRoot := rootPrincipal(?Tag),
+    ?TagSet := label(?TRoot, "groups/?Tag"),
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?TrustHub := label(?TRoot, "trusthub"),
     ?TrustWallet := label(?TRoot, "trustWallet"),
     ?TrustedEndorserSet := label(?TRoot, "trustedEndorsers"),
     ?LibraryRules := label("LKubeLibraryRules"),
@@ -467,7 +469,9 @@ defguard checkPodOnTag(?Instance, ?Tag) :-
     ?PolicyRules := label("trustPolicyRules"),
     ?MembershipPolicy := label("standard-membership-policy"),
 {
+    link($TagSet).
     link($InstanceSet).
+    link($TrustHub).
     link($TrustWallet).
     link($TrustedEndorserSet).
     link($LibraryRules).
@@ -477,6 +481,7 @@ defguard checkPodOnTag(?Instance, ?Tag) :-
     attester(P) :- $TRoot: attester(P).
     trustedCloudProvider(P) :- $TRoot: trustedCloudProvider(P).
     trustedEndorserOn(Property, E) :- $TRoot: trustedEndorserOn(Property, E).
+    trustedEndorserOn(_, $TRoot).
     checkPodOnTag($Instance, $Tag)?
 }.
 
