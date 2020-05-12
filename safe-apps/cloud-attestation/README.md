@@ -144,7 +144,7 @@ together meet the specification of a particular policy before it
 grants access or allocates resources
 to the requester. 
 
-### Checking for police compliance
+### Checking for policy compliance
 In joint data analytics, a storage guard uses a Latte client
 to check policy compliance on the arrival of
 an access request. Authorization checks by Latte ensure that not only the 
@@ -161,7 +161,7 @@ checkPodByPolicy alice kmaster pod6 policy1
 
 ### Adopting an existing policy
 
-Alternatively, a principal in Latte can simply adopt an existing policy to 
+A principal in Latte can simply choose to adopt an existing policy to 
 guard its service. For example, Bob might have set up another policy as shown
 by the commands below. 
 
