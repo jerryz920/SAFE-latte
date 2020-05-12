@@ -111,9 +111,9 @@ postGroupAdmissionPolicy alice alice:tag0 policy1
 # Authorizer frank issues the following checks using alice:tag0
 # pod1 and pod6 can pass this check
 printf "\n\n\nchecking pods using a tag\n\n"
-checkPodOnTag frank kmaster pod1 alice:tag0
-checkPodOnTag frank kmaster pod2 alice:tag0
-checkPodOnTag frank kmaster pod3 alice:tag0
-checkPodOnTag frank kmaster pod4 alice:tag0
-checkPodOnTag frank kmaster pod5 alice:tag0
-checkPodOnTag frank kmaster pod6 alice:tag0
+checkPodAccess frank kmaster pod1 alice:tag0
+checkPodAccess frank kmaster pod2 alice:tag0
+checkPodAccess frank kmaster pod3 alice:tag0
+checkPodAccess frank kmaster pod4 alice:tag0
+checkPodAccess frank kmaster pod5 alice:tag0
+checkPodAccess frank kmaster pod6 alice:tag0

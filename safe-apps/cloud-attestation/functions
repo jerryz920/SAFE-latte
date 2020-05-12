@@ -1086,11 +1086,11 @@ checkPodByPolicy() {
     curl -XPOST $SAFE_ADDR/checkPodByPolicy -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 
-checkPodOnTag() {
+checkPodAccess() {
     local principal=$1
     shift 1
     local bearer=$1
     shift 1
 # ?Instance, ?Tag                                                                                                                                                         
-    curl -XPOST $SAFE_ADDR/checkPodOnTag -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+    curl -XPOST $SAFE_ADDR/checkPodAccess -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
 }

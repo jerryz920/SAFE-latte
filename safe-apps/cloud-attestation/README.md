@@ -128,12 +128,12 @@ all property lists.
 
 ```
 postImagePolicy alice policy1 "[image_c1,image_c2,image_c3]"
-postProhibitedPolicy alice policy1 "[image_c1,k5]"
-postProhibitedPolicy alice policy1 "[image_c2,k5]"
 postRequiredPolicy alice policy1 "[image_c1,k1,k2]"
 postRequiredPolicy alice policy1 "[image_c2,k1]"
 postQualifierPolicy alice policy1 "[image_c1,[k4,v4]]"
 postQualifierPolicy alice policy1 "[image_c2,[k1,v1]]"
+postProhibitedPolicy alice policy1 "[image_c1,k5]"
+postProhibitedPolicy alice policy1 "[image_c2,k5]"
 postEndorsementLink alice trustPolicy/policy1
 ```
 
@@ -144,7 +144,7 @@ together meet the specification of a particular policy before it
 grants access or allocates resources
 to the requester. 
 
-### Checking for access control
+### Checking for police compliance
 In joint data analytics, a storage guard uses a Latte client
 to check policy compliance on the arrival of
 an access request. Authorization checks by Latte ensure that not only the 
@@ -167,12 +167,12 @@ by the commands below.
 
 ```
 postImagePolicy bob policy1 "[image_c1,image_c2]"
-postProhibitedPolicy bob policy1 "[image_c1,k5]"
-postProhibitedPolicy bob policy1 "[image_c2,k5]"
-postQualifierPolicy bob policy1 "[image_c1,[k1,v1]]"
-postQualifierPolicy bob policy1 "[image_c2,[k4,v4]]"
 postRequiredPolicy bob policy1 "[image_c1,k1,k2]"
 postRequiredPolicy bob policy1 "[image_c2,k3]"
+postQualifierPolicy bob policy1 "[image_c1,[k1,v1]]"
+postQualifierPolicy bob policy1 "[image_c2,[k4,v4]]"
+postProhibitedPolicy bob policy1 "[image_c1,k5]"
+postProhibitedPolicy bob policy1 "[image_c2,k5]"
 ```
 
 Alice adopts Bob's policy by endorsing Bob as a trusted policy source. Note that 
@@ -216,5 +216,5 @@ Another authorizer Frank can now check if pod1 has access privilege of tag0 unde
 This check should pass because Alice's tag policy (policy1) admits the attestation of pod1.
 
 ```
-checkPodOnTag frank kmaster pod1 alice:tag0
+checkPodAccess frank kmaster pod1 alice:tag0
 ```

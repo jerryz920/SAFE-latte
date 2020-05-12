@@ -457,7 +457,7 @@ defguard checkPodByPolicy(?Instance, ?Policy) :-
 }.
 
 
-defguard checkPodOnTag(?Instance, ?Tag) :-
+defguard checkPodAccess(?Instance, ?Tag) :-
     ?TRoot := rootPrincipal(?Tag),
     ?TagSet := label(?TRoot, "groups/?Tag"),
     ?InstanceSet := label($BearerRef, "instance/?Instance"),
