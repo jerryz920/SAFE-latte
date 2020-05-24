@@ -18,7 +18,7 @@ defpost postGroupMember(?Group, ?User, ?Delegatable) :- [addGroupMember(?Group, 
 
 defcon setAdmissionPolicy(?Group, ?PID, ?Endorser) :-
   spec("Set admission policy for group"),
-  ?PolicySet := label(?Endorser, "endorsements/trustPolicy/policy1"),
+  ?PolicySet := label(?Endorser, "endorsements/trustPolicy/?PID"),
   {
     link($PolicySet).
     groupAdmissionPolicy($Group, $PID).
