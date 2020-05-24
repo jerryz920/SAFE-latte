@@ -52,6 +52,9 @@ defcon consLibraryRules() :-
         launches(Instance, Image),
         hasProperty(Image, Property, Value).
 
+    hasProperty(Instance, "trustPolicy", PID) :-
+        checkCompliance(Instance, PID).
+
     checkPodOnTag(Instance, Tag) :-
         authPodToUser(Instance, User),
         membership(Tag, User).

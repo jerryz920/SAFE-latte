@@ -105,7 +105,7 @@ checkPodAttestation alice kmaster pod6 policy1
 
 
 # Install policy1 for admission of alice's tag0
-postGroupAdmissionPolicy alice alice:tag0 policy1
+postGroupAdmissionPolicy alice alice:tag0 policy1 bob
 
 
 # Authorizer frank issues the following checks using alice:tag0

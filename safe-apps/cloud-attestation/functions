@@ -455,8 +455,8 @@ delAckMembership() {
 postGroupAdmissionPolicy() {
     local principal=$1
     shift 1
-# GroupID, PolicyID                                                                                                                    
-    curl -XPOST $SAFE_ADDR/postGroupAdmissionPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+# GroupID, PolicyID, TrustedEndorser                                                                                                                    
+    curl -XPOST $SAFE_ADDR/postGroupAdmissionPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\"], \"auth\":\"${AUTH:-1}\"}"
 }
         
 postParameterizedConnection() {

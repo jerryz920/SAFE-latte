@@ -16,14 +16,17 @@ defcon addGroupMember(?Group, ?User, ?Delegatable) :-
 
 defpost postGroupMember(?Group, ?User, ?Delegatable) :- [addGroupMember(?Group, ?User, ?Delegatable)].
 
-defcon setAdmissionPolicy(?Group, ?Policy) :-
+defcon setAdmissionPolicy(?Group, ?PID, ?Endorser) :-
   spec("Set admission policy for group"),
+  ?PolicySet := label(?Endorser, "endorsements/trustPolicy/policy1"),
   {
-    groupAdmissionPolicy($Group, $Policy).
+    link($PolicySet).
+    groupAdmissionPolicy($Group, $PID).
+    trustedEndorserOn("trustPolicy", $Endorser).
     label("groups/$Group").
   }.
 
-defpost postGroupAdmissionPolicy(?Group, ?Policy) :- [setAdmissionPolicy(?Group, ?Policy)].
+defpost postGroupAdmissionPolicy(?Group, ?Policy, ?Endorser) :- [setAdmissionPolicy(?Group, ?Policy, ?Endorser)].
 
 defcon delegateGroup(?Group, ?SubGroup, ?Delegatable) :-
   spec('Delegate administration to another group'), (* Membership is granted if membership of sub-group is granted *)
@@ -139,8 +142,8 @@ defcon memberSet() :-
 
     membership(?Group, ?User, true) :-
       ?GRoot := rootPrincipal(?Group),
-      ?GRoot: groupAdmissionPolicy(?Group, ?Policy),
-      checkCompliance(?User, ?Policy).
+      ?GRoot: groupAdmissionPolicy(?Group, ?PID),
+      hasProperty(?User, "trustPolicy", ?PID).
 
     label('standard-membership-policy').
   }.

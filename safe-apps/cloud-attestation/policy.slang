@@ -59,8 +59,14 @@ defcon policyRules() :-
 
     // if endorsement occurs and trusted, then derive policy as well
     hasPolicy(ID, Type, Value) :-
-        E: policy(ID, Type, Value),
-	trustedEndorserOn("trustPolicy", E).
+	trustedEndorserOn("trustPolicy", E),
+        E: policy(ID, Type, Value).
+
+    // hasPolicy(ID, Type, Value) :-
+    // 	trustedEndorserOn("trustPolicy", E),
+    //     E: policy(ID, Type, Value),
+    //     PRoot := rootPrincipal(ID),
+    //     E = PRoot.
 
     hasPolicy(ID, Type, Value) :-
 	policy(ID, Type, Value).
