@@ -16,15 +16,28 @@ defcon addGroupMember(?Group, ?User, ?Delegatable) :-
 
 defpost postGroupMember(?Group, ?User, ?Delegatable) :- [addGroupMember(?Group, ?User, ?Delegatable)].
 
-defcon setAdmissionPolicy(?Group, ?PID, ?Endorser) :-
+// 
+// defcon setAdmissionPolicy(?Group, ?PID, ?Endorser) :-
+//   spec("Set admission policy for group"),
+//   ?PolicySet := label(?Endorser, "endorsements/trustPolicy/?PID"),
+//   {
+//     link($PolicySet).
+//     groupAdmissionPolicy($Group, $PID).
+//     trustedEndorserOn("trustPolicy", $Endorser).
+//     label("groups/$Group").
+//   }.
+// 
+
+defcon setAdmissionPolicy(?Group, ?Property, ?Endorser) :-
   spec("Set admission policy for group"),
-  ?PolicySet := label(?Endorser, "endorsements/trustPolicy/?PID"),
+  ?EndorserSet := label(?Endorser, "trusthub"),
   {
-    link($PolicySet).
-    groupAdmissionPolicy($Group, $PID).
-    trustedEndorserOn("trustPolicy", $Endorser).
+    link($EndorserSet).
+    groupAdmissionPolicy($Group, $Property).
+    trustedEndorserOn($Property, $Endorser).
     label("groups/$Group").
   }.
+
 
 defpost postGroupAdmissionPolicy(?Group, ?Policy, ?Endorser) :- [setAdmissionPolicy(?Group, ?Policy, ?Endorser)].
 
@@ -142,8 +155,8 @@ defcon memberSet() :-
 
     membership(?Group, ?User, true) :-
       ?GRoot := rootPrincipal(?Group),
-      ?GRoot: groupAdmissionPolicy(?Group, ?PID),
-      hasProperty(?User, "trustPolicy", ?PID).
+      ?GRoot: groupAdmissionPolicy(?Group, ?Property),
+      hasProperty(?User, ?Property, _).
 
     label('standard-membership-policy').
   }.

@@ -57,6 +57,7 @@ postInstanceConfigList kmaster pod6 ctn1 '[image_c1,[k1,v6],[k2,v7],[k4,v4]]'
 postInstanceConfigList kmaster pod6 ctn2 '[image_c2,[k1,v1],[k4,v5]]'
 
 
+postPodPolicy bob policy1 leak-free
 postImagePolicy bob policy1 "[image_c1,image_c2]"
 postProhibitedPolicy bob policy1 "[image_c1,k5]" 
 postProhibitedPolicy bob policy1 "[image_c2,k5]" 
@@ -85,7 +86,8 @@ debugCheck4 alice image_c1 "[image_c1]"
 debugCheck4 alice image_c1 "[image_c2]"
 
 
-# Using alice's own policy
+# Using alice's own policy]
+postPodPolicy alice policy1 leak-free
 postImagePolicy alice policy1 "[image_c1,image_c2,image_c3]"
 postProhibitedPolicy alice policy1 "[image_c1,k5]"
 postProhibitedPolicy alice policy1 "[image_c2,k5]"
@@ -105,7 +107,7 @@ checkPodAttestation alice kmaster pod6 policy1
 
 
 # Install policy1 for admission of alice's tag0
-postGroupAdmissionPolicy alice alice:tag0 policy1 bob
+postGroupAdmissionPolicy alice alice:tag0 "leak-free" bob
 
 
 # Authorizer frank issues the following checks using alice:tag0

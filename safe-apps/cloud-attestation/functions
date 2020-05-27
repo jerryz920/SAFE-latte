@@ -501,6 +501,12 @@ delTrustHubLink() {
     curl -XPOST $SAFE_ADDR/delTrustHubLink -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\"], \"auth\": \"${AUTH:-1}\"}"
 }
 
+postPodPolicy() {
+    local principal=$1
+    shift 1
+    curl -XPOST $SAFE_ADDR/postPodPolicy -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\", \"${2}\"], \"auth\": \"${AUTH:-1}\"}"
+}
+
 postImagePolicy() {
     local principal=$1
     shift 1

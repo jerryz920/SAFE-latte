@@ -2,6 +2,12 @@
 
 // Endorser needs to call postEndorsementLink("trustPolicy/xxx").
 
+defcon createPodPolicy(?PolicyID, ?PodProperty) :-
+{
+    policy($PolicyID, "podProperty", $PodProperty).
+    label("endorsements/trustPolicy/$PolicyID").
+}.
+
 defcon createImagePolicy(?PolicyID, ?ImgWhiteList) :-
 {
     policy($PolicyID, "image", $ImgWhiteList).
@@ -39,6 +45,9 @@ defcon createQualifierKVsPolicy(?PolicyID, ?ConfQualifiers) :-
 // I didn't use list representation to construct "policy" statement is for easier implementation
 // of "matching" some policy. It could be optimized such that images of each container in a Pod
 // appears always in sort order, which can accelerate the policy matching process.
+
+defpost postPodPolicy(?PolicyID, ?PodProperty) :-
+    [createPodPolicy(?PolicyID, ?PodProperty)].
 
 defpost postImagePolicy(?PolicyID, ?ImgWhiteList) :-
     [createImagePolicy(?PolicyID, ?ImgWhiteList)].
