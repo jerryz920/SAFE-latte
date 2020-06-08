@@ -2,11 +2,18 @@
 
 // Endorser needs to call postEndorsementLink("trustPolicy/xxx").
 
+//defcon createPodPolicy(?PolicyID, ?PodProperty) :-
+//{
+//    policy($PolicyID, "podProperty", $PodProperty).
+//    label("endorsements/trustPolicy/$PolicyID").
+//}.
+
 defcon createPodPolicy(?PolicyID, ?PodProperty) :-
 {
-    policy($PolicyID, "podProperty", $PodProperty).
+    endorsedConfigSet($PodProperty, $PolicyID).
     label("endorsements/trustPolicy/$PolicyID").
-}.
+}
+
 
 defcon createImagePolicy(?PolicyID, ?ImgWhiteList) :-
 {

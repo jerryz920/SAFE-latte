@@ -27,9 +27,21 @@ defcon consLibraryRules() :-
 {
     label("LKubeLibraryRules").
 
-    launches(Instance, Image) :-
+    launches(H, Instance, Image) :-
+        H: runs(Instance, Image),
+        attester(H).
+
+    launch(Instance, Image) :-
         H : runs(Instance, Image),
         attester(H).
+
+    builder(Instance) :-
+        hasProperty(Instance, 'builder', 1).
+
+    launch(Instance, Program) :-
+        launch(Instance, Image),
+        B: builtInto(Program, Image),
+        builder(B).
 
     attester(Instance) :-
         trustedCloudProvider(Instance).
@@ -49,12 +61,12 @@ defcon consLibraryRules() :-
         trustedEndorserOn(Property, H).
 
     hasProperty(Instance, Property, Value) :-
-        launches(Instance, Image),
+        launch(Instance, Image),
         hasProperty(Image, Property, Value).
 
-    hasProperty(Instance, Property, PolicyID) :-
-        hasPolicy(PolicyID, "podProperty", Property),
-        checkCompliance(Instance, PolicyID).
+//    hasProperty(Instance, Property, PolicyID) :-
+//        hasPolicy(PolicyID, "podProperty", Property),
+//        checkCompliance(Instance, PolicyID).
 
     checkPodOnTag(Instance, Tag) :-
         authPodToUser(Instance, User),
@@ -63,9 +75,9 @@ defcon consLibraryRules() :-
     checkPodOnTag(Instance, Tag) :-
         membership(Tag, Instance).
 
-    checkCompliance(Instance, Policy) :-
-        approvePodByPolicy(Instance, Policy),
-        \+( denyPodByPolicy(Instance, Policy) ).
+    checkCompliance(Instance, Policy, H) :-
+        approvePodByPolicy(Instance, Policy, H),
+        \+( denyPodByPolicy(Instance, Policy, H) ).
 
     // This rule below is included in policy.slang
     //hasPolicy(PolicyID, Name, Value) :-
@@ -74,18 +86,34 @@ defcon consLibraryRules() :-
     // Approve a pod by checking it against a whitelist of images,
     // a list of qualifier config KV pairs, a list of required config
     // keys specified by a policy (which is identified by a policy ID).
-    approvePodByPolicy(Pod, PolicyID) :- 
-        hasConfig(Pod, 'containers', Containers),
-        approveCtnByImagePolicy(Pod, Containers, PolicyID),
-        approveCtnByQualifiedKvs(Pod, Containers, PolicyID),
-        approveCtnByRequiredKeys(Pod, Containers, PolicyID).
+//    approvePodByPolicy(Pod, PolicyID) :- 
+//        hasConfig(Pod, 'containers', Containers),
+//        approveCtnByImagePolicy(Pod, Containers, PolicyID),
+//        approveCtnByQualifiedKvs(Pod, Containers, PolicyID),
+//        approveCtnByRequiredKeys(Pod, Containers, PolicyID).
+//
+
+    approvePodByPolicy(Pod, PolicyID, H) :- 
+        H: config(Pod, 'containers', Containers),
+        approveCtnByImagePolicy(Pod, Containers, PolicyID, H),
+        approveCtnByQualifiedKvs(Pod, Containers, PolicyID, H),
+        approveCtnByRequiredKeys(Pod, Containers, PolicyID, H).
+
 
     /// Image handling
-    approveCtnByImagePolicy(Pod, [Ctn|Rest], PolicyID) :-
-        hasConfig(Pod, Ctn, [Image|_]),
+//    approveCtnByImagePolicy(Pod, [Ctn|Rest], PolicyID) :-
+//        hasConfig(Pod, Ctn, [Image|_]),
+//        hasPolicy(PolicyID, "image", WhiteListImages),
+//        approveImage(Image, WhiteListImages),
+//        approveCtnByImagePolicy(Pod, Rest, PolicyID).
+
+
+    approveCtnByImagePolicy(Pod, [Ctn|Rest], PolicyID, H) :-
+        H: config(Pod, Ctn, [Image|_]),
         hasPolicy(PolicyID, "image", WhiteListImages),
         approveImage(Image, WhiteListImages),
-        approveCtnByImagePolicy(Pod, Rest, PolicyID).
+        approveCtnByImagePolicy(Pod, Rest, PolicyID, H).
+
 
     /// Image matching polices
     matchImage(Image, Matcher) :-
@@ -96,7 +124,7 @@ defcon consLibraryRules() :-
 
     matchImage(Image, Image).
 
-    approveCtnByImagePolicy(_, [], _).
+    approveCtnByImagePolicy(_, [], _, _).
 
     // Handle image: whitelist, or an endorsed property
     approveImage(Image, [Prop|_]) :-
@@ -106,38 +134,38 @@ defcon consLibraryRules() :-
         approveImage(Image, Rest).
 
     // Handle Required Keys and QualifiedKvs
-    approveCtnByQualifiedKvs(Pod, [Ctn|Rest], PolicyID) :-
-        hasConfig(Pod, Ctn, [Image|Config]),
+    approveCtnByQualifiedKvs(Pod, [Ctn|Rest], PolicyID, H) :-
+        H: config(Pod, Ctn, [Image|Config]),
         hasPolicy(PolicyID, "qualifier", [ImageMatcher|QualifiedKvs]),
         matchImage(Image, ImageMatcher),
         esubseq(QualifiedKvs, Config),
-        approveCtnByQualifiedKvs(Pod, Rest, PolicyID).
+        approveCtnByQualifiedKvs(Pod, Rest, PolicyID, H).
 
-    approveCtnByQualifiedKvs(_, [], _).
+    approveCtnByQualifiedKvs(_, [], _, _).
 
-    approveCtnByRequiredKeys(Pod, [Ctn|Rest], PolicyID) :-
-        hasConfig(Pod, Ctn, [Image|Config]),
+    approveCtnByRequiredKeys(Pod, [Ctn|Rest], PolicyID, H) :-
+        H:config(Pod, Ctn, [Image|Config]),
         hasPolicy(PolicyID, "required", [ImageMatcher|RequiredKeys]),
         matchImage(Image, ImageMatcher),
         propsPresent(RequiredKeys, Config),
-        approveCtnByRequiredKeys(Pod, Rest, PolicyID).
+        approveCtnByRequiredKeys(Pod, Rest, PolicyID, H).
 
-    approveCtnByRequiredKeys(_, [], _).
+    approveCtnByRequiredKeys(_, [], _, _).
 
 
     // Deny check on a pod's config against a policy
-    denyPodByPolicy(Pod, PolicyID) :-
-        hasConfig(Pod, 'containers', Containers),
-        denyCtnByProhibitedKeys(Pod, Containers, PolicyID).
+    denyPodByPolicy(Pod, PolicyID, H) :-
+        H: config(Pod, 'containers', Containers),
+        denyCtnByProhibitedKeys(Pod, Containers, PolicyID, H).
 
-    denyCtnByProhibitedKeys(Pod, [Ctn|_], PolicyID) :-
-        hasConfig(Pod, Ctn, [Image|Config]),
+    denyCtnByProhibitedKeys(Pod, [Ctn|_], PolicyID, H) :-
+        H: config(Pod, Ctn, [Image|Config]),
         hasPolicy(PolicyID, "prohibited", [ImageMatcher|ProhibitedKeys]),
         matchImage(Image, ImageMatcher),
         anyPropPresent(ProhibitedKeys, Config).
 
-    denyCtnByProhibitedKeys(Pod, [_|Rest], PolicyID) :-
-      denyCtnByProhibitedKeys(Pod, Rest, PolicyID).
+    denyCtnByProhibitedKeys(Pod, [_|Rest], PolicyID, H) :-
+      denyCtnByProhibitedKeys(Pod, Rest, PolicyID, H).
 
     // Latte-K8s only logic.
     authPodToUser(Pod, User) :-

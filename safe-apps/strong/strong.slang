@@ -33,7 +33,7 @@ defcon setAdmissionPolicy(?Group, ?Property, ?Endorser) :-
   ?EndorserSet := label(?Endorser, "trusthub"),
   {
     link($EndorserSet).
-    groupAdmissionPolicy($Group, $Property).
+    memberByAttestedProperty($Group, $Property).
     trustedEndorserOn($Property, $Endorser).
     label("groups/$Group").
   }.
@@ -153,10 +153,23 @@ defcon memberSet() :-
       ?SubGroupRoot := rootPrincipal(?SubGroup),
       ?SubGroupRoot: groupMember(?SubGroup, ?User, ?Delegatable).
 
-    membership(?Group, ?User, true) :-
+//     membership(?Group, ?User, true) :-
+//       ?GRoot := rootPrincipal(?Group),
+//       ?GRoot: memberByAttestedProperty(?Group, ?Property),
+//       hasProperty(?User, ?Property, _).
+
+    membership(?Group, ?Instance, true) :-
       ?GRoot := rootPrincipal(?Group),
-      ?GRoot: groupAdmissionPolicy(?Group, ?Property),
-      hasProperty(?User, ?Property, _).
+      ?GRoot: memberByAttestedProperty(?Group, ?Prop),
+      launch(?H, ?Instance, ?Image),
+      memberByAttestation(?Group, ?Instance, ?H).
+
+    memberByAttestation(?Group, ?Instance, ?H) :-
+      ?GRoot := rootPrincipal(?Group),
+      ?GRoot: memberByAttestedProperty(?Group, ?Prop, ?H),
+      ?GRoot: trustedEndorserOn(?Prop, ?Endorser),
+      ?Endorser: EndorsedConfigSet(?Prop, ?ConfigSetID),
+      checkCompliance(?Instance, ?ConfigSetID, ?H).
 
     label('standard-membership-policy').
   }.
