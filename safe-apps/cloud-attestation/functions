@@ -55,6 +55,7 @@ postVMInstance() {
 # ?Instance,?Image,?Vpc,?AuthID,?Cidr
 #
 # ?Instance, ?Image, ?Vpc, ?NetAddr, ?Cidr
+    echo curl -XPOST $SAFE_ADDR/postVMInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\",\"${4}\",\"${5}\"], \"auth\":\"${AUTH:-1}\"}"
     curl -XPOST $SAFE_ADDR/postVMInstance -d "{ \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\",\"${3}\",\"${4}\",\"${5}\"], \"auth\":\"${AUTH:-1}\"}"
 }
 

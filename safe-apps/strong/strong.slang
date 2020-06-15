@@ -28,8 +28,8 @@ defpost postGroupMember(?Group, ?User, ?Delegatable) :- [addGroupMember(?Group, 
 //   }.
 // 
 
-defcon setAdmissionPolicy(?Group, ?Property, ?Endorser) :-
-  spec("Set admission policy for group"),
+defcon setMemberPolicy(?Group, ?Property, ?Endorser) :-
+  spec("Set an attestation property for admitted members of this group and link to the trusthub of an trusted endorser"),
   ?EndorserSet := label(?Endorser, "trusthub"),
   {
     link($EndorserSet).
@@ -39,7 +39,7 @@ defcon setAdmissionPolicy(?Group, ?Property, ?Endorser) :-
   }.
 
 
-defpost postGroupAdmissionPolicy(?Group, ?Policy, ?Endorser) :- [setAdmissionPolicy(?Group, ?Policy, ?Endorser)].
+defpost postGroupAdmissionPolicy(?Group, ?Property, ?Endorser) :- [setMemberPolicy(?Group, ?Property, ?Endorser)].
 
 defcon delegateGroup(?Group, ?SubGroup, ?Delegatable) :-
   spec('Delegate administration to another group'), (* Membership is granted if membership of sub-group is granted *)
@@ -161,14 +161,14 @@ defcon memberSet() :-
     membership(?Group, ?Instance, true) :-
       ?GRoot := rootPrincipal(?Group),
       ?GRoot: memberByAttestedProperty(?Group, ?Prop),
-      launch(?H, ?Instance, ?Image),
+      launches(?H, ?Instance, ?Image),
       memberByAttestation(?Group, ?Instance, ?H).
 
     memberByAttestation(?Group, ?Instance, ?H) :-
       ?GRoot := rootPrincipal(?Group),
-      ?GRoot: memberByAttestedProperty(?Group, ?Prop, ?H),
+      ?GRoot: memberByAttestedProperty(?Group, ?Prop),
       ?GRoot: trustedEndorserOn(?Prop, ?Endorser),
-      ?Endorser: EndorsedConfigSet(?Prop, ?ConfigSetID),
+      ?Endorser: endorsedConfigSet(?Prop, ?ConfigSetID),
       checkCompliance(?Instance, ?ConfigSetID, ?H).
 
     label('standard-membership-policy').

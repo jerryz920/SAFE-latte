@@ -39,8 +39,8 @@ defcon consLibraryRules() :-
         hasProperty(Instance, 'builder', 1).
 
     launch(Instance, Program) :-
-        launch(Instance, Image),
         B: builtInto(Program, Image),
+        launch(Instance, Image),
         builder(B).
 
     attester(Instance) :-
@@ -75,45 +75,25 @@ defcon consLibraryRules() :-
     checkPodOnTag(Instance, Tag) :-
         membership(Tag, Instance).
 
-    checkCompliance(Instance, Policy, H) :-
-        approvePodByPolicy(Instance, Policy, H),
-        \+( denyPodByPolicy(Instance, Policy, H) ).
-
-    // This rule below is included in policy.slang
-    //hasPolicy(PolicyID, Name, Value) :-
-    //    policy(PolicyID, Name, Value).
+    checkCompliance(Instance, ConfigSet, H) :-
+        approvePodByPolicy(Instance, ConfigSet, H),
+        \+( denyPodByPolicy(Instance, ConfigSet, H) ).
 
     // Approve a pod by checking it against a whitelist of images,
     // a list of qualifier config KV pairs, a list of required config
-    // keys specified by a policy (which is identified by a policy ID).
-//    approvePodByPolicy(Pod, PolicyID) :- 
-//        hasConfig(Pod, 'containers', Containers),
-//        approveCtnByImagePolicy(Pod, Containers, PolicyID),
-//        approveCtnByQualifiedKvs(Pod, Containers, PolicyID),
-//        approveCtnByRequiredKeys(Pod, Containers, PolicyID).
-//
-
-    approvePodByPolicy(Pod, PolicyID, H) :- 
+    // keys specified by a policy (which is identified by a configset ID).
+    approvePodByPolicy(Pod, ConfigSet, H) :- 
         H: config(Pod, 'containers', Containers),
-        approveCtnByImagePolicy(Pod, Containers, PolicyID, H),
-        approveCtnByQualifiedKvs(Pod, Containers, PolicyID, H),
-        approveCtnByRequiredKeys(Pod, Containers, PolicyID, H).
-
+        approveCtnByImagePolicy(Pod, Containers, ConfigSet, H),
+        approveCtnByQualifiedKvs(Pod, Containers, ConfigSet, H),
+        approveCtnByRequiredKeys(Pod, Containers, ConfigSet, H).
 
     /// Image handling
-//    approveCtnByImagePolicy(Pod, [Ctn|Rest], PolicyID) :-
-//        hasConfig(Pod, Ctn, [Image|_]),
-//        hasPolicy(PolicyID, "image", WhiteListImages),
-//        approveImage(Image, WhiteListImages),
-//        approveCtnByImagePolicy(Pod, Rest, PolicyID).
-
-
-    approveCtnByImagePolicy(Pod, [Ctn|Rest], PolicyID, H) :-
+    approveCtnByImagePolicy(Pod, [Ctn|Rest], ConfigSet, H) :-
         H: config(Pod, Ctn, [Image|_]),
-        hasPolicy(PolicyID, "image", WhiteListImages),
+        hasPolicy(ConfigSet, "image", WhiteListImages),
         approveImage(Image, WhiteListImages),
-        approveCtnByImagePolicy(Pod, Rest, PolicyID, H).
-
+        approveCtnByImagePolicy(Pod, Rest, ConfigSet, H).
 
     /// Image matching polices
     matchImage(Image, Matcher) :-
@@ -134,38 +114,38 @@ defcon consLibraryRules() :-
         approveImage(Image, Rest).
 
     // Handle Required Keys and QualifiedKvs
-    approveCtnByQualifiedKvs(Pod, [Ctn|Rest], PolicyID, H) :-
+    approveCtnByQualifiedKvs(Pod, [Ctn|Rest], ConfigSet, H) :-
         H: config(Pod, Ctn, [Image|Config]),
-        hasPolicy(PolicyID, "qualifier", [ImageMatcher|QualifiedKvs]),
+        hasPolicy(ConfigSet, "qualifier", [ImageMatcher|QualifiedKvs]),
         matchImage(Image, ImageMatcher),
         esubseq(QualifiedKvs, Config),
-        approveCtnByQualifiedKvs(Pod, Rest, PolicyID, H).
+        approveCtnByQualifiedKvs(Pod, Rest, ConfigSet, H).
 
     approveCtnByQualifiedKvs(_, [], _, _).
 
-    approveCtnByRequiredKeys(Pod, [Ctn|Rest], PolicyID, H) :-
+    approveCtnByRequiredKeys(Pod, [Ctn|Rest], ConfigSet, H) :-
         H:config(Pod, Ctn, [Image|Config]),
-        hasPolicy(PolicyID, "required", [ImageMatcher|RequiredKeys]),
+        hasPolicy(ConfigSet, "required", [ImageMatcher|RequiredKeys]),
         matchImage(Image, ImageMatcher),
         propsPresent(RequiredKeys, Config),
-        approveCtnByRequiredKeys(Pod, Rest, PolicyID, H).
+        approveCtnByRequiredKeys(Pod, Rest, ConfigSet, H).
 
     approveCtnByRequiredKeys(_, [], _, _).
 
 
     // Deny check on a pod's config against a policy
-    denyPodByPolicy(Pod, PolicyID, H) :-
+    denyPodByPolicy(Pod, ConfigSet, H) :-
         H: config(Pod, 'containers', Containers),
-        denyCtnByProhibitedKeys(Pod, Containers, PolicyID, H).
+        denyCtnByProhibitedKeys(Pod, Containers, ConfigSet, H).
 
-    denyCtnByProhibitedKeys(Pod, [Ctn|_], PolicyID, H) :-
+    denyCtnByProhibitedKeys(Pod, [Ctn|_], ConfigSet, H) :-
         H: config(Pod, Ctn, [Image|Config]),
-        hasPolicy(PolicyID, "prohibited", [ImageMatcher|ProhibitedKeys]),
+        hasPolicy(ConfigSet, "prohibited", [ImageMatcher|ProhibitedKeys]),
         matchImage(Image, ImageMatcher),
         anyPropPresent(ProhibitedKeys, Config).
 
-    denyCtnByProhibitedKeys(Pod, [_|Rest], PolicyID, H) :-
-      denyCtnByProhibitedKeys(Pod, Rest, PolicyID, H).
+    denyCtnByProhibitedKeys(Pod, [_|Rest], ConfigSet, H) :-
+      denyCtnByProhibitedKeys(Pod, Rest, ConfigSet, H).
 
     // Latte-K8s only logic.
     authPodToUser(Pod, User) :-
@@ -390,7 +370,7 @@ defguard checkLaunches(?Instance,?Name) :-
     link($TrustedEndorserSet).
     link($TrustWallet).
     link($LibraryRules).
-    launches($Instance, $Name)?
+    launch($Instance, $Name)?
 }.
 
 
@@ -445,8 +425,8 @@ defguard checkPodAttestationLocal(?Instance) :-
     link($ListRules).
     link($Spec).
     link($PolicyRules).
-    approvePodByPolicy($Instance, default)? =@= require
-    denyPodByPolicy($Instance, default)? =@= deny
+    approvePodByPolicy($Instance, default, $BearerRef)? =@= require
+    denyPodByPolicy($Instance, default, $BearerRef)? =@= deny
 }.
 
 
@@ -466,8 +446,8 @@ defguard checkPodAttestation(?Instance, ?PolicyID) :-
     link($ListRules).
     link($Spec).
     link($PolicyRules).
-    approvePodByPolicy($Instance, $PolicyID)? =@= require
-    denyPodByPolicy($Instance, $PolicyID)? =@= deny
+    approvePodByPolicy($Instance, $PolicyID, $BearerRef)? =@= require
+    denyPodByPolicy($Instance, $PolicyID, $BearerRef)? =@= deny
 }.
 
 defguard checkPodByPolicy(?Instance, ?Policy) :-
@@ -484,8 +464,8 @@ defguard checkPodByPolicy(?Instance, ?Policy) :-
     link($LibraryRules).
     link($ListRules).
     link($PolicyRules).
-    approvePodByPolicy($Instance, $Policy)? =@= require
-    denyPodByPolicy($Instance, $Policy)? =@= deny
+    approvePodByPolicy($Instance, $Policy, $BearerRef)? =@= require
+    denyPodByPolicy($Instance, $Policy, $BearerRef)? =@= deny
 }.
 
 
@@ -562,7 +542,7 @@ defguard debugCheck1(?Instance, ?Policy) :-
     link($LibraryRules).
     link($ListRules).
     link($PolicyRules).
-    approvePodByPolicy($Instance, $Policy)? =@= require
+    approvePodByPolicy($Instance, $Policy, $BearerRef)? =@= require
 }.
 
 defguard debugCheck2(?Instance, ?Policy) :-
@@ -579,7 +559,7 @@ defguard debugCheck2(?Instance, ?Policy) :-
     link($LibraryRules).
     link($ListRules).
     link($PolicyRules).
-    denyPodByPolicy($Instance, $Policy)? =@= deny
+    denyPodByPolicy($Instance, $Policy, $BearerRef)? =@= deny
 }.
 
 defguard debugCheck3(?Instance, ?Policy, ?Containers) :-
@@ -596,7 +576,7 @@ defguard debugCheck3(?Instance, ?Policy, ?Containers) :-
     link($LibraryRules).
     link($ListRules).
     link($PolicyRules).
-    denyCtnByProhibitedKeys($Instance, $Containers, $Policy)? =@=deny
+    denyCtnByProhibitedKeys($Instance, $Containers, $Policy, $BearerRef)? =@=deny
 }.
 
 defguard debugCheck4(?Image, ?ImageList) :-

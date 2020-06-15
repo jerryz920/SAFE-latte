@@ -12,8 +12,7 @@ defcon createPodPolicy(?PolicyID, ?PodProperty) :-
 {
     endorsedConfigSet($PodProperty, $PolicyID).
     label("endorsements/trustPolicy/$PolicyID").
-}
-
+}.
 
 defcon createImagePolicy(?PolicyID, ?ImgWhiteList) :-
 {
