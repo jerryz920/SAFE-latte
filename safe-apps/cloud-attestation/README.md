@@ -132,7 +132,7 @@ postEndorsementLink alice trustPolicy/policy1
 ```
 
 
-### Endorsements from trusted endorsers
+### Endorsements of endorsers
 A principal can make use of an image/configuration endorsement by incorporating this
 endorsement along with a declaration of the issuer as a trusted endorser. This is accomplished via logic-set
 linking of SAFE. The principal can choose to link an interested endorsement 
