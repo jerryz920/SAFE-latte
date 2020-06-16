@@ -15,9 +15,9 @@ and [Latte policy Slang](policy.slang).
 These Slang scripts provide a variety of constructs for attesting Latte instances
 (e.g., VMs and pods), endorsing code properties (e.g., attester) and trusted endorsers,
 and checking policy compilance to guard service access. A common set of
-latte policy rules provided in the scripts allows re-use to check configurations
+resuable latte policy rules provided in the scripts allows to check configurations
 and properties attested by instances which themselves are attested.
-The following section walks through a typical process of
+The following sections walk through a typical process of
 attesting, endorsing, and checking in Latte using an end-to-end running example.
 In this example, a test uses a bash shell [script](tests/test_app_policy.sh) 
 for invoking a Latte construct. 
@@ -104,7 +104,7 @@ and their configurations. An authorizer may only
 accept images from a vetted whitelist, and may not allow an image configured
 in an arbitrary way. For example, safety-sensitive configuration
 must be unset, set, or set in particular ways, depending on application
-context. L-Kube provides *configuration sets" to support checks on a common set of configuration properties.
+context. L-Kube provides *configuration sets* to support checks on a common set of configuration properties.
 A *configuration set* uses *property lists*, each of which is a predicated list representation of configuration targeting a particular property,
 to faciliate expression, interpretation, and evaluation
 for three categories of configuration properties: *prohibited*, *required*, and *qualifier*.
@@ -149,33 +149,43 @@ postTrustedEndorser alice alice trustPolicy
 
 ## Authorizing
 An authorizor invokes a Latte guard in Slang to check if 
-related attestations, configurations, and endorsements of a requester
+attestations, configurations, and related endorsements of a requester
 together meet the specification of a particular policy before it
 grants access or allocates resources
-to the requester. 
-
-### Checking for policy compliance
-In joint data analytics, a storage guard uses a Latte client
-to check policy compliance on the arrival of
-an access request. Authorization checks by Latte ensure that not only the 
-code and configuration of the requester but also the underlying execution 
-environment where the
-requester resides all comply with the guard's policy. The command below
-issues for Alice a request to check pod6 against policy1. This authorization
-check will pass.
-
-```
-checkPodByPolicy alice kmaster pod6 policy1
-```
+to the requester. L-Kube uses tag-based access control.
 
 
-### Adopting an existing policy
 
-A principal in Latte can simply choose to adopt an existing policy to 
-guard its service. For example, Bob might have set up another policy as shown
-by the commands below. 
+### Tag-based access control
+In tag-based access control,  file access is granted based on tag privilege. A file owner associates to a file an access tag, which 
+indicates a privilege that must be acquired before an access to this file can be permitted. The access tag could be under
+management of the principal of the file owner, but in general it could be under any principal. A managing
+principal uses standard [STRONG](../strong) group library to establish and operate a tag, e.g., adding and removing
+members into/from a tag, delegating and revoking authority of membership to/from another principal. In L-Kube,
+a tag-managing principal uses STRONG to install a member policy for this tag based on an instance's attestion and
+an endorsed property of this attestation. For example, Alice installs a policy on its tag that requires an instance to 
+have a property of *leak-free* and this property to be anchored at trusted
+endorser bob.  Of course, Alice accepts itself as a trusted endorser. Note that as in STRONG,
+an access tag in L-Kube is represented by a self-certifying ID, a string containing the ID of the tag's managing principal
+and an identifying substring of the tag.
 
 ```
+postGroupAdmissionPolicy alice alice:tag0 "leak-free" bob
+```
+
+
+### Plugging in a configuration set from a trusted endorser
+
+After a principal installs a member policy for a tag, this tag owner adpopts the specified 
+endorser as a trusted source and delegates endorsement 
+of the required instance property to this endorser.
+Therefore, the endorser is eligible to publish a trusted configuration set
+for endorsing the desired property.
+For example, Bob sets up a configuration set named policy1 and associates it to the endorsement of
+security property leak-free, as shown in the commands below. 
+
+```
+postPodPolicy bob policy1 leak-free
 postImagePolicy bob policy1 "[image_c1,image_c2]"
 postRequiredPolicy bob policy1 "[image_c1,k1,k2]"
 postRequiredPolicy bob policy1 "[image_c2,k3]"
@@ -185,8 +195,8 @@ postProhibitedPolicy bob policy1 "[image_c1,k5]"
 postProhibitedPolicy bob policy1 "[image_c2,k5]"
 ```
 
-Alice adopts Bob's policy by endorsing Bob as a trusted policy source. Note that 
-here it uses SAFE's *direct linking* to incorporate the desired policy into this
+Alice could also explicitly  adopt Bob's configuration set by endorsing Bob as a trusted policy source. Note that 
+here it uses SAFE's *direct linking* to incorporate the desired configuration set into this
 endorsement of trusted endorser. This linking structure prunes the inference context at authorization time
 and can dramatically reduce resource consumption (e.g., memory footprint), 
 and delay of property proving on the authorizer.
@@ -197,33 +207,19 @@ postAndDLinkTrustedEndorser alice bob trustPolicy endorsements/trustPolicy/polic
 ```
 
 
-Now, Alice can check a pod, e.g., pod1, using this policy. While it previously has failed, 
-this check passes. 
 
-```
-checkPodByPolicy alice kmaster pod1 policy1
-```
-
-### Tag-based access control
-Latte supports file access based on tag privilege. A file owner associates to a file an access tag, which 
-indicates a privilege that must be acquired before an access to this file can be permitted. The access tag could be under
-management of the principal of the file owner, but in general it could be under any principal. A managing
-principal uses standard [STRONG](../strong) group library to establish and operate on a tag, e.g., adding and removing
-members into/from a tag, delegating and revoking authority of membership to/from another principal. In L-Kube,
-a tag-managing principal installs an attestation policy on the tag for admission control. An instance whose
-attestation complies with the admission policy gets the tag privilege for file access. As in STRONG,
-an access tag in L-Kube is represented by a self-certifying ID, a string containing the ID of the tag's managing principal
-and an identifying substring of the tag.
-
-
-In this example, Alice creates tag0 and installs policy1 to guard this access tag. 
-
-```
-postGroupAdmissionPolicy alice alice:tag0 policy1
-```
-
-Another authorizer Frank can now check if pod1 has access privilege of tag0 under Alice, i.e., alice:tag0.
-This check should pass because Alice's tag policy (policy1) admits the attestation of pod1.
+### Compliance check
+In joint data analytics, a storage guard uses a Latte client
+to check compliance on the arrival of
+an access request. Authorization checks by L-Kube ensure that not only the
+code and configuration of the requester but also the underlying execution
+environment where the
+requester resides all comply with the guard's policy. The command below
+issues for authorizer Frank a request to check if pod1 has access privilege of tag0 under Alice,
+i.e., alice:tag0. The authorizer accepts trusted endorsers registered on the tag and the attesters
+accepted by the tag owner, verifies if the requester pod1 has a valid attestation, and evaluates 
+the attestation against endorsed configuration set(s) to check compliance.   This authorization
+check will pass.
 
 ```
 checkPodAccess frank kmaster pod1 alice:tag0
