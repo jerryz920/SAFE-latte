@@ -29,7 +29,7 @@ defpost postGroupMember(?Group, ?User, ?Delegatable) :- [addGroupMember(?Group, 
 // 
 
 defcon setMemberPolicy(?Group, ?Property, ?Endorser) :-
-  spec("Set an attestation property for admitted members of this group and link to the trusthub of an trusted endorser"),
+  spec("Set an attestation property for admitted members of this group and link to the trusthub of a trusted endorser"),
   ?EndorserSet := label(?Endorser, "trusthub"),
   {
     link($EndorserSet).

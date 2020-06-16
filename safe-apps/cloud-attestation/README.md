@@ -81,10 +81,14 @@ postInstanceConfigList kmaster pod6 ctn2 '[image_c2,[k1,v1],[k4,v5]]'
 Latte allows endorsements on image properties, configuration properties, and
 the endorsers themselves. 
 
-### VM image properties
-One can endorse certain properties of images based on the code. 
+### Code properties 
+One can endorse certain properties of an image based on the code included in
+the image. An open-source community might endorse that a certain release of TLS
+they work on is *no-heartbleed*. L-Kube itself uses properties such as *attester*, *builder*, and *endorser*
+to facilitate the verification of attestation, image build 
+information, and endorsements. 
 For example, with the following commands Bob 
-endorses on the property of *attester* for kube-image that kmaster runs. 
+endorses on the property of *attester* for kube-image that kmaster runs.
 Bob then stores the link to this endorsement into his *trust hub*.
 
 ```
@@ -92,34 +96,23 @@ postEndorsement bob kube-image attester 1
 postEndorsementLink bob kube-image
 ```
 
-### Use of endorsements
-A principal can make use of an image endorsement by incorporating this
-endorsement along with a declaration of the speaker as a trusted endorser. This is accomplished via logic-set
-linking of SAFE. The principal can choose to link an interested endorsement 
-(or a trust hub) to a set of its own for an endorser policy which
-specifies  whose endorsements it trusts and on what endorsable property.
-For instance, Alice can optionally accept Bob's endorsements on the
-property *attester*. Of course, Bob accepts the endorsements made by itself. 
 
-```
-postTrustedEndorser alice bob attester
-postTrustedEndorser bob bob attester
-``` 
+### Configuration sets
 
-### Property lists for configurations
-
-An authorization policy asserts certain properties for images
+An authorization ultimately asserts certain properties for images
 and their configurations. An authorizer may only
 accept images from a vetted whitelist, and may not allow an image configured
 in an arbitrary way. For example, safety-sensitive configuration
 must be unset, set, or set in particular ways, depending on application
-context. Latte provides  mechanics to support checks on a common set of configuration properties.
-It uses *property lists*, a predicated list representation of configuration using properties,
+context. L-Kube provides *configuration sets" to support checks on a common set of configuration properties.
+A *configuration set* uses *property lists*, each of which is a predicated list representation of configuration targeting a particular property,
 to faciliate expression, interpretation, and evaluation
-for three categories of properties: *prohibited*, *required*, and *qualifier*.
+for three categories of configuration properties: *prohibited*, *required*, and *qualifier*.
 These three properties are used to denote configurations that must not be present,
 must be present, and must be specified in a certain way, respectively. 
-In this example, Alice accrues the specifications for policy1, publishing what are
+In this sense, a configuration set acts as a policy that governs how a configuration would be accepted. 
+In our example, Alice publishes a configuration set policy1 for endorsing property *leak-free*.
+It accrues the specifications of this configuration set by publishing what are
 acceptable container images, and for each image what are the prohibited 
 configuration (by keys), the required configuration (by
 keys), and the qualifier configuration 
@@ -127,6 +120,7 @@ keys), and the qualifier configuration
 all property lists.
 
 ```
+postPodPolicy ailce policy1 leak-free
 postImagePolicy alice policy1 "[image_c1,image_c2,image_c3]"
 postRequiredPolicy alice policy1 "[image_c1,k1,k2]"
 postRequiredPolicy alice policy1 "[image_c2,k1]"
@@ -136,6 +130,22 @@ postProhibitedPolicy alice policy1 "[image_c1,k5]"
 postProhibitedPolicy alice policy1 "[image_c2,k5]"
 postEndorsementLink alice trustPolicy/policy1
 ```
+
+
+### Endorsements from trusted endorsers
+A principal can make use of an image/configuration endorsement by incorporating this
+endorsement along with a declaration of the issuer as a trusted endorser. This is accomplished via logic-set
+linking of SAFE. The principal can choose to link an interested endorsement 
+(or a trust hub) to a set of its own that adds an endorsement of the endorser:
+specifying  whose endorsements the principal trusts and on what endorsable property.
+For example, Alice can optionally accept Bob's endorsements on
+properties *attester* and *trustPolicy*. Of course, Alice accepts the endorsements made by itself. 
+
+```
+postTrustedEndorser alice bob attester
+postTrustedEndorser alice bob trustPolicy
+postTrustedEndorser alice alice trustPolicy
+``` 
 
 ## Authorizing
 An authorizor invokes a Latte guard in Slang to check if 
