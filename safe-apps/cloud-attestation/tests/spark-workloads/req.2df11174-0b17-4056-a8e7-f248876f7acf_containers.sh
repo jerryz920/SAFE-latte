@@ -1,0 +1,1 @@
+curl -XPOST "http://127.0.0.1:7777/postInstanceConfigList" --data-binary "@req.2df11174-0b17-4056-a8e7-f248876f7acf_containers.json"
