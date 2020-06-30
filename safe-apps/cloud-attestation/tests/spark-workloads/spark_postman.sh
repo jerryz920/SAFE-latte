@@ -1,6 +1,4 @@
 export SAFE_ADDR=http://127.0.0.1:7777
-export IAAS=152.3.145.38:444
-. ../../functions
 . attest_pod
 
 postSparkPod "026f48d4-3a68-42fd-b8b0-9c94f00b1f1a" "driver"
