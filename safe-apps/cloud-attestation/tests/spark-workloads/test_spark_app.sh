@@ -60,7 +60,7 @@ postProhibitedPolicy alice policy1 '[\"spark:v2.3\", \"KUBERNETES_PROHIBITED_KEY
 postProhibitedPolicy alice policy1 '[\"spark:v2.3\", \"KUBERNETES_PROHIBITED_KEY4\"]' 
 postRequiredPolicy alice policy1 '[\"spark:v2.3\",\"KUBERNETES_SERVICE_PORT\",\"SPARK_DRIVER_URL\"]'
 postRequiredPolicy alice policy1 '[\"spark:v2.3\",\"KUBERNETES_PORT\"]'
-postQualifierPolicy alice policy1 '[\"spark:v2.3\",[\"arg0\",\"executor\"],[\"SPARK_EXECUTOR_ID\",\"3\"]]'
+postQualifierPolicy alice policy1 '[\"spark:v2.3\",[\"SPARK_EXECUTOR_ID\",\"3\"],[\"arg0\",\"executor\"]]'
 postQualifierPolicy alice policy1 '[\"spark:v2.3\",[\"arg0\",\"init\"],[\"arg1\",\"/etc/spark-init/spark-init.properties\"]]'
 postEndorsementLink alice trustPolicy/policy1
 
@@ -74,7 +74,7 @@ checkPodAttestation alice $kmaster "8d827ee8-91a6-4402-9df5-ed2414d6edcd" policy
 postGroupAdmissionPolicy alice alice:tag0 "leak-free" bob
 
 # Authorizer frank issues the following checks using alice:tag0
-# pod1 and pod6 can pass this check
+# The first and the last can pass this check
 printf "\n\n\nchecking pods using a tag\n\n"
 checkPodAccess frank $kmaster "026f48d4-3a68-42fd-b8b0-9c94f00b1f1a" alice:tag0
 checkPodAccess frank $kmaster "2df11174-0b17-4056-a8e7-f248876f7acf" alice:tag0
