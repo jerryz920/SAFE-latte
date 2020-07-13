@@ -147,9 +147,13 @@ defcon consLibraryRules() :-
     denyCtnByProhibitedKeys(Pod, [_|Rest], ConfigSet, H) :-
       denyCtnByProhibitedKeys(Pod, Rest, ConfigSet, H).
 
-    // Latte-K8s only logic.
+    // Latte-K8s only logic
     authPodToUser(Pod, User) :-
-      hasConfig(Pod, "latte.user", User).
+      hasConfig(Pod, "global", Gconfig),
+      esubseq(["latte.user", User], Gconfig).
+
+    // authPodToUser(Pod, User) :-
+    //   hasConfig(Pod, "latte.user", User).
 
     authPodToUser(Pod, User) :-
       hasConfig(Pod, "latte.creator", Creator),
@@ -468,6 +472,7 @@ defguard checkPodByPolicy(?Instance, ?Policy) :-
     denyPodByPolicy($Instance, $Policy, $BearerRef)? =@= deny
 }.
 
+defguard checkWorker(?Instance, ?Tag) :- checkPodAccess(?Instance, ?Tag).
 
 defguard checkPodAccess(?Instance, ?Tag) :-
     ?TRoot := rootPrincipal(?Tag),
@@ -490,6 +495,7 @@ defguard checkPodAccess(?Instance, ?Tag) :-
     link($ListRules).
     link($PolicyRules).
     link($MembershipPolicy).
+    trustedCloudProvider($IaaS).
     attester(P) :- $TRoot: attester(P).
     trustedCloudProvider(P) :- $TRoot: trustedCloudProvider(P).
     trustedEndorserOn(Property, E) :- $TRoot: trustedEndorserOn(Property, E).

@@ -1101,3 +1101,12 @@ checkPodAccess() {
 # ?Instance, ?Tag                                                                                                                                                         
     curl -XPOST $SAFE_ADDR/checkPodAccess -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
 }
+
+checkWorker() {
+    local principal=$1
+    shift 1
+    local bearer=$1
+    shift 1
+# ?Instance, ?Tag                                                                                                                                                         
+    curl -XPOST $SAFE_ADDR/checkWorker -d "{ \"bearerRef\": \"$bearer\", \"principal\": \"$principal\", \"methodParams\": [\"${1}\",\"${2}\"], \"auth\":\"${AUTH:-1}\"}"
+}

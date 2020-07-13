@@ -66,7 +66,7 @@ postEndorsementLink jack trustPolicy/jconfexec
 postAndDLinkTrustedEndorser gabbi jack trustPolicy endorsements/trustPolicy/jconfexec
 
 
-# All of the following checks would pass.         
+# All of the following check would pass.                                                   
 printf "\n\n\nchecking pods against jconfexec\n\n"
 checkPodByPolicy gabbi $kmaster "2df11174-0b17-4056-a8e7-f248876f7acf" jconfexec
 checkPodByPolicy gabbi $kmaster "776740af-4895-4eaf-83a3-b7552227b13b" jconfexec
@@ -78,6 +78,40 @@ postGroupAdmissionPolicy gabbi ${drivergroup} "safe-spark-worker" gabbi
 # Driver authorizes a worker to be part of the job
 # All checks would pass
 printf "\n\n\nchecking access for pods\n\n"
-checkPodAccess ${driver} $kmaster "2df11174-0b17-4056-a8e7-f248876f7acf" ${drivergroup}
-checkPodAccess ${driver} $kmaster "776740af-4895-4eaf-83a3-b7552227b13b" ${drivergroup}
-checkPodAccess ${driver} $kmaster "8d827ee8-91a6-4402-9df5-ed2414d6edcd" ${drivergroup}
+checkWorker ${driver} $kmaster "2df11174-0b17-4056-a8e7-f248876f7acf" ${drivergroup}
+checkWorker ${driver} $kmaster "776740af-4895-4eaf-83a3-b7552227b13b" ${drivergroup}
+checkWorker ${driver} $kmaster "8d827ee8-91a6-4402-9df5-ed2414d6edcd" ${drivergroup}
+
+
+# Driver policy  
+postPodPolicy bob configd safe-spark-job
+postImagePolicy bob configd '[\"spark:v2.3\",\"spark:v2.3\"]'
+postProhibitedPolicy bob configd '[\"spark:v2.3\", \"KUBERNETES_PROHIBITED_KEY1\"]' 
+postProhibitedPolicy bob configd '[\"spark:v2.3\", \"KUBERNETES_PROHIBITED_KEY2\"]' 
+postRequiredPolicy bob configd '[\"spark:v2.3\",\"KUBERNETES_SERVICE_PORT\",\"SPARK_DRIVER_ARGS\"]'
+postRequiredPolicy bob configd '[\"spark:v2.3\",\"KUBERNETES_PORT\"]'
+postQualifierPolicy bob configd '[\"spark:v2.3\",[\"SPARK_JAVA_OPT_17\",\"-Dspark.jars=http://192.168.0.1:12345/spatial-spark.jar,http://192.168.0.1:12345/spatial-spark.jar\"],[\"arg0\",\"driver\"]]'
+postQualifierPolicy bob configd '[\"spark:v2.3\",[\"arg0\",\"init\"],[\"arg1\",\"/etc/spark-init/spark-init.properties\"]]'
+postEndorsementLink bob trustPolicy/configd
+
+postAndDLinkTrustedEndorser alice bob trustPolicy endorsements/trustPolicy/configd
+postTrustedEndorser alice bob attester
+
+
+# Exercise configd: only the check on the first pod would pass.
+printf "\n\n\nchecking pods against configd\n\n"
+checkPodByPolicy alice $kmaster "026f48d4-3a68-42fd-b8b0-9c94f00b1f1a" configd
+checkPodByPolicy alice $kmaster "2df11174-0b17-4056-a8e7-f248876f7acf" configd
+checkPodByPolicy alice $kmaster "776740af-4895-4eaf-83a3-b7552227b13b" configd
+checkPodByPolicy alice $kmaster "8d827ee8-91a6-4402-9df5-ed2414d6edcd" configd
+
+# Install configd for admission of alice's tag0
+postGroupAdmissionPolicy alice alice:tag0 "safe-spark-job" bob
+
+# Authorizer frank issues checks on alice:tag0
+# Only the first pod (the driver) can pass the check
+printf "\n\n\nchecking access for pods\n\n"
+checkPodAccess frank $kmaster "026f48d4-3a68-42fd-b8b0-9c94f00b1f1a" alice:tag0
+checkPodAccess frank $kmaster "2df11174-0b17-4056-a8e7-f248876f7acf" alice:tag0
+checkPodAccess frank $kmaster "776740af-4895-4eaf-83a3-b7552227b13b" alice:tag0
+checkPodAccess frank $kmaster "8d827ee8-91a6-4402-9df5-ed2414d6edcd" alice:tag0
