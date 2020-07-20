@@ -1,4 +1,4 @@
-
+// import("./plist-lib.slang").
 
 // Endorser needs to call postEndorsementLink("trustPolicy/xxx").
 
@@ -46,7 +46,7 @@ defcon createQualifierKVsPolicy(?PolicyID, ?ConfQualifiers) :-
 // 
 // The semantic of the three list is: each element is a list that starts with an "ImageMatcher",
 // which will match an image based on authorizer's trust setting. A container satisfies an element
-// if the ImageMatcher matches its image, and rest of the list match the container config.
+// if the ImageMatcher matchaes its image, and rest of the list match the container config.
 // 
 // I didn't use list representation to construct "policy" statement is for easier implementation
 // of "matching" some policy. It could be optimized such that images of each container in a Pod
@@ -85,7 +85,50 @@ defcon policyRules() :-
 
     hasPolicy(ID, Type, Value) :-
 	policy(ID, Type, Value).
+
+    // Checking spark job policy
+    approveDriverGroup(?DriverGroup, ?PolicyID) :-
+      ?GRoot := rootPrincipal(?DriverGroup),
+      ?GRoot: memberByAttestedProperty(?DriverGroup, ?Prop),
+      ?GRoot: trustedEndorserOn(?Prop, ?Endorser),
+      ?Endorser: endorsedConfigSet(?Prop, ?ConfigSetID),
+      checkConfigSet(?Endorser, ?ConfigSetID, ?PolicyID).
+
+    checkConfigSet(P, PConfSet, CheckerConfigSet) :-
+      P: policy(PConfSet, "image", Images),
+      hasPolicy(CheckerConfigSet, "image", CheckerImages),
+      subseq(Images, CheckerImages),
+      checkConfigSetByImages(P, PConfSet, CheckerConfigSet, Images).
+
+    checkConfigSetByImages(P, PConfigSet, CheckerConfigSet, [Img|Rest]) :-
+      approvePropertyList(P, PConfigSet, Img, "required", CheckerConfigSet),
+      approvePropertyList(P, PConfigSet, Img, "qualifier", ChekcerConfigSet),
+      approvePropertyList(P, PconfigSet, Img, "prohibited", CheckerConfigSet),
+      checkConfigSetByImages(P, PConfigSet, CheckerConfigSet, Rest).
+
+    checkConfigSetByImages(P, PConfigSet, CheckerConfigSet, []).
+
+    approvePropertyList(P, PConfigSet, Img, Category, CheckerConfigSet) :-
+      "qualifier" = Category,
+      P: policy(PConfigSet, Category, [Img|PList]),
+      hasPolicy(CheckerConfigSet, "required", [[Img, Category]|CRequiredKeys]),
+      propsPresent(CRequiredKeys, PList),
+      hasPolicy(CheckerConfigSet, "qualifier", [[Img, Category]|CQualifiers]),
+      esubseq(CQualifiers, PList),
+      hasPolicy(CheckerConfigSet, "prohibited", [[Img, Category]|CProhibitedKeys]),
+      \+( anyPropPresent(CProhibitedKeys, PList) ).
+
+    approvePropertyList(P, PConfigSet, Img, Category, CheckerConfigSet) :-
+      P: policy(PConfigSet, Category, [Img|PList]),
+      hasPolicy(CheckerConfigSet, "required", [[Img, Category]|CRequiredKeys]),
+      subseq(CRequiredKeys, PList),
+      hasPolicy(CheckerConfigSet, "qualifier", [[Img, Category]|CQualifiers]),
+      esubseq(CQualifiers, PList),
+      hasPolicy(CheckerConfigSet, "prohibited", [[Img, Category]|CProhibitedKeys]),
+      \+( intersecting(CProhibitedKeys, PList) ).
+
+    approvePropertyList(P, PConfigSet, Img, Category, CheckerConfigSet) :-
+      \+( P:policy(PConfigSet, Category, [Img|PList]) ).
 }.
 
 definit policyRules().
-

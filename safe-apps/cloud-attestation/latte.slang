@@ -503,6 +503,27 @@ defguard checkPodAccess(?Instance, ?Tag) :-
     checkPodOnTag($Instance, $Tag)?
 }.
 
+defguard checkDriverGroup(?Instance, ?Creator, ?PolicyID) :-
+    ?DriverGroup := "?Creator:?Instance",
+    ?GroupSet := label(?Creator, "groups/?DriverGroup"),
+    ?InstanceSet := label($BearerRef, "instance/?Instance"),
+    ?CheckingPolicy := label("endorsements/trustPolicy/?PolicyID"),
+    ?TrustedEndorserSet := label("trustedEndorsers"),
+    ?LibraryRules := label("LKubeLibraryRules"),
+    ?ListRules := listMatchingRules(),
+    ?PolicyRules := label("trustPolicyRules"),
+{
+    link($GroupSet).
+    link($InstanceSet).
+    link($CheckingPolicy).
+    link($TrustedEndorserSet).
+    link($LibraryRules).
+    link($ListRules).
+    link($PolicyRules).
+
+    approveDriverGroup($DriverGroup, $PolicyID)?
+}.
+
 
 defguard checkPodOwner(?Instance, ?Owner) :-
     ?InstanceSet := label($BearerRef, "instance/?Instance"),

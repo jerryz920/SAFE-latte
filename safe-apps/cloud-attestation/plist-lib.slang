@@ -120,13 +120,24 @@ subseq([H|L], [S|R]) :-
    subseq([H|L], R).
 subseq([], R).
 
-// Test if L is a subsequence of R.
+// Test if L is an extended subsequence of R.
 esubseq([[X,Y]|L], [[X,Y]|R]) :-
    esubseq(L, R).
 esubseq([[H,Y]|L], [[S,_]|R]) :-
    S < H,
    esubseq([[H,Y]|L], R).
 esubseq([], R).
+
+// Test if L and R intersect
+intersecting([E|_], [E|_]).
+intersecting([S|L], R) :-
+  [H|_] = R,
+  S < H,
+  intersecting(L, R).
+intersecting(L, [S|R]) :-
+  [H|_] = L,
+  S < H,
+  intersecting(L, R).
 
 // Test if L is a extended subsequence of any element in right hand side
 //esubseq([], R).
