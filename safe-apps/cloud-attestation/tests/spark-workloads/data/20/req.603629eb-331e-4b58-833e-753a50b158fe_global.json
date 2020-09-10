@@ -1,0 +1,1 @@
+{"principal":"192.168.0.1:6431","methodParams":["603629eb-331e-4b58-833e-753a50b158fe","global","[[\"latte.outputTag\",\"testtag\"],[\"latte.user\",\"system:serviceaccount:latte-gabbi:latte-admin-gabbi\"],[\"namespace\",\"latte-gabbi\"],[\"service_account\",\"default\"]]"]}
