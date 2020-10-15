@@ -1,0 +1,37 @@
+#!/bin/bash
+. timing
+
+postSparkPod() {
+  file_times=$1
+  shift
+
+  pod=$1
+  type=$2
+  datahome="data"
+  if [ $# -ge 3 ]; then
+    datahome=$3
+  fi
+  
+  voidparam="void"
+
+  safe_time ${file_times} postInstanceCurl "@${datahome}/req.${pod}_pod.json"  $voidparam
+  safe_time ${file_times} postInstanceConfigListCurl "@${datahome}/req.${pod}_global.json" $voidparam
+  safe_time ${file_times} postInstanceConfigListCurl "@${datahome}/req.${pod}_containers.json" $voidparam
+  safe_time ${file_times} postInstanceConfigListCurl "@${datahome}/req.${pod}__spark-init.json" $voidparam
+  if [ "$type" = "driver" ]; then
+      safe_time ${file_times} postInstanceConfigListCurl "@${datahome}/req.${pod}__spark-kubernetes-driver.json" $voidparam
+  elif [ "$type" = "worker" ]; then
+      safe_time ${file_times} postInstanceConfigListCurl "@${datahome}/req.${pod}__executor.json" $voidparam
+  else
+      echo "Unrecognized Spark pod type: $type"
+      exit 1
+  fi
+}
+
+postInstanceCurl() {
+  curl -XPOST $SAFE_ADDR/postInstance --data-binary $1
+}
+
+postInstanceConfigListCurl() {
+  curl -XPOST $SAFE_ADDR/postInstanceConfigList --data-binary $1
+}

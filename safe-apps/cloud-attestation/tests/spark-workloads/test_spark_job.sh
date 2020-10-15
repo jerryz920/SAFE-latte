@@ -35,7 +35,6 @@ postQualifierPolicy gabbi confexec '[\"spark:v2.3\",[\"SPARK_EXECUTOR_ID\",\"3\"
 postQualifierPolicy gabbi confexec '[\"spark:v2.3\",[\"arg0\",\"init\"],[\"arg1\",\"/etc/spark-init/spark-init.properties\"]]'
 postEndorsementLink gabbi trustPolicy/confexec
 
-
 # Among the following queries, only the check on the last pod would pass.
 printf "\n\n\nchecking pods against confexec\n\n"
 checkPodAttestation gabbi $kmaster "2df11174-0b17-4056-a8e7-f248876f7acf" confexec
@@ -83,7 +82,7 @@ checkWorker ${driver} $kmaster "776740af-4895-4eaf-83a3-b7552227b13b" ${drivergr
 checkWorker ${driver} $kmaster "8d827ee8-91a6-4402-9df5-ed2414d6edcd" ${drivergroup}
 
 
-# Driver ConfigSet  
+# ConfigSet to check the driver  
 postPodPolicy bob configd safe-spark-job
 postImagePolicy bob configd '[image_00, image_01, \"spark:v2.3\",\"spark:v2.3\"]'
 postProhibitedPolicy bob configd '[\"spark:v2.3\", \"KUBERNETES_PROHIBITED_KEY1\"]' 

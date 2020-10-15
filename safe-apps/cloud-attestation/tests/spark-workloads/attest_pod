@@ -3,14 +3,19 @@
 postSparkPod() {
   pod=$1
   type=$2
-  curl -XPOST $SAFE_ADDR/postInstance --data-binary "@data/req.${pod}_pod.json"
-  curl -XPOST $SAFE_ADDR/postInstanceConfigList --data-binary "@data/req.${pod}_global.json"
-  curl -XPOST $SAFE_ADDR/postInstanceConfigList --data-binary "@data/req.${pod}_containers.json"
-  curl -XPOST $SAFE_ADDR/postInstanceConfigList --data-binary "@data/req.${pod}__spark-init.json"
+  datahome="data"
+  if [ $# -ge 3 ]; then
+    datahome=$3
+  fi
+
+  curl -XPOST $SAFE_ADDR/postInstance --data-binary "@${datahome}/req.${pod}_pod.json"
+  curl -XPOST $SAFE_ADDR/postInstanceConfigList --data-binary "@${datahome}/req.${pod}_global.json"
+  curl -XPOST $SAFE_ADDR/postInstanceConfigList --data-binary "@${datahome}/req.${pod}_containers.json"
+  curl -XPOST $SAFE_ADDR/postInstanceConfigList --data-binary "@${datahome}/req.${pod}__spark-init.json"
   if [ "$type" = "driver" ]; then
-      curl -XPOST $SAFE_ADDR/postInstanceConfigList --data-binary "@data/req.${pod}__spark-kubernetes-driver.json"
+      curl -XPOST $SAFE_ADDR/postInstanceConfigList --data-binary "@${datahome}/req.${pod}__spark-kubernetes-driver.json"
   elif [ "$type" = "worker" ]; then 
-      curl -XPOST $SAFE_ADDR/postInstanceConfigList --data-binary "@data/req.${pod}__executor.json"
+      curl -XPOST $SAFE_ADDR/postInstanceConfigList --data-binary "@${datahome}/req.${pod}__executor.json"
   else
       echo "Unrecognized Spark pod type: $type"
       exit 1

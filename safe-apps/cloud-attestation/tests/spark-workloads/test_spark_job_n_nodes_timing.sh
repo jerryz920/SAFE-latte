@@ -1,7 +1,7 @@
 export SAFE_ADDR=http://127.0.0.1:7777
 export IAAS=152.3.145.38:444
 . ../../functions
-. attest_pod
+. attest_pod_timing
 . timing
 
 if [ $# -ne 1 ]; then
@@ -13,12 +13,15 @@ datadir="data"
 datahome="${datadir}/$1"
 file_driver_id="${datahome}/driver_id.txt"
 file_exec_ids="${datahome}/exec_ids.txt"
-file_times="${datahome}/times.txt"
+file_times=`realpath "${datahome}/times.txt"`
 
 if [ ! -e ${file_driver_id} ]; then
   echo "Make metadata first; use mk_metadata.sh"
   exit
 fi
+
+# Remove any previous results if any
+rm "${file_times}" 2> /dev/null
 
 kmaster="192.168.0.1:6431"
 driver=`sed -n 1p ${file_driver_id}`
@@ -32,9 +35,7 @@ postTrustedEndorser gabbi bob attester
 
 checkAttester gabbi $IAAS $kmaster
 
-time_info=`safe_time postSparkPod ${driver} "driver" ${datahome}`
-echo ""
-echo ${time_info} | tee -a ${file_times}
+postSparkPod ${file_times} ${driver} "driver" ${datahome}
 
 # checkLaunches gabbi $kmaster ${driver} "GJOIpguw8b1Zhdc7kYBhtbVaU4IRolUfSEbCyKNQXHM"
 # checkHasConfig gabbi $kmaster "026f48d4-3a68-42fd-b8b0-9c94f00b1f1a" containers '[\"026f48d4-3a68-42fd-b8b0-9c94f00b1f1a__default__spark-kubernetes-driver\", \"026f48d4-3a68-42fd-b8b0-9c94f00b1f1a__init__spark-init\"]'
@@ -42,9 +43,7 @@ echo ${time_info} | tee -a ${file_times}
 while IFS= read -r line
 do
   echo "Attest for executor pod: ${line}"
-  time_info=`safe_time postSparkPod ${line} "worker" ${datahome}`
-  echo ""
-  echo ${time_info} | tee -a ${file_times}
+  postSparkPod ${file_times} ${line} "worker" ${datahome}
 done < ${file_exec_ids}
  
 
@@ -64,9 +63,7 @@ printf "\n\n\nchecking executor pods against confexec\n\n"
 printf "\nAction\tInstanceID\tTime_in_ms\tTime_in_sec\n"
 while IFS= read -r exec_id
 do
-  time_info=`safe_time checkPodAttestation gabbi $kmaster ${exec_id} confexec`
-  echo ""
-  echo ${time_info} | tee -a ${file_times}
+  safe_time ${file_times} checkPodAttestation gabbi $kmaster ${exec_id} confexec
 done < ${file_exec_ids}
 
 
@@ -77,9 +74,7 @@ postGroupAdmissionPolicy gabbi ${drivergroup} "safe-spark-worker" gabbi
 printf "\n\n\nchecking access for pods\n\n"
 while IFS= read -r exec_id
 do
-  time_info=`safe_time checkPodAccess ${driver} ${kmaster} ${exec_id} ${drivergroup}`
-  echo ""
-  echo ${time_info} | tee -a ${file_times}
+  safe_time ${file_times} checkPodAccess ${driver} ${kmaster} ${exec_id} ${drivergroup}
 done < ${file_exec_ids}
 
 
@@ -101,9 +96,7 @@ postAndDLinkTrustedEndorser gabbi jack trustPolicy endorsements/trustPolicy/jcon
 printf "\n\n\nchecking executor pods against jconfexec\n\n"
 while IFS= read -r exec_id
 do
-  time_info=`safe_time checkPodByPolicy gabbi $kmaster ${exec_id} jconfexec`
-  echo ""
-  echo ${time_info} | tee -a ${file_times}
+  safe_time ${file_times} checkPodByPolicy gabbi $kmaster ${exec_id} jconfexec
 done < ${file_exec_ids}
 
 postGroupAdmissionPolicy gabbi ${drivergroup} "safe-spark-worker" jack
@@ -114,9 +107,7 @@ postGroupAdmissionPolicy gabbi ${drivergroup} "safe-spark-worker" gabbi
 printf "\n\n\nchecking access for pods\n\n"
 while IFS= read -r exec_id
 do
-  time_info=`safe_time checkPodByPolicy gabbi $kmaster ${exec_id} jconfex`
-  echo ""
-  echo ${time_info} | tee -a ${file_times}
+  safe_time ${file_times} checkWorker ${driver} ${kmaster} ${exec_id} ${drivergroup}
 done < ${file_exec_ids}
 
 
@@ -139,15 +130,11 @@ postTrustedEndorser alice bob attester
 # Exercise configd: only the check on the first pod would pass.
 printf "\n\n\nchecking pods against configd\n\n"
 
-time_info=`safe_time checkPodByPolicy alice $kmaster ${driver} configd`
-echo ""
-echo ${time_info} | tee -a ${file_times}
+safe_time ${file_times} checkPodByPolicy alice $kmaster ${driver} configd
 
 while IFS= read -r exec_id
 do
-  time_info=`safe_time checkPodByPolicy alice $kmaster ${exec_id} configd`
-  echo ""
-  echo ${time_info} | tee -a ${file_times}
+  safe_time ${file_times} checkPodByPolicy alice $kmaster ${exec_id} configd
 done < ${file_exec_ids}
 
 # Install configd for admission of alice's tag0                                                        
@@ -156,15 +143,11 @@ postGroupAdmissionPolicy alice alice:tag0 "safe-spark-job" bob
 # Authorizer frank issues checks on alice:tag0                                                         
 # Only the first pod (the driver) can pass the check                                                   
 printf "\n\n\nchecking access for pods\n\n"
-time_info=`safe_time checkPodAccess frank $kmaster ${driver} alice:tag0`
-echo ""
-echo ${time_info} | tee -a ${file_times}
+safe_time ${file_times} checkPodAccess frank $kmaster ${driver} alice:tag0
 
 while IFS= read -r exec_id
 do
-  time_info=`safe_time checkPodAccess frank $kmaster ${exec_id} alice:tag0`
-  echo ""
-  echo ${time_info} | tee -a ${file_times}
+  safe_time ${file_times} checkPodAccess frank $kmaster ${exec_id} alice:tag0
 done < ${file_exec_ids}
 
 
@@ -202,6 +185,4 @@ postEndorsementLink tom trustPolicy/diveradm
 printf "\n\nCheck driver group\n\n"
 
 # This driver-group check should pass
-time_info=`safe_time checkDriverGroup tom $kmaster ${driver} gabbi driveradm`
-echo ""
-echo ${time_info} | tee -a ${file_times}
+safe_time ${file_times} checkDriverGroup tom $kmaster ${driver} gabbi driveradm

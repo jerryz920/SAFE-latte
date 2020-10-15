@@ -1,15 +1,23 @@
 #!/bin/bash
 
 safe_time() {
+  file_times=$1
+  shift
+
+  #echo "command to run:" 
+  #echo "$@"
   t_start=`gdate +%s%6N`
   $@ 1>&2
   t_end=`gdate +%s%6N`
   t_in_us=`expr ${t_end} - ${t_start}`
   t_in_sec=`echo "scale=10; ${t_in_us}/1000000" | bc`
+
+  # log results
   op=$1
   while [ $# -gt 2 ]; do
     shift
   done
   #exec_id_pos=`expr $# - 2`
-  printf "$op\t$1\t${t_in_us}\t${t_in_sec}\n"
+  echo ""
+  printf "$op\t$1\t${t_in_us}\t${t_in_sec}\n"  | tee -a ${file_times}
 }
